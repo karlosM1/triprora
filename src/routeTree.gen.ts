@@ -9,12 +9,24 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SchedulesRouteImport } from './routes/schedules'
+import { Route as MyBookingsRouteImport } from './routes/my-bookings'
 import { Route as FindVansRouteImport } from './routes/find-vans'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BookVanIdIndexRouteImport } from './routes/book/$vanId/index'
 import { Route as BookVanIdConfirmationRouteImport } from './routes/book/$vanId/confirmation'
 import { Route as BookVanIdCheckoutRouteImport } from './routes/book/$vanId/checkout'
 
+const SchedulesRoute = SchedulesRouteImport.update({
+  id: '/schedules',
+  path: '/schedules',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MyBookingsRoute = MyBookingsRouteImport.update({
+  id: '/my-bookings',
+  path: '/my-bookings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FindVansRoute = FindVansRouteImport.update({
   id: '/find-vans',
   path: '/find-vans',
@@ -44,6 +56,8 @@ const BookVanIdCheckoutRoute = BookVanIdCheckoutRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/find-vans': typeof FindVansRoute
+  '/my-bookings': typeof MyBookingsRoute
+  '/schedules': typeof SchedulesRoute
   '/book/$vanId/checkout': typeof BookVanIdCheckoutRoute
   '/book/$vanId/confirmation': typeof BookVanIdConfirmationRoute
   '/book/$vanId/': typeof BookVanIdIndexRoute
@@ -51,6 +65,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/find-vans': typeof FindVansRoute
+  '/my-bookings': typeof MyBookingsRoute
+  '/schedules': typeof SchedulesRoute
   '/book/$vanId/checkout': typeof BookVanIdCheckoutRoute
   '/book/$vanId/confirmation': typeof BookVanIdConfirmationRoute
   '/book/$vanId': typeof BookVanIdIndexRoute
@@ -59,6 +75,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/find-vans': typeof FindVansRoute
+  '/my-bookings': typeof MyBookingsRoute
+  '/schedules': typeof SchedulesRoute
   '/book/$vanId/checkout': typeof BookVanIdCheckoutRoute
   '/book/$vanId/confirmation': typeof BookVanIdConfirmationRoute
   '/book/$vanId/': typeof BookVanIdIndexRoute
@@ -68,6 +86,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/find-vans'
+    | '/my-bookings'
+    | '/schedules'
     | '/book/$vanId/checkout'
     | '/book/$vanId/confirmation'
     | '/book/$vanId/'
@@ -75,6 +95,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/find-vans'
+    | '/my-bookings'
+    | '/schedules'
     | '/book/$vanId/checkout'
     | '/book/$vanId/confirmation'
     | '/book/$vanId'
@@ -82,6 +104,8 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/find-vans'
+    | '/my-bookings'
+    | '/schedules'
     | '/book/$vanId/checkout'
     | '/book/$vanId/confirmation'
     | '/book/$vanId/'
@@ -90,6 +114,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FindVansRoute: typeof FindVansRoute
+  MyBookingsRoute: typeof MyBookingsRoute
+  SchedulesRoute: typeof SchedulesRoute
   BookVanIdCheckoutRoute: typeof BookVanIdCheckoutRoute
   BookVanIdConfirmationRoute: typeof BookVanIdConfirmationRoute
   BookVanIdIndexRoute: typeof BookVanIdIndexRoute
@@ -97,6 +123,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/schedules': {
+      id: '/schedules'
+      path: '/schedules'
+      fullPath: '/schedules'
+      preLoaderRoute: typeof SchedulesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/my-bookings': {
+      id: '/my-bookings'
+      path: '/my-bookings'
+      fullPath: '/my-bookings'
+      preLoaderRoute: typeof MyBookingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/find-vans': {
       id: '/find-vans'
       path: '/find-vans'
@@ -138,6 +178,8 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FindVansRoute: FindVansRoute,
+  MyBookingsRoute: MyBookingsRoute,
+  SchedulesRoute: SchedulesRoute,
   BookVanIdCheckoutRoute: BookVanIdCheckoutRoute,
   BookVanIdConfirmationRoute: BookVanIdConfirmationRoute,
   BookVanIdIndexRoute: BookVanIdIndexRoute,
