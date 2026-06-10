@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignUpRouteImport } from './routes/sign-up'
+import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SchedulesRouteImport } from './routes/schedules'
 import { Route as MyBookingsRouteImport } from './routes/my-bookings'
 import { Route as FindVansRouteImport } from './routes/find-vans'
@@ -17,6 +19,16 @@ import { Route as BookVanIdIndexRouteImport } from './routes/book/$vanId/index'
 import { Route as BookVanIdConfirmationRouteImport } from './routes/book/$vanId/confirmation'
 import { Route as BookVanIdCheckoutRouteImport } from './routes/book/$vanId/checkout'
 
+const SignUpRoute = SignUpRouteImport.update({
+  id: '/sign-up',
+  path: '/sign-up',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignInRoute = SignInRouteImport.update({
+  id: '/sign-in',
+  path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SchedulesRoute = SchedulesRouteImport.update({
   id: '/schedules',
   path: '/schedules',
@@ -58,6 +70,8 @@ export interface FileRoutesByFullPath {
   '/find-vans': typeof FindVansRoute
   '/my-bookings': typeof MyBookingsRoute
   '/schedules': typeof SchedulesRoute
+  '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
   '/book/$vanId/checkout': typeof BookVanIdCheckoutRoute
   '/book/$vanId/confirmation': typeof BookVanIdConfirmationRoute
   '/book/$vanId/': typeof BookVanIdIndexRoute
@@ -67,6 +81,8 @@ export interface FileRoutesByTo {
   '/find-vans': typeof FindVansRoute
   '/my-bookings': typeof MyBookingsRoute
   '/schedules': typeof SchedulesRoute
+  '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
   '/book/$vanId/checkout': typeof BookVanIdCheckoutRoute
   '/book/$vanId/confirmation': typeof BookVanIdConfirmationRoute
   '/book/$vanId': typeof BookVanIdIndexRoute
@@ -77,6 +93,8 @@ export interface FileRoutesById {
   '/find-vans': typeof FindVansRoute
   '/my-bookings': typeof MyBookingsRoute
   '/schedules': typeof SchedulesRoute
+  '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
   '/book/$vanId/checkout': typeof BookVanIdCheckoutRoute
   '/book/$vanId/confirmation': typeof BookVanIdConfirmationRoute
   '/book/$vanId/': typeof BookVanIdIndexRoute
@@ -88,6 +106,8 @@ export interface FileRouteTypes {
     | '/find-vans'
     | '/my-bookings'
     | '/schedules'
+    | '/sign-in'
+    | '/sign-up'
     | '/book/$vanId/checkout'
     | '/book/$vanId/confirmation'
     | '/book/$vanId/'
@@ -97,6 +117,8 @@ export interface FileRouteTypes {
     | '/find-vans'
     | '/my-bookings'
     | '/schedules'
+    | '/sign-in'
+    | '/sign-up'
     | '/book/$vanId/checkout'
     | '/book/$vanId/confirmation'
     | '/book/$vanId'
@@ -106,6 +128,8 @@ export interface FileRouteTypes {
     | '/find-vans'
     | '/my-bookings'
     | '/schedules'
+    | '/sign-in'
+    | '/sign-up'
     | '/book/$vanId/checkout'
     | '/book/$vanId/confirmation'
     | '/book/$vanId/'
@@ -116,6 +140,8 @@ export interface RootRouteChildren {
   FindVansRoute: typeof FindVansRoute
   MyBookingsRoute: typeof MyBookingsRoute
   SchedulesRoute: typeof SchedulesRoute
+  SignInRoute: typeof SignInRoute
+  SignUpRoute: typeof SignUpRoute
   BookVanIdCheckoutRoute: typeof BookVanIdCheckoutRoute
   BookVanIdConfirmationRoute: typeof BookVanIdConfirmationRoute
   BookVanIdIndexRoute: typeof BookVanIdIndexRoute
@@ -123,6 +149,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sign-up': {
+      id: '/sign-up'
+      path: '/sign-up'
+      fullPath: '/sign-up'
+      preLoaderRoute: typeof SignUpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-in': {
+      id: '/sign-in'
+      path: '/sign-in'
+      fullPath: '/sign-in'
+      preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/schedules': {
       id: '/schedules'
       path: '/schedules'
@@ -180,6 +220,8 @@ const rootRouteChildren: RootRouteChildren = {
   FindVansRoute: FindVansRoute,
   MyBookingsRoute: MyBookingsRoute,
   SchedulesRoute: SchedulesRoute,
+  SignInRoute: SignInRoute,
+  SignUpRoute: SignUpRoute,
   BookVanIdCheckoutRoute: BookVanIdCheckoutRoute,
   BookVanIdConfirmationRoute: BookVanIdConfirmationRoute,
   BookVanIdIndexRoute: BookVanIdIndexRoute,

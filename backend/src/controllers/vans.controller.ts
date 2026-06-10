@@ -2,12 +2,13 @@ import type { Request, Response } from 'express'
 import { VanModel } from '../models/van.model.js'
 import { AppError } from '../utils/app-error.js'
 
-export function getVans(_req: Request, res: Response) {
-  res.json(VanModel.findAll())
+export async function getVans(_req: Request, res: Response) {
+  const vans = await VanModel.findAll()
+  res.json(vans)
 }
 
-export function getVanById(req: Request, res: Response) {
-  const van = VanModel.findById(req.params.vanId)
+export async function getVanById(req: Request, res: Response) {
+  const van = await VanModel.findById(req.params.vanId)
 
   if (!van) {
     throw new AppError('Van not found', 404)
@@ -16,8 +17,8 @@ export function getVanById(req: Request, res: Response) {
   res.json(van)
 }
 
-export function getVanSeats(req: Request, res: Response) {
-  const seats = VanModel.findSeatsByVanId(req.params.vanId)
+export async function getVanSeats(req: Request, res: Response) {
+  const seats = await VanModel.findSeatsByVanId(req.params.vanId)
 
   if (!seats) {
     throw new AppError('Van not found', 404)

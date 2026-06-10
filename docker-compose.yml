@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: triprora-postgres
+    restart: unless-stopped
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRES_USER: triprora
+      POSTGRES_PASSWORD: triprora
+      POSTGRES_DB: triprora
+    volumes:
+      - triprora_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U triprora -d triprora']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: triprora-backend
+    restart: unless-stopped
+    ports:
+      - '3001:3001'
+    environment:
+      PORT: 3001
+      DATABASE_URL: postgresql://triprora:triprora@postgres:5432/triprora?schema=public
+      DIRECT_URL: postgresql://triprora:triprora@postgres:5432/triprora?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend/src:/app/backend/src
+      - ./backend/prisma:/app/backend/prisma
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: triprora-frontend
+    restart: unless-stopped
+    ports:
+      - '5173:5173'
+    env_file:
+      - frontend/.env
+    environment:
+      VITE_API_URL: /api
+      VITE_API_PROXY_TARGET: http://backend:3001
+    depends_on:
+      - backend
+
+volumes:
+  triprora_postgres_data:
