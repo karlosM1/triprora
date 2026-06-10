@@ -20,6 +20,18 @@ enum BookingStatus {
   cancelled
 }
 
+enum Role {
+  passenger
+  driver
+  admin
+}
+
+enum DriverApplicationStatus {
+  pending
+  approved
+  rejected
+}
+
 model Van {
   id                String   @id
   classType         String
@@ -50,8 +62,41 @@ model Seat {
   @@unique([vanId, label])
 }
 
+model Profile {
+  id        String   @id @db.Uuid
+  email     String   @unique
+  fullName  String?
+  phone     String?
+  role      Role     @default(passenger)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  driverApplication DriverApplication?
+  bookings          Booking[]
+
+  @@map("profiles")
+}
+
+model DriverApplication {
+  id          String                  @id @default(cuid())
+  profileId   String                  @unique @db.Uuid
+  profile     Profile                 @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  licenseNo   String
+  vehicleInfo String?
+  status      DriverApplicationStatus @default(pending)
+  reviewedBy  String?                 @db.Uuid
+  reviewedAt  DateTime?
+  adminNotes  String?
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+
+  @@map("driver_applications")
+}
+
 model Booking {
   id        String        @id
+  userId    String?       @db.Uuid
+  user      Profile?      @relation(fields: [userId], references: [id], onDelete: SetNull)
   reference String?       @unique
   routeCode String?
   image     String?

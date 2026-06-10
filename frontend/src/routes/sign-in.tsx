@@ -37,7 +37,7 @@ export const Route = createFileRoute('/sign-in')({
 function SignInPage() {
   const { redirect } = Route.useSearch()
   const navigate = useNavigate()
-  const { signIn } = useAuth()
+  const { signIn, refreshProfile } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -56,6 +56,7 @@ function SignInPage() {
       return
     }
 
+    await refreshProfile()
     await navigate({ to: redirect ?? '/my-bookings' })
   }
 

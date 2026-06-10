@@ -15,6 +15,8 @@ import { Route as SchedulesRouteImport } from './routes/schedules'
 import { Route as MyBookingsRouteImport } from './routes/my-bookings'
 import { Route as FindVansRouteImport } from './routes/find-vans'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DriverRegisterRouteImport } from './routes/driver/register'
+import { Route as AdminDriversRouteImport } from './routes/admin/drivers'
 import { Route as BookVanIdIndexRouteImport } from './routes/book/$vanId/index'
 import { Route as BookVanIdConfirmationRouteImport } from './routes/book/$vanId/confirmation'
 import { Route as BookVanIdCheckoutRouteImport } from './routes/book/$vanId/checkout'
@@ -49,6 +51,16 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DriverRegisterRoute = DriverRegisterRouteImport.update({
+  id: '/driver/register',
+  path: '/driver/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminDriversRoute = AdminDriversRouteImport.update({
+  id: '/admin/drivers',
+  path: '/admin/drivers',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BookVanIdIndexRoute = BookVanIdIndexRouteImport.update({
   id: '/book/$vanId/',
   path: '/book/$vanId/',
@@ -72,6 +84,8 @@ export interface FileRoutesByFullPath {
   '/schedules': typeof SchedulesRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/admin/drivers': typeof AdminDriversRoute
+  '/driver/register': typeof DriverRegisterRoute
   '/book/$vanId/checkout': typeof BookVanIdCheckoutRoute
   '/book/$vanId/confirmation': typeof BookVanIdConfirmationRoute
   '/book/$vanId/': typeof BookVanIdIndexRoute
@@ -83,6 +97,8 @@ export interface FileRoutesByTo {
   '/schedules': typeof SchedulesRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/admin/drivers': typeof AdminDriversRoute
+  '/driver/register': typeof DriverRegisterRoute
   '/book/$vanId/checkout': typeof BookVanIdCheckoutRoute
   '/book/$vanId/confirmation': typeof BookVanIdConfirmationRoute
   '/book/$vanId': typeof BookVanIdIndexRoute
@@ -95,6 +111,8 @@ export interface FileRoutesById {
   '/schedules': typeof SchedulesRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/admin/drivers': typeof AdminDriversRoute
+  '/driver/register': typeof DriverRegisterRoute
   '/book/$vanId/checkout': typeof BookVanIdCheckoutRoute
   '/book/$vanId/confirmation': typeof BookVanIdConfirmationRoute
   '/book/$vanId/': typeof BookVanIdIndexRoute
@@ -108,6 +126,8 @@ export interface FileRouteTypes {
     | '/schedules'
     | '/sign-in'
     | '/sign-up'
+    | '/admin/drivers'
+    | '/driver/register'
     | '/book/$vanId/checkout'
     | '/book/$vanId/confirmation'
     | '/book/$vanId/'
@@ -119,6 +139,8 @@ export interface FileRouteTypes {
     | '/schedules'
     | '/sign-in'
     | '/sign-up'
+    | '/admin/drivers'
+    | '/driver/register'
     | '/book/$vanId/checkout'
     | '/book/$vanId/confirmation'
     | '/book/$vanId'
@@ -130,6 +152,8 @@ export interface FileRouteTypes {
     | '/schedules'
     | '/sign-in'
     | '/sign-up'
+    | '/admin/drivers'
+    | '/driver/register'
     | '/book/$vanId/checkout'
     | '/book/$vanId/confirmation'
     | '/book/$vanId/'
@@ -142,6 +166,8 @@ export interface RootRouteChildren {
   SchedulesRoute: typeof SchedulesRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
+  AdminDriversRoute: typeof AdminDriversRoute
+  DriverRegisterRoute: typeof DriverRegisterRoute
   BookVanIdCheckoutRoute: typeof BookVanIdCheckoutRoute
   BookVanIdConfirmationRoute: typeof BookVanIdConfirmationRoute
   BookVanIdIndexRoute: typeof BookVanIdIndexRoute
@@ -191,6 +217,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/driver/register': {
+      id: '/driver/register'
+      path: '/driver/register'
+      fullPath: '/driver/register'
+      preLoaderRoute: typeof DriverRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/drivers': {
+      id: '/admin/drivers'
+      path: '/admin/drivers'
+      fullPath: '/admin/drivers'
+      preLoaderRoute: typeof AdminDriversRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/book/$vanId/': {
       id: '/book/$vanId/'
       path: '/book/$vanId'
@@ -222,6 +262,8 @@ const rootRouteChildren: RootRouteChildren = {
   SchedulesRoute: SchedulesRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
+  AdminDriversRoute: AdminDriversRoute,
+  DriverRegisterRoute: DriverRegisterRoute,
   BookVanIdCheckoutRoute: BookVanIdCheckoutRoute,
   BookVanIdConfirmationRoute: BookVanIdConfirmationRoute,
   BookVanIdIndexRoute: BookVanIdIndexRoute,

@@ -3,15 +3,22 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth-context'
 import { cn } from '@/lib/utils'
 
-const navLinks = [
+const baseNavLinks = [
   { label: 'Find Vans', to: '/find-vans' as const, key: 'find-vans' },
   { label: 'My Bookings', to: '/my-bookings' as const, key: 'my-bookings' },
   { label: 'Schedules', to: '/schedules' as const, key: 'schedules' },
+  { label: 'Become a Driver', to: '/driver/register' as const, key: 'driver-register' },
   { label: 'Support', to: '/' as const, key: 'support' },
 ] as const
 
 type HeaderProps = {
-  activeLink?: 'find-vans' | 'my-bookings' | 'schedules' | 'home'
+  activeLink?:
+    | 'find-vans'
+    | 'my-bookings'
+    | 'schedules'
+    | 'home'
+    | 'driver-register'
+    | 'admin-drivers'
 }
 
 function getInitials(email: string) {
@@ -21,7 +28,14 @@ function getInitials(email: string) {
 
 export function Header({ activeLink = 'home' }: HeaderProps) {
   const navigate = useNavigate()
-  const { user, loading, signOut } = useAuth()
+  const { user, loading, signOut, isAdmin } = useAuth()
+
+  const navLinks = [
+    ...baseNavLinks,
+    ...(isAdmin
+      ? [{ label: 'Admin', to: '/admin/drivers' as const, key: 'admin-drivers' as const }]
+      : []),
+  ]
 
   async function handleSignOut() {
     await signOut()
