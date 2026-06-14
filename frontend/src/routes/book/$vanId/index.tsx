@@ -4,6 +4,7 @@ import { BookingFooter } from '@/components/booking/booking-footer'
 import { ConciergeCard, TripSummaryCard } from '@/components/booking/trip-summary-card'
 import { SeatMap } from '@/components/booking/seat-map'
 import { Header } from '@/components/landing/header'
+import { Button } from '@/components/ui/button'
 import { loadVanBooking } from '@/lib/api/load-van-booking'
 
 export const Route = createFileRoute('/book/$vanId/')({
@@ -13,14 +14,62 @@ export const Route = createFileRoute('/book/$vanId/')({
   loader: async ({ params }) => {
     return loadVanBooking(params.vanId)
   },
+  notFoundComponent: TripNotFound,
+  errorComponent: TripLoadError,
   component: SeatSelectionPage,
 })
+
+function TripNotFound() {
+  return (
+    <TripErrorLayout
+      title="Trip not found"
+      message="This trip may have been removed or is no longer available for booking."
+    />
+  )
+}
+
+function TripLoadError({ error }: { error: Error }) {
+  return (
+    <TripErrorLayout
+      title="Unable to load trip"
+      message={error.message || 'Something went wrong while loading seat availability.'}
+    />
+  )
+}
+
+function TripErrorLayout({
+  title,
+  message,
+}: {
+  title: string
+  message: string
+}) {
+  return (
+    <div className="min-h-svh bg-[#F8F9FB]">
+      <Header activeLink="find-vans" />
+      <main className="mx-auto max-w-lg px-6 py-16 text-center lg:px-8">
+        <h1 className="text-2xl font-bold text-foreground">{title}</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{message}</p>
+        <Button className="mt-6 rounded-lg" asChild>
+          <Link to="/find-vans">Back to available trips</Link>
+        </Button>
+      </main>
+      <BookingFooter />
+    </div>
+  )
+}
 
 function SeatSelectionPage() {
   const { van, seats } = Route.useLoaderData()
   const { vanId } = Route.useParams()
   const { seat: initialSeat } = Route.useSearch()
-  const [selectedSeatId, setSelectedSeatId] = useState(initialSeat)
+  const defaultSeat =
+    seats.find((s) => s.status === 'available')?.id ?? seats[0]?.id ?? '1A'
+  const [selectedSeatId, setSelectedSeatId] = useState(
+    seats.some((s) => s.id === initialSeat && s.status !== 'occupied')
+      ? initialSeat
+      : defaultSeat,
+  )
 
   const selectedSeat = seats.find((s) => s.id === selectedSeatId)
   const isPremium = selectedSeat?.premium ?? false
@@ -55,7 +104,7 @@ function SeatSelectionPage() {
             Select Your Preferred Seat
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {van.classType.replace(' CLASS', '')} Van • {van.id.padStart(3, '0')} Route
+            {van.classType.replace(' CLASS', '')} Van • {van.id} Route
           </p>
         </div>
 

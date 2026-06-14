@@ -5,12 +5,13 @@ import { CheckoutFooter } from '@/components/booking/booking-footer'
 import { CheckoutHeader } from '@/components/booking/checkout-header'
 import { Button } from '@/components/ui/button'
 import { loadVanBooking } from '@/lib/api/load-van-booking'
-import { calculateTotals, formatPrice } from '@/lib/booking'
+import { calculateTotals } from '@/lib/booking'
 
 export const Route = createFileRoute('/book/$vanId/confirmation')({
   validateSearch: (search: Record<string, unknown>) => ({
     seat: (search.seat as string) || '1A',
     name: (search.name as string) || 'Guest',
+    ref: (search.ref as string) || '',
   }),
   loader: async ({ params }) => {
     return loadVanBooking(params.vanId)
@@ -18,14 +19,23 @@ export const Route = createFileRoute('/book/$vanId/confirmation')({
   component: ConfirmationPage,
 })
 
+function formatTripDate(departureDate?: string) {
+  if (!departureDate) return '—'
+  return new Date(`${departureDate}T00:00:00`).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
 function ConfirmationPage() {
   const { van, seats } = Route.useLoaderData()
-  const { seat, name } = Route.useSearch()
+  const { seat, name, ref } = Route.useSearch()
 
   const selectedSeat = seats.find((s) => s.id === seat)
   const isPremium = selectedSeat?.premium ?? false
   const { total } = calculateTotals(van.price, isPremium)
-  const bookingRef = `TRP-${Date.now().toString().slice(-8)}`
+  const tripDate = formatTripDate(van.departureDate)
 
   return (
     <div className="min-h-svh bg-[#F8F9FB]">
@@ -48,17 +58,17 @@ function ConfirmationPage() {
           <div className="flex items-center justify-between border-b border-border pb-4">
             <span className="text-xs text-muted-foreground">Booking Reference</span>
             <span className="font-mono text-sm font-bold text-primary">
-              {bookingRef}
+              {ref || '—'}
             </span>
           </div>
 
           <dl className="mt-4 space-y-3 text-sm">
             <Row label="Route" value={`${van.departureLocation} → ${van.arrivalLocation}`} />
-            <Row label="Date" value="Oct 24, 2024" />
-            <Row label="Departure" value={`${van.departureTime} AM`} />
+            <Row label="Date" value={tripDate} />
+            <Row label="Departure" value={van.departureTime} />
             <Row label="Seat" value={`${seat}${isPremium ? ' (Premium)' : ''}`} />
             <Row label="Operator" value={van.operator} />
-            <Row label="Total Paid" value={formatPrice(total)} bold />
+            <Row label="Total Paid" value={`₱${total.toLocaleString()}`} bold />
           </dl>
         </div>
 
@@ -72,9 +82,9 @@ function ConfirmationPage() {
             Download Receipt
           </Button>
           <Button className="rounded-lg" asChild>
-            <Link to="/">
+            <Link to="/my-bookings">
               <Home className="size-4" />
-              Back to Home
+              View My Bookings
             </Link>
           </Button>
         </div>

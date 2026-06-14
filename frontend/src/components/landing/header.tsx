@@ -18,6 +18,7 @@ type HeaderProps = {
     | 'schedules'
     | 'home'
     | 'driver-register'
+    | 'driver-portal'
     | 'admin-drivers'
 }
 
@@ -28,10 +29,15 @@ function getInitials(email: string) {
 
 export function Header({ activeLink = 'home' }: HeaderProps) {
   const navigate = useNavigate()
-  const { user, loading, signOut, isAdmin } = useAuth()
+  const { user, loading, signOut, isAdmin, isDriver } = useAuth()
 
   const navLinks = [
-    ...baseNavLinks,
+    ...baseNavLinks.filter(
+      (link) => link.key !== 'driver-register' || !isDriver,
+    ),
+    ...(isDriver
+      ? [{ label: 'Driver Portal', to: '/driver' as const, key: 'driver-portal' as const }]
+      : []),
     ...(isAdmin
       ? [{ label: 'Admin', to: '/admin/drivers' as const, key: 'admin-drivers' as const }]
       : []),

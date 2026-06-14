@@ -25,6 +25,9 @@ export type Van = {
   price: number
   seatsLeft: number
   totalSeats?: number
+  departureDate?: string
+  tripCategory?: string | null
+  vehicleName?: string | null
 }
 
 export type SeatStatus = 'available' | 'occupied' | 'selected'

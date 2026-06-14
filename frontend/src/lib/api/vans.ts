@@ -7,12 +7,14 @@ export async function fetchVans() {
 }
 
 export async function fetchVanById(vanId: string) {
-  const { data } = await api.get<ApiVan>(`/vans/${vanId}`)
+  const { data } = await api.get<ApiVan>(`/vans/${encodeURIComponent(vanId)}`)
   return data
 }
 
 export async function fetchVanSeats(vanId: string) {
-  const { data } = await api.get<Seat[]>(`/vans/${vanId}/seats`)
+  const { data } = await api.get<Seat[]>(
+    `/vans/${encodeURIComponent(vanId)}/seats`,
+  )
   return data
 }
 

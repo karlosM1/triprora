@@ -23,6 +23,20 @@ export type HistoryBooking = {
   price: string
 }
 
+export type CreatedBooking = {
+  id: string
+  reference: string
+  route: string
+  date: string
+  time: string
+  seat: string
+  gate: string
+  vehicle: string
+  operator: string
+  price: string
+  isPremium: boolean
+}
+
 export type RouteCard = {
   id: string
   icon: 'bus' | 'mountains' | 'building'
@@ -84,6 +98,9 @@ export type ApiVan = {
   price: number
   seatsLeft: number
   totalSeats?: number
+  departureDate?: string
+  tripCategory?: string | null
+  vehicleName?: string | null
 }
 
 export type SeatStatus = 'available' | 'occupied' | 'selected'

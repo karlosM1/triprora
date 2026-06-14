@@ -15,26 +15,44 @@ const amenities = [
   { icon: Coffee, label: 'Mini Bar' },
 ]
 
+function groupSeatsByRow(seats: Seat[]) {
+  const rows = new Map<number, Seat[]>()
+
+  for (const seat of seats) {
+    const row = Number.parseInt(seat.label, 10)
+    if (Number.isNaN(row)) continue
+    const rowSeats = rows.get(row) ?? []
+    rowSeats.push(seat)
+    rows.set(row, rowSeats)
+  }
+
+  return [...rows.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([row, rowSeats]) => ({
+      row,
+      seats: rowSeats.sort((a, b) => a.label.localeCompare(b.label)),
+    }))
+}
+
 export function SeatMap({ seats, selectedSeatId, onSelectSeat }: SeatMapProps) {
   const seatById = Object.fromEntries(seats.map((s) => [s.id, s]))
+  const rows = groupSeatsByRow(seats)
 
   function getStatus(seatId: string): Seat['status'] {
     if (seatId === selectedSeatId) return 'selected'
     return seatById[seatId]?.status ?? 'occupied'
   }
 
-  function renderSeat(seatId: string) {
-    const seat = seatById[seatId]
-    if (!seat) return null
-    const status = getStatus(seatId)
-    const isClickable = status === 'available' || status === 'selected'
+  function renderSeat(seat: Seat) {
+    const status = getStatus(seat.id)
+    const isClickable = status !== 'occupied'
 
     return (
       <button
-        key={seatId}
+        key={seat.id}
         type="button"
         disabled={!isClickable}
-        onClick={() => onSelectSeat(seatId)}
+        onClick={() => onSelectSeat(seat.id)}
         className={cn(
           'relative flex size-14 flex-col items-center justify-center rounded-lg border-2 transition-colors',
           status === 'selected' &&
@@ -90,23 +108,24 @@ export function SeatMap({ seats, selectedSeatId, onSelectSeat }: SeatMapProps) {
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center gap-4">
-            {renderSeat('1A')}
-            <div className="flex h-14 flex-1 items-center justify-center rounded-lg bg-muted/80">
-              <svg viewBox="0 0 24 24" fill="currentColor" className="size-6 text-muted-foreground/40">
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-              </svg>
+          {rows.map(({ row, seats: rowSeats }, index) => (
+            <div
+              key={row}
+              className={cn(
+                'flex items-center gap-4',
+                rowSeats.length === 1 ? 'justify-start' : 'justify-center',
+              )}
+            >
+              {rowSeats.map((seat) => renderSeat(seat))}
+              {index === 0 && rowSeats.length === 1 && (
+                <div className="flex h-14 flex-1 items-center justify-center rounded-lg bg-muted/80">
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="size-6 text-muted-foreground/40">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                  </svg>
+                </div>
+              )}
             </div>
-          </div>
-          <div className="flex justify-center gap-4">
-            {renderSeat('2A')}
-            {renderSeat('2B')}
-          </div>
-          <div className="flex justify-center gap-4">
-            {renderSeat('3A')}
-            {renderSeat('3B')}
-            {renderSeat('3C')}
-          </div>
+          ))}
         </div>
       </div>
 

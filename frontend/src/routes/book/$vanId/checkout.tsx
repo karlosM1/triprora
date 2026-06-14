@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { ArrowRight } from 'lucide-react'
 import { BookingStepper } from '@/components/booking/booking-stepper'
@@ -8,13 +9,23 @@ import { CheckoutSummary } from '@/components/booking/checkout-summary'
 import { PassengerForm } from '@/components/booking/passenger-form'
 import { PaymentForm } from '@/components/booking/payment-form'
 import { Button } from '@/components/ui/button'
+import {
+  bookingHistoryQueryKey,
+  createBooking,
+  upcomingBookingQueryKey,
+} from '@/lib/api/bookings'
 import { loadVanBooking } from '@/lib/api/load-van-booking'
+import { vansQueryKey } from '@/lib/api/vans'
 import type { PassengerDetails } from '@/lib/booking'
+import { requireAuth } from '@/lib/route-guards'
 
 export const Route = createFileRoute('/book/$vanId/checkout')({
   validateSearch: (search: Record<string, unknown>) => ({
     seat: (search.seat as string) || '1A',
   }),
+  beforeLoad: async ({ params, search }) => {
+    await requireAuth(`/book/${params.vanId}/checkout?seat=${search.seat ?? '1A'}`)
+  },
   loader: async ({ params }) => {
     return loadVanBooking(params.vanId)
   },
@@ -33,24 +44,47 @@ function CheckoutPage() {
   const { vanId } = Route.useParams()
   const { seat } = Route.useSearch()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
 
   const selectedSeat = seats.find((s) => s.id === seat)
   const isPremium = selectedSeat?.premium ?? false
 
   const [passenger, setPassenger] = useState<PassengerDetails>(emptyPassenger)
   const [checkoutStep, setCheckoutStep] = useState<1 | 2>(1)
+  const [error, setError] = useState<string | null>(null)
+
+  const bookingMutation = useMutation({
+    mutationFn: () => createBooking({ vanId, seat }),
+    onSuccess: (booking) => {
+      queryClient.invalidateQueries({ queryKey: upcomingBookingQueryKey })
+      queryClient.invalidateQueries({ queryKey: bookingHistoryQueryKey })
+      queryClient.invalidateQueries({ queryKey: vansQueryKey })
+      queryClient.invalidateQueries({ queryKey: ['vans', vanId] })
+
+      navigate({
+        to: '/book/$vanId/confirmation',
+        params: { vanId },
+        search: {
+          seat,
+          name: `${passenger.firstName} ${passenger.lastName}`.trim(),
+          ref: booking.reference,
+        },
+      })
+    },
+    onError: (err: Error & { response?: { data?: { message?: string } } }) => {
+      setError(err.response?.data?.message ?? 'Failed to complete booking. Please try again.')
+    },
+  })
 
   function handleContinueToPayment() {
+    setError(null)
     setCheckoutStep(2)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function handleCompleteBooking() {
-    navigate({
-      to: '/book/$vanId/confirmation',
-      params: { vanId },
-      search: { seat, name: `${passenger.firstName} ${passenger.lastName}`.trim() },
-    })
+    setError(null)
+    bookingMutation.mutate()
   }
 
   return (
@@ -65,6 +99,12 @@ function CheckoutPage() {
 
             {checkoutStep === 2 && <PaymentForm />}
 
+            {error && (
+              <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
+                {error}
+              </p>
+            )}
+
             {checkoutStep === 1 ? (
               <Button
                 className="w-full rounded-lg py-5 text-base"
@@ -77,8 +117,9 @@ function CheckoutPage() {
               <Button
                 className="w-full rounded-lg py-5 text-base"
                 onClick={handleCompleteBooking}
+                disabled={bookingMutation.isPending}
               >
-                Complete Booking
+                {bookingMutation.isPending ? 'Processing...' : 'Complete Booking'}
                 <ArrowRight className="size-4" />
               </Button>
             )}

@@ -77,6 +77,18 @@ function DetailsColumn({ result }: { result: VanResult }) {
       <h3 className="mt-2 text-base font-bold text-foreground">
         {result.operator}
       </h3>
+      {result.vehicleName && (
+        <p className="mt-1 text-xs text-muted-foreground">{result.vehicleName}</p>
+      )}
+      {result.departureDate && (
+        <p className="mt-1 text-xs text-muted-foreground">
+          {new Date(`${result.departureDate}T00:00:00`).toLocaleDateString(undefined, {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          })}
+        </p>
+      )}
 
       <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1.5">
         {result.amenities.map((amenity) => (

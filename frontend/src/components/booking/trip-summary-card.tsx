@@ -12,6 +12,15 @@ type TripSummaryCardProps = {
   showProceed?: boolean
 }
 
+function formatTripDate(departureDate?: string) {
+  if (!departureDate) return 'Date TBD'
+  return new Date(`${departureDate}T00:00:00`).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
 export function TripSummaryCard({
   van,
   vanId,
@@ -21,6 +30,7 @@ export function TripSummaryCard({
 }: TripSummaryCardProps) {
   const premiumFee = isPremium ? 150 : 0
   const total = van.price + premiumFee
+  const tripDate = formatTripDate(van.departureDate)
 
   return (
     <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-black/5">
@@ -41,7 +51,7 @@ export function TripSummaryCard({
               {van.departureLocation}
             </p>
             <p className="text-xs text-muted-foreground">
-              Oct 24, 2024 • {van.departureTime} AM
+              {tripDate} • {van.departureTime}
             </p>
           </div>
           <div>
@@ -52,7 +62,7 @@ export function TripSummaryCard({
               {van.arrivalLocation}
             </p>
             <p className="text-xs text-muted-foreground">
-              Oct 24, 2024 • {van.arrivalTime} AM
+              {tripDate} • {van.arrivalTime}
             </p>
           </div>
         </div>
