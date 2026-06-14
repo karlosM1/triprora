@@ -11,7 +11,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
-    "db:push:local": "prisma db push --url postgresql://triprora:triprora@localhost:5433/triprora?schema=public",
+    "db:push:local": "prisma db push --accept-data-loss --config prisma.docker.config.ts",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio"
   },
@@ -29,8 +29,5 @@
     "prisma": "^6.19.3",
     "tsx": "^4.19.4",
     "typescript": "~6.0.2"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
   }
 }

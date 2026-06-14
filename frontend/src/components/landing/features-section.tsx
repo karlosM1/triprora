@@ -1,6 +1,13 @@
 import { ArrowUpRight } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
+import {
+  fadeInUp,
+  scaleIn,
+  staggerContainer,
+  viewportOnce,
+} from '@/lib/motion'
 import beachView from '@/assets/beach-view.jpg'
 import ditumaboFalls from '@/assets/ditumabo-falls.jpg'
 import hillBeachView from '@/assets/hill-beach-view.jpg'
@@ -31,56 +38,82 @@ const galleryImages = [
 
 export function FeaturesSection() {
   return (
-    <section className="mx-auto max-w-7xl px-6 py-20 lg:px-8 lg:py-24">
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between lg:gap-0">
-        <h2 className="shrink-0 text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:pr-10">
-          Your Journey,
+    <section className="mx-auto max-w-[980px] px-6 py-20 lg:px-8 lg:py-28">
+      <motion.div
+        className="text-center"
+        initial="hidden"
+        whileInView="visible"
+        viewport={viewportOnce}
+        variants={staggerContainer}
+      >
+        <motion.p
+          variants={fadeInUp}
+          className="text-sm font-medium tracking-wide text-[#bf4800] uppercase"
+        >
+          Why Triprora
+        </motion.p>
+        <motion.h2
+          variants={fadeInUp}
+          className="mt-3 text-[40px] leading-[1.08] font-semibold tracking-[-0.02em] text-[#1d1d1f] sm:text-[48px] lg:text-[56px]"
+        >
+          Your journey.
           <br />
-          Our Priority
-        </h2>
-
-        <div className="hidden h-16 w-px shrink-0 bg-border sm:block" aria-hidden />
-
-        <p className="max-w-md text-sm leading-relaxed text-muted-foreground sm:flex-1 lg:px-10">
-          At Triprora, we believe booking a van ride should be as easy as
-          planning your dream trip. Our platform connects travelers from
-          Casiguran, Aurora with trusted local drivers for safe, comfortable
-          door-to-door travel to Metro Manila — helping you save time and
-          money.
-        </p>
-
-        <div className="hidden h-16 w-px shrink-0 bg-border sm:block" aria-hidden />
-
-        <div className="shrink-0 sm:pl-6 lg:pl-10">
-          <Button className="rounded-full px-8" size="lg" asChild>
-            <Link to="/find-vans">Explore More</Link>
-          </Button>
-        </div>
-      </div>
-
-      <div className="mt-14 grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-[1.2fr_0.55fr_1fr] lg:grid-rows-2 lg:gap-5 lg:h-[480px]">
-        {galleryImages.map((image, index) => (
-          <div
-            key={image.alt}
-            className={`group relative overflow-hidden rounded-2xl ${image.className}`}
+          Our priority.
+        </motion.h2>
+        <motion.p
+          variants={fadeInUp}
+          className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#86868b] sm:text-[19px]"
+        >
+          Booking a van ride should be as effortless as planning your dream trip.
+          We connect travelers with trusted local drivers for safe, comfortable
+          door-to-door travel between Aurora and Metro Manila — both ways.
+        </motion.p>
+        <motion.div variants={fadeInUp} className="mt-8">
+          <Button
+            className="h-11 rounded-full bg-[#0071e3] px-7 text-[17px] font-normal hover:bg-[#0077ed]"
+            size="lg"
+            asChild
           >
-            <img
+            <Link to="/find-vans">
+              Explore routes
+              <ArrowUpRight className="ml-1 size-4" />
+            </Link>
+          </Button>
+        </motion.div>
+      </motion.div>
+
+      <motion.div
+        className="mt-16 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-[1.2fr_0.55fr_1fr] lg:grid-rows-2 lg:gap-5 lg:h-[520px]"
+        initial="hidden"
+        whileInView="visible"
+        viewport={viewportOnce}
+        variants={staggerContainer}
+      >
+        {galleryImages.map((image, index) => (
+          <motion.div
+            key={image.alt}
+            variants={scaleIn}
+            className={`group relative overflow-hidden rounded-2xl bg-[#f5f5f7] ${image.className}`}
+          >
+            <motion.img
               src={image.src}
               alt={image.alt}
-              className="size-full min-h-[160px] object-cover transition-transform duration-500 group-hover:scale-105 lg:min-h-0 lg:h-full"
+              className="size-full min-h-[160px] object-cover lg:min-h-0 lg:h-full"
+              whileHover={{ scale: 1.04 }}
+              transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
             />
             {index === 0 && (
               <Link
                 to="/find-vans"
-                className="absolute right-4 bottom-4 flex size-10 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-transform hover:scale-110"
+                className="absolute right-4 bottom-4 flex size-10 items-center justify-center rounded-full bg-[#0071e3] text-white shadow-lg transition-transform hover:scale-110"
                 aria-label="Explore van routes"
               >
                 <ArrowUpRight className="size-5" />
               </Link>
             )}
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </section>
   )
 }

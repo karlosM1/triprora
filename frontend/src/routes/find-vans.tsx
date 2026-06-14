@@ -1,10 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { FindVansFooter } from '@/components/find-vans/find-vans-footer'
 import {
   PriorityPassCard,
   SearchFilters,
 } from '@/components/find-vans/search-filters'
 import { SearchResults } from '@/components/find-vans/search-results'
+import { Footer } from '@/components/landing/footer'
 import { Header } from '@/components/landing/header'
 
 export const Route = createFileRoute('/find-vans')({
@@ -13,18 +13,18 @@ export const Route = createFileRoute('/find-vans')({
 
 function FindVansPage() {
   return (
-    <div className="min-h-svh bg-[#F8F9FB]">
+    <div className="app-page min-h-svh bg-[#f5f5f7]">
       <Header activeLink="find-vans" />
-      <main className="mx-auto max-w-7xl px-6 py-8 lg:px-8">
-        <div className="flex flex-col gap-8 lg:flex-row">
-          <aside className="w-full shrink-0 space-y-5 lg:w-64 xl:w-72">
+      <main className="mx-auto max-w-[980px] px-6 py-10 lg:px-8 lg:py-14">
+        <div className="flex flex-col gap-10 lg:flex-row lg:gap-12">
+          <aside className="w-full shrink-0 space-y-4 lg:w-64 xl:w-72">
             <SearchFilters />
             <PriorityPassCard />
           </aside>
           <SearchResults />
         </div>
       </main>
-      <FindVansFooter />
+      <Footer />
     </div>
   )
 }

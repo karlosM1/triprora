@@ -10,7 +10,13 @@ import {
   type ReactNode,
 } from 'react'
 import { fetchProfile, profileQueryKey } from '@/lib/api/profile'
-import { supabase } from '@/lib/supabase'
+import {
+  clearRememberedEmail,
+  getAuthRedirectUrl,
+  setRememberedEmail,
+  setRememberMePreference,
+  supabase,
+} from '@/lib/supabase'
 import type { Profile, Role } from '@/lib/types/profile'
 
 type AuthContextValue = {
@@ -23,11 +29,21 @@ type AuthContextValue = {
   isAdmin: boolean
   isDriver: boolean
   isPassenger: boolean
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>
-  signUp: (email: string, password: string) => Promise<{
+  signIn: (
+    email: string,
+    password: string,
+    rememberMe?: boolean,
+  ) => Promise<{ error: string | null }>
+  signUp: (
+    email: string,
+    password: string,
+    fullName: string,
+  ) => Promise<{
     error: string | null
     needsEmailConfirmation: boolean
   }>
+  signInWithGoogle: (redirectTo?: string) => Promise<{ error: string | null }>
+  resetPassword: (email: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
 }
@@ -43,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: profileQueryKey,
     queryFn: fetchProfile,
     enabled: Boolean(session),
-    retry: false,
+    retry: 2,
   })
 
   useEffect(() => {
@@ -57,7 +73,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession)
       setLoading(false)
-      if (!nextSession) {
+      if (nextSession) {
+        void queryClient.invalidateQueries({ queryKey: profileQueryKey })
+      } else {
         queryClient.removeQueries({ queryKey: profileQueryKey })
       }
     })
@@ -65,28 +83,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe()
   }, [queryClient])
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+  const signIn = useCallback(
+    async (email: string, password: string, rememberMe = true) => {
+      setRememberMePreference(rememberMe)
+
+      if (rememberMe) {
+        setRememberedEmail(email)
+      } else {
+        clearRememberedEmail()
+      }
+
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      return { error: error?.message ?? null }
+    },
+    [],
+  )
+
+  const signUp = useCallback(
+    async (email: string, password: string, fullName: string) => {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: fullName.trim() },
+          emailRedirectTo: getAuthRedirectUrl('/sign-in'),
+        },
+      })
+
+      const needsEmailConfirmation = Boolean(
+        data.user && !data.session && data.user.identities?.length,
+      )
+
+      return {
+        error: error?.message ?? null,
+        needsEmailConfirmation,
+      }
+    },
+    [],
+  )
+
+  const signInWithGoogle = useCallback(async (redirectTo = '/my-bookings') => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: getAuthRedirectUrl(redirectTo),
+      },
+    })
     return { error: error?.message ?? null }
   }, [])
 
-  const signUp = useCallback(async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/sign-in`,
-      },
+  const resetPassword = useCallback(async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: getAuthRedirectUrl('/sign-in'),
     })
-
-    const needsEmailConfirmation = Boolean(
-      data.user && !data.session && data.user.identities?.length,
-    )
-
-    return {
-      error: error?.message ?? null,
-      needsEmailConfirmation,
-    }
+    return { error: error?.message ?? null }
   }, [])
 
   const signOut = useCallback(async () => {
@@ -109,11 +159,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       role,
       loading,
       profileLoading: Boolean(session) && profileQuery.isLoading,
-      isAdmin: role === 'admin',
-      isDriver: role === 'driver',
-      isPassenger: role === 'passenger',
+      isAdmin: profile?.role === 'admin',
+      isDriver: profile?.role === 'driver',
+      isPassenger: profile?.role === 'passenger',
       signIn,
       signUp,
+      signInWithGoogle,
+      resetPassword,
       signOut,
       refreshProfile,
     }),
@@ -125,6 +177,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profileQuery.isLoading,
       signIn,
       signUp,
+      signInWithGoogle,
+      resetPassword,
       signOut,
       refreshProfile,
     ],

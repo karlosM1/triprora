@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { CreditCard } from 'lucide-react'
+import { CreditCard, Lock } from 'lucide-react'
+import { AppleCard, SectionTitle } from '@/components/layout/page-header'
 import { cn } from '@/lib/utils'
 import type { PaymentMethod } from '@/lib/booking'
 
@@ -18,13 +19,13 @@ export function PaymentForm({ readOnly = false }: PaymentFormProps) {
   ]
 
   return (
-    <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
-      <div className="flex items-center gap-2">
-        <CreditCard className="size-4 text-primary" />
-        <h2 className="text-base font-bold text-foreground">Payment Method</h2>
-      </div>
+    <AppleCard className="p-6 sm:p-8">
+      <SectionTitle
+        title="Payment"
+        subtitle="All transactions are secure and encrypted."
+      />
 
-      <div className="mt-5 flex rounded-lg bg-muted p-1">
+      <div className="flex gap-1 rounded-full bg-[#e8e8ed] p-1">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -32,10 +33,10 @@ export function PaymentForm({ readOnly = false }: PaymentFormProps) {
             disabled={readOnly}
             onClick={() => setMethod(tab.id)}
             className={cn(
-              'flex-1 rounded-md py-2 text-sm font-medium transition-colors',
+              'flex-1 rounded-full py-2 text-[13px] font-medium transition-colors',
               method === tab.id
-                ? 'bg-white text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground',
+                ? 'bg-white text-[#1d1d1f] shadow-sm'
+                : 'text-[#86868b] hover:text-[#1d1d1f]',
             )}
           >
             {tab.label}
@@ -44,71 +45,88 @@ export function PaymentForm({ readOnly = false }: PaymentFormProps) {
       </div>
 
       {method === 'card' && (
-        <div className="mt-5 space-y-4">
-          <label className="block">
-            <span className="text-xs font-medium text-muted-foreground">
-              Card Number
-            </span>
-            <div className="relative mt-1.5">
-              <input
-                type="text"
-                placeholder="1234 5678 9012 3456"
-                readOnly={readOnly}
-                className="w-full rounded-lg border border-border bg-white px-3 py-2.5 pr-10 text-sm placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 read-only:bg-muted/30"
-              />
-              <CreditCard className="absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground" />
-            </div>
-          </label>
+        <div className="mt-6 space-y-4">
+          <Field
+            label="Card number"
+            placeholder="1234 5678 9012 3456"
+            readOnly={readOnly}
+            icon={<CreditCard className="size-4 text-[#86868b]" strokeWidth={1.75} />}
+          />
           <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block">
-              <span className="text-xs font-medium text-muted-foreground">
-                Expiry Date
-              </span>
-              <input
-                type="text"
-                placeholder="MM / YY"
-                readOnly={readOnly}
-                className="mt-1.5 w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 read-only:bg-muted/30"
-              />
-            </label>
-            <label className="block">
-              <span className="text-xs font-medium text-muted-foreground">
-                CVC
-              </span>
-              <input
-                type="text"
-                placeholder="•••"
-                readOnly={readOnly}
-                className="mt-1.5 w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 read-only:bg-muted/30"
-              />
-            </label>
+            <Field label="Expiry" placeholder="MM / YY" readOnly={readOnly} />
+            <Field label="CVC" placeholder="•••" readOnly={readOnly} />
           </div>
-          <label className="flex cursor-pointer items-center gap-2">
+          <label className="flex cursor-pointer items-center gap-2.5">
             <input
               type="checkbox"
               checked={saveCard}
               disabled={readOnly}
               onChange={(e) => setSaveCard(e.target.checked)}
-              className="size-4 rounded border-border accent-primary"
+              className="size-4 rounded border-[#d2d2d7] accent-[#0071e3]"
             />
-            <span className="text-sm text-muted-foreground">
-              Save card for future reservations
+            <span className="text-[14px] text-[#86868b]">
+              Save card for future trips
             </span>
           </label>
         </div>
       )}
 
       {method === 'bank' && (
-        <p className="mt-5 text-sm text-muted-foreground">
-          Bank transfer details will be provided after booking confirmation.
+        <p className="mt-6 text-[15px] leading-relaxed text-[#86868b]">
+          Bank transfer details will be provided after you confirm your booking.
         </p>
       )}
 
       {method === 'wallet' && (
-        <p className="mt-5 text-sm text-muted-foreground">
-          Pay securely with GCash, Maya, or Apple Pay at checkout.
+        <p className="mt-6 text-[15px] leading-relaxed text-[#86868b]">
+          Pay securely with GCash, Maya, or Apple Pay.
         </p>
       )}
-    </div>
+
+      <div className="mt-6 flex items-center gap-2 rounded-xl bg-[#f5f5f7] px-4 py-3">
+        <Lock className="size-4 shrink-0 text-[#86868b]" strokeWidth={1.75} />
+        <p className="text-[12px] text-[#86868b]">
+          256-bit SSL encryption · Your payment info is never stored on our servers
+        </p>
+      </div>
+    </AppleCard>
+  )
+}
+
+function Field({
+  label,
+  placeholder,
+  readOnly,
+  icon,
+}: {
+  label: string
+  placeholder: string
+  readOnly?: boolean
+  icon?: React.ReactNode
+}) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-[13px] font-medium text-[#1d1d1f]">
+        {label}
+      </span>
+      <div className="relative">
+        <input
+          type="text"
+          placeholder={placeholder}
+          readOnly={readOnly}
+          className={cn(
+            'h-11 w-full rounded-xl bg-white px-4 text-[15px] text-[#1d1d1f] placeholder:text-[#86868b]/70 ring-1 ring-[#d2d2d7] transition-all outline-none',
+            'focus:ring-2 focus:ring-[#0071e3]/40',
+            icon && 'pr-10',
+            readOnly && 'bg-[#f5f5f7] text-[#86868b]',
+          )}
+        />
+        {icon && (
+          <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2">
+            {icon}
+          </span>
+        )}
+      </div>
+    </label>
   )
 }

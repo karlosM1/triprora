@@ -1,5 +1,7 @@
 import { Home, MapPin } from 'lucide-react'
+import { AppleCard, SectionTitle } from '@/components/layout/page-header'
 import type { TripAddresses } from '@/lib/booking'
+import { cn } from '@/lib/utils'
 
 type TripAddressFormProps = {
   values: TripAddresses
@@ -12,35 +14,31 @@ export function TripAddressForm({ values, onChange }: TripAddressFormProps) {
   }
 
   return (
-    <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
-      <div className="flex items-center gap-2">
-        <MapPin className="size-4 text-primary" />
-        <h2 className="text-base font-bold text-foreground">Your Trip Addresses</h2>
-      </div>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Door-to-door service — no terminals. Enter where the van should pick you
-        up and where you want to be dropped off.
-      </p>
+    <AppleCard className="p-6 sm:p-8">
+      <SectionTitle
+        title="Your addresses"
+        subtitle="Door-to-door service — no terminals. Tell us where to pick you up and drop you off."
+      />
 
-      <div className="mt-5 space-y-4">
+      <div className="space-y-5">
         <AddressField
-          icon={<Home className="size-4 text-primary" />}
-          label="Pickup Address"
+          icon={<Home className="size-4 text-[#0066cc]" strokeWidth={1.75} />}
+          label="Pickup address"
           hint="Your home or pickup point in Casiguran, Aurora"
           placeholder="e.g. Brgy. Poblacion, Casiguran, Aurora"
           value={values.pickupAddress}
           onChange={(v) => update('pickupAddress', v)}
         />
         <AddressField
-          icon={<MapPin className="size-4 text-primary" />}
-          label="Destination Address"
+          icon={<MapPin className="size-4 text-[#0066cc]" strokeWidth={1.75} />}
+          label="Destination address"
           hint="Your exact drop-off location in Metro Manila"
           placeholder="e.g. 123 EDSA, Cubao, Quezon City"
           value={values.dropoffAddress}
           onChange={(v) => update('dropoffAddress', v)}
         />
       </div>
-    </div>
+    </AppleCard>
   )
 }
 
@@ -61,17 +59,20 @@ function AddressField({
 }) {
   return (
     <label className="block">
-      <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+      <span className="flex items-center gap-2 text-[13px] font-medium text-[#1d1d1f]">
         {icon}
         {label}
       </span>
-      <span className="mt-0.5 block text-[11px] text-muted-foreground/80">{hint}</span>
+      <span className="mt-0.5 block text-[12px] text-[#86868b]">{hint}</span>
       <textarea
         placeholder={placeholder}
         value={value}
         rows={2}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1.5 w-full resize-none rounded-lg border border-border bg-white px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+        className={cn(
+          'mt-2 w-full resize-none rounded-xl bg-white px-4 py-3 text-[15px] text-[#1d1d1f] placeholder:text-[#86868b]/70 ring-1 ring-[#d2d2d7] transition-all outline-none',
+          'focus:ring-2 focus:ring-[#0071e3]/40',
+        )}
       />
     </label>
   )

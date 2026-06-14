@@ -1,83 +1,107 @@
 import { Globe, Share2 } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
+import { motion } from 'framer-motion'
+import { useAuth } from '@/lib/auth-context'
+import { fadeInUp, staggerContainer, viewportOnce } from '@/lib/motion'
 
-const footerLinks = {
-  PRODUCT: [
-    { label: 'Find Vans', to: '/find-vans' as const },
-    { label: 'My Bookings', to: '/my-bookings' as const },
-    { label: 'Schedules', to: '/schedules' as const },
-  ],
-  RESOURCES: [
-    { label: 'Support', to: '/' as const },
-    { label: 'Become a Driver', to: '/sign-up' as const },
-    { label: 'Driver Portal', to: '/driver' as const },
-  ],
-  LEGAL: [
-    { label: 'Privacy Policy', to: '/' as const },
-    { label: 'Terms of Service', to: '/' as const },
-  ],
-}
+const productLinks = [
+  { label: 'Find Vans', to: '/find-vans' as const },
+  { label: 'My Bookings', to: '/my-bookings' as const },
+  { label: 'Schedules', to: '/schedules' as const },
+] as const
+
+const legalLinks = [
+  { label: 'Privacy Policy', to: '/' as const },
+  { label: 'Terms of Service', to: '/' as const },
+] as const
 
 export function Footer() {
+  const { user, profileLoading, isDriver } = useAuth()
+
+  const resourceLinks = [
+    { label: 'Support', to: '/' as const },
+    ...(user && !profileLoading && isDriver
+      ? [{ label: 'Driver Portal', to: '/driver' as const }]
+      : [{ label: 'Become a Driver', to: user ? '/driver/register' : '/sign-up' }]),
+  ] as const
+
+  const footerLinks = {
+    Product: productLinks,
+    Resources: resourceLinks,
+    Legal: legalLinks,
+  }
+
   return (
-    <footer className="border-t border-border bg-muted/50">
-      <div className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
+    <footer className="border-t border-black/5 bg-[#f5f5f7]">
+      <motion.div
+        className="mx-auto max-w-[980px] px-6 py-16 lg:px-8"
+        initial="hidden"
+        whileInView="visible"
+        viewport={viewportOnce}
+        variants={staggerContainer}
+      >
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
-          <div className="sm:col-span-2 lg:col-span-2">
-            <Link to="/" className="text-xl font-bold tracking-tight text-foreground">
+          <motion.div variants={fadeInUp} className="sm:col-span-2 lg:col-span-2">
+            <Link
+              to="/"
+              className="text-[17px] font-semibold tracking-tight text-[#1d1d1f]"
+            >
               Triprora
             </Link>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
-              Door-to-door van service from Casiguran, Aurora to Metro Manila.
-              Safe, comfortable, and convenient travel with no terminal
+            <p className="mt-3 max-w-xs text-[12px] leading-relaxed text-[#86868b]">
+              Door-to-door van service between Aurora and Metro Manila, both
+              ways. Safe, comfortable, and convenient travel with no terminal
               transfers.
             </p>
-          </div>
+          </motion.div>
 
           {Object.entries(footerLinks).map(([heading, links]) => (
-            <div key={heading}>
-              <h3 className="text-xs font-semibold tracking-wider text-foreground uppercase">
+            <motion.div key={heading} variants={fadeInUp}>
+              <h3 className="text-[12px] font-semibold text-[#1d1d1f]">
                 {heading}
               </h3>
-              <ul className="mt-4 space-y-3">
+              <ul className="mt-3 space-y-2">
                 {links.map((link) => (
                   <li key={link.label}>
                     <Link
                       to={link.to}
-                      className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                      className="text-[12px] text-[#424245] transition-colors hover:text-[#0066cc] hover:underline"
                     >
                       {link.label}
                     </Link>
                   </li>
                 ))}
               </ul>
-            </div>
+            </motion.div>
           ))}
         </div>
 
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 sm:flex-row">
-          <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} Triprora — Casiguran, Aurora. All
-            rights reserved.
+        <motion.div
+          variants={fadeInUp}
+          className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-black/5 pt-6 sm:flex-row"
+        >
+          <p className="text-[12px] text-[#86868b]">
+            Copyright &copy; {new Date().getFullYear()} Triprora Inc. All rights
+            reserved.
           </p>
           <div className="flex items-center gap-4">
             <a
               href="#"
               aria-label="Language"
-              className="text-muted-foreground transition-colors hover:text-foreground"
+              className="text-[#86868b] transition-colors hover:text-[#1d1d1f]"
             >
               <Globe className="size-4" />
             </a>
             <a
               href="#"
               aria-label="Share"
-              className="text-muted-foreground transition-colors hover:text-foreground"
+              className="text-[#86868b] transition-colors hover:text-[#1d1d1f]"
             >
               <Share2 className="size-4" />
             </a>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </footer>
   )
 }

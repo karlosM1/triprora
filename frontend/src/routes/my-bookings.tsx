@@ -1,11 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, redirect } from '@tanstack/react-router'
+import { PageHeader } from '@/components/layout/page-header'
 import { BookingHistoryTable } from '@/components/my-bookings/booking-history-table'
-import {
-  MyBookingsFooter,
-  PlanTripCta,
-} from '@/components/my-bookings/plan-trip-cta'
+import { PlanTripCta } from '@/components/my-bookings/plan-trip-cta'
 import { UpcomingTripCard } from '@/components/my-bookings/upcoming-trip-card'
+import { Footer } from '@/components/landing/footer'
 import { Header } from '@/components/landing/header'
 import {
   bookingHistoryQueryKey,
@@ -44,22 +43,19 @@ function MyBookingsPage() {
   const isLoading = upcomingQuery.isLoading || historyQuery.isLoading
 
   return (
-    <div className="min-h-svh bg-[#F8F9FB]">
+    <div className="app-page min-h-svh bg-[#f5f5f7]">
       <Header activeLink="my-bookings" />
 
-      <main className="mx-auto max-w-7xl px-6 py-10 lg:px-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            My Bookings
-          </h1>
-          <p className="mt-2 text-muted-foreground">
-            Manage your trips and track upcoming journeys to Metro Manila.
-          </p>
-        </div>
+      <main className="mx-auto max-w-[980px] px-6 py-10 lg:px-8 lg:py-14">
+        <PageHeader
+          eyebrow="Your trips"
+          title="My Bookings"
+          subtitle="Manage your trips and track upcoming journeys between Aurora and Metro Manila."
+        />
 
-        <div className="mt-10 space-y-10">
+        <div className="mt-12 space-y-14">
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading bookings...</p>
+            <p className="text-[15px] text-[#86868b]">Loading bookings...</p>
           ) : (
             <>
               {upcomingQuery.data && (
@@ -74,7 +70,7 @@ function MyBookingsPage() {
         </div>
       </main>
 
-      <MyBookingsFooter />
+      <Footer />
     </div>
   )
 }

@@ -1,10 +1,11 @@
 import { useState } from 'react'
+import { AppleCard } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 
 const departureTimes = [
-  { id: 'morning', label: 'Morning (06:00 - 12:00)' },
-  { id: 'afternoon', label: 'Afternoon (12:00 - 18:00)' },
-  { id: 'evening', label: 'Evening (18:00 - 00:00)' },
+  { id: 'morning', label: 'Morning (06:00 – 12:00)' },
+  { id: 'afternoon', label: 'Afternoon (12:00 – 18:00)' },
+  { id: 'evening', label: 'Evening (18:00 – 00:00)' },
 ]
 
 const vanTypes = [
@@ -31,37 +32,35 @@ export function SearchFilters() {
   }
 
   return (
-    <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-black/5">
-      <h2 className="text-base font-bold text-foreground">Refine Search</h2>
+    <AppleCard className="p-5">
+      <h2 className="text-[17px] font-semibold text-[#1d1d1f]">Filters</h2>
 
-      <div className="mt-5 space-y-5">
+      <div className="mt-5 space-y-6">
         <fieldset>
-          <legend className="text-sm font-semibold text-foreground">
-            Departure Time
+          <legend className="text-[13px] font-medium text-[#1d1d1f]">
+            Departure time
           </legend>
-          <div className="mt-3 space-y-2.5">
+          <div className="mt-3 space-y-3">
             {departureTimes.map((time) => (
               <label
                 key={time.id}
-                className="flex cursor-pointer items-center gap-2.5"
+                className="flex cursor-pointer items-center gap-3"
               >
                 <input
                   type="checkbox"
                   checked={selectedTimes.includes(time.id)}
                   onChange={() => toggleTime(time.id)}
-                  className="size-4 rounded border-border text-primary accent-primary"
+                  className="size-4 rounded border-[#d2d2d7] text-[#0071e3] accent-[#0071e3]"
                 />
-                <span className="text-sm text-muted-foreground">
-                  {time.label}
-                </span>
+                <span className="text-[14px] text-[#86868b]">{time.label}</span>
               </label>
             ))}
           </div>
         </fieldset>
 
         <fieldset>
-          <legend className="text-sm font-semibold text-foreground">
-            Price Range
+          <legend className="text-[13px] font-medium text-[#1d1d1f]">
+            Price range
           </legend>
           <div className="mt-3">
             <input
@@ -71,35 +70,36 @@ export function SearchFilters() {
               step={50}
               value={priceMax}
               onChange={(e) => setPriceMax(Number(e.target.value))}
-              className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-border accent-primary [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary"
+              className="h-1 w-full cursor-pointer appearance-none rounded-full bg-[#d2d2d7] accent-[#0071e3] [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#0071e3]"
             />
-            <div className="mt-2 flex justify-between text-xs text-muted-foreground">
+            <div className="mt-2 flex justify-between text-[12px] text-[#86868b]">
               <span>₱500</span>
+              <span className="font-medium text-[#1d1d1f]">
+                up to ₱{priceMax.toLocaleString()}
+              </span>
               <span>₱2,500</span>
             </div>
           </div>
         </fieldset>
 
         <fieldset>
-          <legend className="text-sm font-semibold text-foreground">
-            Van Type
+          <legend className="text-[13px] font-medium text-[#1d1d1f]">
+            Van type
           </legend>
-          <div className="mt-3 space-y-2.5">
+          <div className="mt-3 space-y-3">
             {vanTypes.map((type) => (
               <label
                 key={type.id}
-                className="flex cursor-pointer items-center gap-2.5"
+                className="flex cursor-pointer items-center gap-3"
               >
                 <input
                   type="radio"
                   name="vanType"
                   checked={vanType === type.id}
                   onChange={() => setVanType(type.id)}
-                  className="size-4 border-border text-primary accent-primary"
+                  className="size-4 border-[#d2d2d7] text-[#0071e3] accent-[#0071e3]"
                 />
-                <span className="text-sm text-muted-foreground">
-                  {type.label}
-                </span>
+                <span className="text-[14px] text-[#86868b]">{type.label}</span>
               </label>
             ))}
           </div>
@@ -107,13 +107,13 @@ export function SearchFilters() {
       </div>
 
       <Button
-        variant="outline"
-        className="mt-6 w-full rounded-lg border-primary text-primary hover:bg-primary/5 hover:text-primary"
+        variant="ghost"
+        className="mt-6 h-10 w-full rounded-full text-[14px] text-[#0066cc] hover:bg-[#0071e3]/5 hover:text-[#0077ed]"
         onClick={resetFilters}
       >
-        Reset All Filters
+        Reset filters
       </Button>
-    </div>
+    </AppleCard>
   )
 }
 
@@ -122,16 +122,19 @@ export function PriorityPassCard() {
     'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=400&q=80&auto=format&fit=crop'
 
   return (
-    <div className="relative overflow-hidden rounded-xl">
+    <div className="relative overflow-hidden rounded-2xl">
       <img
         src={promoImage}
         alt=""
         className="absolute inset-0 size-full object-cover"
       />
-      <div className="absolute inset-0 bg-linear-to-t from-primary/95 via-primary/70 to-primary/40" />
+      <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-black/20" />
       <div className="relative p-5">
-        <p className="text-sm font-bold text-white">Priority Pass</p>
-        <p className="mt-1 text-xs leading-relaxed text-white/85">
+        <p className="text-[13px] font-medium tracking-wide text-white/70 uppercase">
+          Offer
+        </p>
+        <p className="mt-1 text-[17px] font-semibold text-white">Priority Pass</p>
+        <p className="mt-1 text-[13px] leading-relaxed text-white/80">
           Get 20% off your first 3 bookings this month.
         </p>
       </div>

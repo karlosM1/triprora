@@ -18,14 +18,5 @@ function DriverRouteLayout() {
     return <Outlet />
   }
 
-  const searchPlaceholder =
-    pathname.startsWith('/driver/trips/')
-      ? 'Search passengers or seat numbers...'
-      : pathname === '/driver/trips'
-        ? 'Search trips, locations, or IDs...'
-        : pathname === '/driver/create'
-          ? 'Search pickup areas or Metro Manila destinations...'
-          : 'Search trips or documents...'
-
-  return <DriverLayout searchPlaceholder={searchPlaceholder} />
+  return <DriverLayout />
 }

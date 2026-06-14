@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { CtaSection } from '@/components/landing/cta-section'
 import { FeaturesSection } from '@/components/landing/features-section'
 import { Footer } from '@/components/landing/footer'
 import { Header } from '@/components/landing/header'
@@ -12,12 +13,15 @@ export const Route = createFileRoute('/')({
 
 function HomePage() {
   return (
-    <div className="min-h-svh bg-white">
+    <div className="landing-page min-h-svh bg-white antialiased">
       <Header variant="hero" />
-      <HeroSection />
-      <TrustSection />
-      <FeaturesSection />
-      <TravelTipsSection />
+      <main>
+        <HeroSection />
+        <TrustSection />
+        <FeaturesSection />
+        <TravelTipsSection />
+        <CtaSection />
+      </main>
       <Footer />
     </div>
   )

@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { ArrowLeftRight, MapPin, Navigation, Search } from 'lucide-react'
+import { ArrowLeftRight, MapPin, Navigation } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
+import { fadeInUp, staggerContainer } from '@/lib/motion'
 
 export function ScheduleHero() {
-  const [from, setFrom] = useState('Casiguran, Aurora')
+  const [from, setFrom] = useState('Aurora')
   const [to, setTo] = useState('Metro Manila')
 
   function swapLocations() {
@@ -13,30 +15,52 @@ export function ScheduleHero() {
   }
 
   return (
-    <section className="relative bg-linear-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] pb-16 pt-12 lg:pb-20 lg:pt-16">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-          Trip Schedules
-        </h1>
-        <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/70 sm:text-base">
-          View available door-to-door van departures from Casiguran, Aurora to
-          Metro Manila. No terminals — we pick you up at your home.
-        </p>
-      </div>
+    <section className="bg-[#1d1d1f] pt-8 pb-14 lg:pt-10 lg:pb-20">
+      <motion.div
+        className="mx-auto max-w-[980px] px-6 text-center lg:px-8"
+        initial="hidden"
+        animate="visible"
+        variants={staggerContainer}
+      >
+        <motion.p
+          variants={fadeInUp}
+          className="text-[13px] font-medium tracking-wide text-white/60 uppercase"
+        >
+          Schedules
+        </motion.p>
+        <motion.h1
+          variants={fadeInUp}
+          className="mt-3 text-[40px] leading-[1.08] font-semibold tracking-[-0.02em] text-white sm:text-[48px]"
+        >
+          Trip schedules.
+        </motion.h1>
+        <motion.p
+          variants={fadeInUp}
+          className="mx-auto mt-4 max-w-xl text-[17px] leading-relaxed text-[#a1a1a6]"
+        >
+          View door-to-door van departures between Aurora and Metro Manila, both
+          ways. No terminals — we pick you up at your door.
+        </motion.p>
+      </motion.div>
 
-      <div className="mx-auto mt-10 max-w-4xl px-6 lg:px-8">
+      <motion.div
+        variants={fadeInUp}
+        initial="hidden"
+        animate="visible"
+        className="mx-auto mt-10 max-w-[980px] px-6 lg:px-8"
+      >
         <form
-          className="flex flex-col gap-3 rounded-xl bg-white p-3 shadow-xl shadow-black/10 sm:flex-row sm:items-center"
+          className="flex flex-col gap-3 rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 backdrop-blur-xl sm:flex-row sm:items-center"
           onSubmit={(e) => e.preventDefault()}
         >
-          <label className="flex flex-1 items-center gap-3 rounded-lg px-3 py-2.5">
-            <MapPin className="size-4 shrink-0 text-muted-foreground" />
+          <label className="flex flex-1 items-center gap-3 rounded-xl bg-white px-4 py-3">
+            <MapPin className="size-4 shrink-0 text-[#86868b]" />
             <input
               type="text"
-              placeholder="Pickup area in Casiguran"
+              placeholder="From"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
-              className="w-full text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+              className="w-full text-[15px] text-[#1d1d1f] placeholder:text-[#86868b] focus:outline-none"
             />
           </label>
 
@@ -44,30 +68,30 @@ export function ScheduleHero() {
             type="button"
             onClick={swapLocations}
             aria-label="Swap locations"
-            className="flex size-9 shrink-0 items-center justify-center self-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex size-9 shrink-0 items-center justify-center self-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25"
           >
             <ArrowLeftRight className="size-4" />
           </button>
 
-          <label className="flex flex-1 items-center gap-3 rounded-lg px-3 py-2.5">
-            <Navigation className="size-4 shrink-0 text-muted-foreground" />
+          <label className="flex flex-1 items-center gap-3 rounded-xl bg-white px-4 py-3">
+            <Navigation className="size-4 shrink-0 text-[#86868b]" />
             <input
               type="text"
-              placeholder="Destination in Metro Manila"
+              placeholder="To"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              className="w-full text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+              className="w-full text-[15px] text-[#1d1d1f] placeholder:text-[#86868b] focus:outline-none"
             />
           </label>
 
-          <Button className="shrink-0 rounded-lg px-5 sm:ml-1" asChild>
-            <Link to="/find-vans">
-              <Search className="size-4" />
-              Find Vans
-            </Link>
+          <Button
+            className="h-11 shrink-0 rounded-full bg-[#0071e3] px-6 text-[15px] font-normal hover:bg-[#0077ed] sm:ml-1"
+            asChild
+          >
+            <Link to="/find-vans">Find vans</Link>
           </Button>
         </form>
-      </div>
+      </motion.div>
     </section>
   )
 }

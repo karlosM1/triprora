@@ -1,5 +1,12 @@
 import { Link } from '@tanstack/react-router'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
+import {
+  fadeInUp,
+  scaleIn,
+  staggerContainer,
+  viewportOnce,
+} from '@/lib/motion'
 import beachView from '@/assets/beach-view.jpg'
 import ditumaboFalls from '@/assets/ditumabo-falls.jpg'
 import hillBeachView from '@/assets/hill-beach-view.jpg'
@@ -14,7 +21,6 @@ const articles = [
       'From the misty trails of Ditumabo Falls to the secluded coves of Baler, discover Aurora\'s best-kept secrets away from the crowds.',
     author: 'Maria Santos',
     image: ditumaboFalls,
-    variant: 'outline' as const,
   },
   {
     tag: 'Surf Guide',
@@ -24,7 +30,6 @@ const articles = [
       'Sabang Beach is the birthplace of Philippine surfing. Learn when to visit, where to rent boards, and how to catch your first wave.',
     author: 'Juan Dela Cruz',
     image: surfingSabang,
-    variant: 'solid' as const,
   },
   {
     tag: 'Nature',
@@ -34,7 +39,6 @@ const articles = [
       'Trek through the Sierra Madre range, visit the Millennium Tree in Maria Aurora, and explore the province\'s rich biodiversity.',
     author: 'Ana Reyes',
     image: hillBeachView,
-    variant: 'outline' as const,
   },
   {
     tag: 'Budget Tips',
@@ -44,45 +48,67 @@ const articles = [
       'Stretch your peso with local homestays, carinderia eats, and off-season travel hacks for an affordable Aurora getaway.',
     author: 'Carlo Mendoza',
     image: beachView,
-    variant: 'solid' as const,
   },
 ]
 
 export function TravelTipsSection() {
   return (
-    <section className="px-6 py-20 lg:px-8 lg:py-24">
-      <div className="mx-auto max-w-7xl rounded-3xl bg-[#F4F6FA] px-6 py-12 lg:px-12 lg:py-16">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between lg:gap-0">
-          <h2 className="shrink-0 text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:pr-10">
-            Travel Tips, Insights
-            <br />
-            &amp; Inspiration
-          </h2>
-
-          <div className="hidden h-16 w-px shrink-0 bg-border sm:block" aria-hidden />
-
-          <p className="max-w-md text-sm leading-relaxed text-muted-foreground sm:flex-1 lg:px-10">
+    <section className="bg-[#f5f5f7] px-6 py-20 lg:px-8 lg:py-28">
+      <div className="mx-auto max-w-[980px]">
+        <motion.div
+          className="text-center"
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewportOnce}
+          variants={staggerContainer}
+        >
+          <motion.p
+            variants={fadeInUp}
+            className="text-sm font-medium tracking-wide text-[#0066cc] uppercase"
+          >
+            Travel Journal
+          </motion.p>
+          <motion.h2
+            variants={fadeInUp}
+            className="mt-3 text-[40px] leading-[1.08] font-semibold tracking-[-0.02em] text-[#1d1d1f] sm:text-[48px]"
+          >
+            Tips, insights &amp; inspiration.
+          </motion.h2>
+          <motion.p
+            variants={fadeInUp}
+            className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#86868b]"
+          >
             Explore Aurora Province through local stories, travel guides, and
-            insider tips — from surfing in Baler to hidden waterfalls and
-            mountain trails across the Sierra Madre.
-          </p>
-
-          <div className="hidden h-16 w-px shrink-0 bg-border sm:block" aria-hidden />
-
-          <div className="shrink-0 sm:pl-6 lg:pl-10">
-            <Button className="rounded-full px-8" size="lg" asChild>
-              <Link to="/find-vans">Read All Articles</Link>
+            insider tips — from surfing in Baler to hidden waterfalls across
+            the Sierra Madre.
+          </motion.p>
+          <motion.div variants={fadeInUp} className="mt-8">
+            <Button
+              className="h-11 rounded-full bg-[#0071e3] px-7 text-[17px] font-normal hover:bg-[#0077ed]"
+              size="lg"
+              asChild
+            >
+              <Link to="/find-vans">Read all articles ›</Link>
             </Button>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
-        <div className="mt-12 grid gap-6 lg:grid-cols-2">
+        <motion.div
+          className="mt-14 grid gap-5 lg:grid-cols-2"
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewportOnce}
+          variants={staggerContainer}
+        >
           {articles.map((article) => (
-            <article
+            <motion.article
               key={article.title}
+              variants={scaleIn}
+              whileHover={{ y: -4 }}
+              transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
               className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5 sm:flex-row"
             >
-              <div className="aspect-[4/3] shrink-0 sm:aspect-auto sm:w-[42%]">
+              <div className="aspect-4/3 shrink-0 sm:aspect-auto sm:w-[42%]">
                 <img
                   src={article.image}
                   alt={article.title}
@@ -90,45 +116,37 @@ export function TravelTipsSection() {
                 />
               </div>
 
-              <div className="flex flex-1 flex-col p-5 sm:p-6">
+              <div className="flex flex-1 flex-col p-6">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                  <span className="text-xs font-medium text-[#0066cc]">
                     {article.tag}
                   </span>
-                  <time className="text-xs text-muted-foreground">
-                    {article.date}
-                  </time>
+                  <time className="text-xs text-[#86868b]">{article.date}</time>
                 </div>
 
-                <h3 className="mt-3 text-base font-bold leading-snug text-foreground">
+                <h3 className="mt-3 text-[19px] leading-snug font-semibold tracking-[-0.01em] text-[#1d1d1f]">
                   {article.title}
                 </h3>
 
-                <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">
+                <p className="mt-2 flex-1 text-[15px] leading-relaxed text-[#86868b]">
                   {article.description}
                 </p>
 
-                <div className="mt-4 border-t border-border pt-4">
-                  <p className="text-xs text-muted-foreground">
-                    Author:{' '}
-                    <span className="font-medium text-foreground">
-                      {article.author}
-                    </span>
+                <div className="mt-5 border-t border-black/5 pt-4">
+                  <p className="text-xs text-[#86868b]">
+                    {article.author}
                   </p>
-
-                  <Button
-                    variant={article.variant === 'solid' ? 'default' : 'outline'}
-                    size="sm"
-                    className="mt-3 rounded-full px-5"
-                    asChild
+                  <Link
+                    to="/find-vans"
+                    className="mt-2 inline-block text-[15px] text-[#0066cc] hover:underline"
                   >
-                    <Link to="/find-vans">Learn More</Link>
-                  </Button>
+                    Learn more ›
+                  </Link>
                 </div>
               </div>
-            </article>
+            </motion.article>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   )

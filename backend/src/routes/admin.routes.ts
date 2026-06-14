@@ -1,5 +1,9 @@
 import { Router } from 'express'
 import {
+  getAdminStats,
+  listAdminBookings,
+  listAdminTrips,
+  listAdminUsers,
   listPendingDriverApplications,
   reviewDriverApplication,
 } from '../controllers/admin.controller.js'
@@ -14,6 +18,11 @@ import {
 export const adminRouter = Router()
 
 adminRouter.use(authenticate, requireRole('admin'))
+
+adminRouter.get('/stats', asyncHandler(getAdminStats))
+adminRouter.get('/trips', asyncHandler(listAdminTrips))
+adminRouter.get('/bookings', asyncHandler(listAdminBookings))
+adminRouter.get('/users', asyncHandler(listAdminUsers))
 
 adminRouter.get(
   '/driver-applications',

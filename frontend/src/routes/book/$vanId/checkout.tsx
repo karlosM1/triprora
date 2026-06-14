@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { motion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 import { BookingStepper } from '@/components/booking/booking-stepper'
 import { CheckoutFooter } from '@/components/booking/booking-footer'
-import { CheckoutHeader } from '@/components/booking/checkout-header'
 import { CheckoutSummary } from '@/components/booking/checkout-summary'
 import { PassengerForm } from '@/components/booking/passenger-form'
 import { PaymentForm } from '@/components/booking/payment-form'
+import { PageHeader } from '@/components/layout/page-header'
+import { Header } from '@/components/landing/header'
 import { Button } from '@/components/ui/button'
 import {
   bookingHistoryQueryKey,
@@ -17,6 +19,7 @@ import {
 import { loadVanBooking } from '@/lib/api/load-van-booking'
 import { vansQueryKey } from '@/lib/api/vans'
 import type { PassengerDetails } from '@/lib/booking'
+import { fadeInUp, staggerContainer } from '@/lib/motion'
 import { requireAuth } from '@/lib/route-guards'
 
 export const Route = createFileRoute('/book/$vanId/checkout')({
@@ -105,14 +108,19 @@ function CheckoutPage() {
 
   if (!pickupAddress.trim() || !dropoffAddress.trim()) {
     return (
-      <div className="min-h-svh bg-[#F8F9FB]">
-        <CheckoutHeader />
-        <main className="mx-auto max-w-lg px-6 py-16 text-center lg:px-8">
-          <h1 className="text-xl font-bold text-foreground">Addresses Required</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+      <div className="app-page min-h-svh bg-[#f5f5f7]">
+        <Header activeLink="find-vans" />
+        <main className="mx-auto max-w-[980px] px-6 py-16 text-center lg:px-8">
+          <h1 className="text-[28px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">
+            Addresses required
+          </h1>
+          <p className="mt-2 text-[15px] text-[#86868b]">
             Please enter your pickup and destination addresses before checkout.
           </p>
-          <Button className="mt-6 rounded-lg" asChild>
+          <Button
+            className="mt-6 rounded-full bg-[#0071e3] px-6 hover:bg-[#0077ed]"
+            asChild
+          >
             <Link to="/book/$vanId" params={{ vanId }} search={{ seat }}>
               Back to booking
             </Link>
@@ -124,58 +132,76 @@ function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-svh bg-[#F8F9FB]">
-      <CheckoutHeader />
-      <BookingStepper currentStep={checkoutStep === 1 ? 1 : 2} />
+    <div className="app-page min-h-svh bg-[#f5f5f7]">
+      <Header activeLink="find-vans" />
 
-      <main className="mx-auto max-w-7xl px-6 pb-8 lg:px-8">
-        <div className="flex flex-col gap-8 lg:flex-row">
-          <div className="min-w-0 flex-1 space-y-5">
-            <PassengerForm values={passenger} onChange={setPassenger} />
+      <main className="mx-auto max-w-[980px] px-6 py-10 lg:px-8 lg:py-14">
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={staggerContainer}
+          className="space-y-8"
+        >
+          <motion.div variants={fadeInUp} className="space-y-6">
+            <PageHeader
+              eyebrow="Checkout"
+              title={checkoutStep === 1 ? 'Review your details' : 'Complete payment'}
+              subtitle="Secure checkout for your door-to-door van trip."
+            />
+            <BookingStepper currentStep={checkoutStep === 1 ? 1 : 2} />
+          </motion.div>
 
-            {checkoutStep === 2 && <PaymentForm />}
+          <motion.div
+            variants={fadeInUp}
+            className="flex flex-col gap-8 lg:flex-row lg:items-start"
+          >
+            <div className="min-w-0 flex-1 space-y-5">
+              <PassengerForm values={passenger} onChange={setPassenger} />
 
-            {error && (
-              <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
-                {error}
+              {checkoutStep === 2 && <PaymentForm />}
+
+              {error && (
+                <p className="rounded-xl bg-[#fef2f2] px-4 py-3 text-[14px] text-[#b42318] ring-1 ring-[#fecaca]">
+                  {error}
+                </p>
+              )}
+
+              {checkoutStep === 1 ? (
+                <Button
+                  className="h-12 w-full rounded-full bg-[#0071e3] text-[15px] font-medium hover:bg-[#0077ed]"
+                  onClick={handleContinueToPayment}
+                >
+                  Continue to payment
+                  <ArrowRight className="size-4" />
+                </Button>
+              ) : (
+                <Button
+                  className="h-12 w-full rounded-full bg-[#0071e3] text-[15px] font-medium hover:bg-[#0077ed]"
+                  onClick={handleCompleteBooking}
+                  disabled={bookingMutation.isPending}
+                >
+                  {bookingMutation.isPending ? 'Processing…' : 'Complete booking'}
+                  <ArrowRight className="size-4" />
+                </Button>
+              )}
+
+              <p className="text-center text-[13px] text-[#86868b]">
+                <Link
+                  to="/book/$vanId"
+                  params={{ vanId }}
+                  search={{ seat, pickupAddress, dropoffAddress }}
+                  className="text-[#0066cc] transition-colors hover:text-[#0077ed] hover:underline"
+                >
+                  ← Back to seat selection
+                </Link>
               </p>
-            )}
+            </div>
 
-            {checkoutStep === 1 ? (
-              <Button
-                className="w-full rounded-lg py-5 text-base"
-                onClick={handleContinueToPayment}
-              >
-                Continue to Payment
-                <ArrowRight className="size-4" />
-              </Button>
-            ) : (
-              <Button
-                className="w-full rounded-lg py-5 text-base"
-                onClick={handleCompleteBooking}
-                disabled={bookingMutation.isPending}
-              >
-                {bookingMutation.isPending ? 'Processing...' : 'Complete Booking'}
-                <ArrowRight className="size-4" />
-              </Button>
-            )}
-
-            <p className="text-center text-xs text-muted-foreground">
-              <Link
-                to="/book/$vanId"
-                params={{ vanId }}
-                search={{ seat, pickupAddress, dropoffAddress }}
-                className="text-primary hover:underline"
-              >
-                ← Back to seat selection
-              </Link>
-            </p>
-          </div>
-
-          <aside className="w-full shrink-0 lg:w-96">
-            <CheckoutSummary van={van} isPremium={isPremium} addresses={addresses} />
-          </aside>
-        </div>
+            <aside className="w-full shrink-0 lg:w-[360px]">
+              <CheckoutSummary van={van} isPremium={isPremium} addresses={addresses} />
+            </aside>
+          </motion.div>
+        </motion.div>
       </main>
 
       <CheckoutFooter />

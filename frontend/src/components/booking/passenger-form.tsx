@@ -1,5 +1,7 @@
 import { User } from 'lucide-react'
+import { AppleCard, SectionTitle } from '@/components/layout/page-header'
 import type { PassengerDetails } from '@/lib/booking'
+import { cn } from '@/lib/utils'
 
 type PassengerFormProps = {
   values: PassengerDetails
@@ -17,22 +19,22 @@ export function PassengerForm({
   }
 
   return (
-    <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
-      <div className="flex items-center gap-2">
-        <User className="size-4 text-primary" />
-        <h2 className="text-base font-bold text-foreground">Passenger Details</h2>
-      </div>
+    <AppleCard className="p-6 sm:p-8">
+      <SectionTitle
+        title="Passenger details"
+        subtitle="We'll send your booking confirmation to this email."
+      />
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2">
         <Field
-          label="First Name"
+          label="First name"
           placeholder="John"
           value={values.firstName}
           onChange={(v) => update('firstName', v)}
           readOnly={readOnly}
         />
         <Field
-          label="Last Name"
+          label="Last name"
           placeholder="Doe"
           value={values.lastName}
           onChange={(v) => update('lastName', v)}
@@ -40,7 +42,7 @@ export function PassengerForm({
         />
         <div className="sm:col-span-2">
           <Field
-            label="Email Address"
+            label="Email"
             placeholder="john.doe@email.com"
             type="email"
             value={values.email}
@@ -50,8 +52,8 @@ export function PassengerForm({
         </div>
         <div className="sm:col-span-2">
           <Field
-            label="Phone Number"
-            placeholder="+63 (555) 000-0000"
+            label="Phone"
+            placeholder="+63 912 345 6789"
             type="tel"
             value={values.phone}
             onChange={(v) => update('phone', v)}
@@ -59,7 +61,7 @@ export function PassengerForm({
           />
         </div>
       </div>
-    </div>
+    </AppleCard>
   )
 }
 
@@ -80,14 +82,20 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      <span className="mb-2 block text-[13px] font-medium text-[#1d1d1f]">
+        {label}
+      </span>
       <input
         type={type}
         placeholder={placeholder}
         value={value}
         readOnly={readOnly}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1.5 w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 read-only:bg-muted/30"
+        className={cn(
+          'h-11 w-full rounded-xl bg-white px-4 text-[15px] text-[#1d1d1f] placeholder:text-[#86868b]/70 ring-1 ring-[#d2d2d7] transition-all outline-none',
+          'focus:ring-2 focus:ring-[#0071e3]/40',
+          readOnly && 'bg-[#f5f5f7] text-[#86868b]',
+        )}
       />
     </label>
   )

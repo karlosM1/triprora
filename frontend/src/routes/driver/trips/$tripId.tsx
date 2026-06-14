@@ -2,17 +2,8 @@ import { isAxiosError } from 'axios'
 import { useQuery } from '@tanstack/react-query'
 import { Link, createFileRoute, notFound } from '@tanstack/react-router'
 import { ArrowLeft, Calendar, Car, Users } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
+import { AppleCard, PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import {
   driverTripDetailsQueryKey,
   fetchDriverTripDetails,
@@ -58,9 +49,11 @@ function TripLoadError({ error }: { error: unknown }) {
   return (
     <TripErrorLayout
       title="Unable to load trip"
-      message={message.includes('status code')
-        ? 'The trip details API is unavailable. Try restarting the backend server.'
-        : message}
+      message={
+        message.includes('status code')
+          ? 'The trip details API is unavailable. Try restarting the backend server.'
+          : message
+      }
     />
   )
 }
@@ -74,16 +67,17 @@ function TripErrorLayout({
 }) {
   return (
     <div className="space-y-4">
-      <Button variant="ghost" className="rounded-sm px-0" asChild>
-        <Link to="/driver/trips">
-          <ArrowLeft className="size-4" />
-          Back to My Trips
-        </Link>
-      </Button>
-      <div className="rounded-sm border border-red-200 bg-red-50 px-5 py-8 text-center">
-        <h1 className="text-lg font-semibold text-foreground">{title}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{message}</p>
-      </div>
+      <Link
+        to="/driver/trips"
+        className="inline-flex items-center gap-2 text-[14px] text-[#0066cc] hover:underline"
+      >
+        <ArrowLeft className="size-4" />
+        Back to My Trips
+      </Link>
+      <AppleCard className="px-6 py-10 text-center">
+        <h1 className="text-[19px] font-semibold text-[#1d1d1f]">{title}</h1>
+        <p className="mx-auto mt-2 max-w-md text-[15px] text-[#86868b]">{message}</p>
+      </AppleCard>
     </div>
   )
 }
@@ -105,6 +99,21 @@ function groupSeatsByRow(seats: { label: string; status: string; premium: boolea
       row,
       seats: rowSeats.sort((a, b) => a.label.localeCompare(b.label)),
     }))
+}
+
+function StatusPill({ label, tone }: { label: string; tone: 'draft' | 'cancelled' | 'active' }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex rounded-full px-3 py-1 text-[12px] font-medium uppercase',
+        tone === 'draft' && 'bg-[#fff8eb] text-[#bf4800]',
+        tone === 'cancelled' && 'bg-[#fff2f2] text-[#bf4800]',
+        tone === 'active' && 'bg-[#f0fdf4] text-[#248a3d]',
+      )}
+    >
+      {label}
+    </span>
+  )
 }
 
 function DriverTripDetailsPage() {
@@ -133,53 +142,47 @@ function DriverTripDetailsPage() {
 
   const { trip, seats, passengers, seatsAvailable, seatsOccupied } = details
   const seatRows = groupSeatsByRow(seats)
+  const statusTone =
+    trip.status === 'draft'
+      ? 'draft'
+      : trip.status === 'cancelled'
+        ? 'cancelled'
+        : 'active'
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <Button variant="ghost" className="mb-2 rounded-sm px-0" asChild>
-            <Link to="/driver/trips">
-              <ArrowLeft className="size-4" />
-              Back to My Trips
-            </Link>
-          </Button>
-          <h1 className="text-3xl font-bold tracking-tight">Trip Details</h1>
-          <p className="mt-1 text-muted-foreground">{trip.id}</p>
+          <Link
+            to="/driver/trips"
+            className="mb-4 inline-flex items-center gap-2 text-[14px] text-[#0066cc] hover:underline"
+          >
+            <ArrowLeft className="size-4" />
+            Back to My Trips
+          </Link>
+          <PageHeader
+            eyebrow={trip.id}
+            title="Trip details."
+            subtitle={getTripRouteLabel(trip)}
+          />
         </div>
-        <Badge
-          className={cn(
-            'w-fit rounded-sm',
-            trip.status === 'draft'
-              ? 'bg-amber-50 text-amber-700 hover:bg-amber-50'
-              : trip.status === 'cancelled'
-                ? 'bg-red-50 text-red-700 hover:bg-red-50'
-                : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-50',
-          )}
-        >
-          {getTripStatusLabel(trip).toUpperCase()}
-        </Badge>
+        <StatusPill label={getTripStatusLabel(trip)} tone={statusTone} />
       </div>
 
-      <Card className="rounded-sm border border-border bg-white py-0 shadow-none ring-0">
-        <CardHeader className="border-b border-border px-5 py-4">
-          <CardTitle className="text-base font-semibold">
-            {getTripRouteLabel(trip)}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4">
+      <AppleCard className="p-6">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <DetailItem
-            icon={<Calendar className="size-4 text-primary" />}
+            icon={<Calendar className="size-4 text-[#86868b]" />}
             label="Departure"
             value={formatTripDateTime(trip)}
           />
           <DetailItem
-            icon={<Car className="size-4 text-primary" />}
+            icon={<Car className="size-4 text-[#86868b]" />}
             label="Vehicle"
             value={trip.vehicleName ?? 'Not set'}
           />
           <DetailItem
-            icon={<Users className="size-4 text-primary" />}
+            icon={<Users className="size-4 text-[#86868b]" />}
             label="Passengers"
             value={`${passengers.length} booked`}
           />
@@ -187,104 +190,103 @@ function DriverTripDetailsPage() {
             label="Fare per seat"
             value={`₱${trip.price.toLocaleString()}`}
           />
-        </CardContent>
-      </Card>
+        </div>
+      </AppleCard>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
-        <Card className="rounded-sm border border-border bg-white py-0 shadow-none ring-0">
-          <CardHeader className="border-b border-border px-5 py-4">
-            <CardTitle className="text-base font-semibold">Passengers</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {passengers.length === 0 ? (
-              <p className="px-5 py-8 text-center text-sm text-muted-foreground">
-                No passengers have booked this trip yet.
-              </p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-[11px] font-semibold tracking-wider uppercase">
-                      Passenger
-                    </TableHead>
-                    <TableHead className="text-[11px] font-semibold tracking-wider uppercase">
-                      Seat
-                    </TableHead>
-                    <TableHead className="text-[11px] font-semibold tracking-wider uppercase">
-                      Contact
-                    </TableHead>
-                    <TableHead className="text-[11px] font-semibold tracking-wider uppercase">
-                      Reference
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {passengers.map((passenger) => (
-                    <TableRow key={passenger.id}>
-                      <TableCell>
-                        <p className="font-medium">{passenger.name}</p>
-                        {passenger.email && (
-                          <p className="text-xs text-muted-foreground">{passenger.email}</p>
-                        )}
-                      </TableCell>
-                      <TableCell className="font-medium">{passenger.seat ?? '—'}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {passenger.phone ?? '—'}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs text-primary">
-                        {passenger.reference ?? '—'}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-sm border border-border bg-white py-0 shadow-none ring-0">
-          <CardHeader className="border-b border-border px-5 py-4">
-            <CardTitle className="text-base font-semibold">Seat Summary</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 p-5">
-            <div className="grid grid-cols-2 gap-3">
-              <SummaryStat label="Available" value={seatsAvailable} tone="available" />
-              <SummaryStat label="Booked" value={seatsOccupied} tone="occupied" />
-            </div>
-
-            <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-              <Legend color="bg-emerald-100 ring-emerald-300" label="Available" />
-              <Legend color="bg-slate-200 ring-slate-300" label="Booked" />
-            </div>
-
-            <div className="rounded-sm border border-border bg-slate-50 p-4">
-              <div className="space-y-3">
-                {seatRows.map(({ row, seats: rowSeats }) => (
-                  <div key={row} className="flex flex-wrap justify-center gap-2">
-                    {rowSeats.map((seat) => (
-                      <div
-                        key={seat.label}
-                        title={
-                          seat.status === 'available'
-                            ? `Seat ${seat.label} — Available`
-                            : `Seat ${seat.label} — Booked`
-                        }
-                        className={cn(
-                          'flex size-11 flex-col items-center justify-center rounded-sm border text-[10px] font-semibold ring-1',
-                          seat.status === 'available'
-                            ? 'border-emerald-200 bg-emerald-50 text-emerald-800 ring-emerald-300'
-                            : 'border-slate-200 bg-slate-200 text-slate-600 ring-slate-300',
-                        )}
+      <div className="grid gap-6 xl:grid-cols-[1fr_300px]">
+        <AppleCard className="overflow-hidden">
+          <div className="border-b border-[#d2d2d7]/60 px-6 py-4">
+            <h2 className="text-[17px] font-semibold text-[#1d1d1f]">Passengers</h2>
+          </div>
+          {passengers.length === 0 ? (
+            <p className="px-6 py-12 text-center text-[15px] text-[#86868b]">
+              No passengers have booked this trip yet.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[520px] text-left">
+                <thead>
+                  <tr className="border-b border-[#d2d2d7]/60 bg-[#f5f5f7]/50">
+                    {['Passenger', 'Seat', 'Contact', 'Reference'].map((head) => (
+                      <th
+                        key={head}
+                        className="px-6 py-3 text-[12px] font-medium text-[#86868b] uppercase"
                       >
-                        {seat.label}
-                      </div>
+                        {head}
+                      </th>
                     ))}
-                  </div>
-                ))}
-              </div>
+                  </tr>
+                </thead>
+                <tbody>
+                  {passengers.map((passenger) => (
+                    <tr
+                      key={passenger.id}
+                      className="border-b border-[#d2d2d7]/40 last:border-b-0"
+                    >
+                      <td className="px-6 py-4">
+                        <p className="text-[15px] font-medium text-[#1d1d1f]">
+                          {passenger.name}
+                        </p>
+                        {passenger.email && (
+                          <p className="text-[13px] text-[#86868b]">{passenger.email}</p>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-[14px] font-medium text-[#1d1d1f]">
+                        {passenger.seat ?? '—'}
+                      </td>
+                      <td className="px-6 py-4 text-[14px] text-[#86868b]">
+                        {passenger.phone ?? '—'}
+                      </td>
+                      <td className="px-6 py-4 font-mono text-[13px] text-[#0066cc]">
+                        {passenger.reference ?? '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </AppleCard>
+
+        <AppleCard className="p-6">
+          <h2 className="text-[17px] font-semibold text-[#1d1d1f]">Seat summary</h2>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <SummaryStat label="Available" value={seatsAvailable} tone="available" />
+            <SummaryStat label="Booked" value={seatsOccupied} tone="occupied" />
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-3 text-[12px] text-[#86868b]">
+            <Legend color="bg-[#dcfce7] ring-[#86efac]" label="Available" />
+            <Legend color="bg-[#e8e8ed] ring-[#d2d2d7]" label="Booked" />
+          </div>
+
+          <div className="mt-4 rounded-xl bg-[#f5f5f7] p-4">
+            <div className="space-y-3">
+              {seatRows.map(({ row, seats: rowSeats }) => (
+                <div key={row} className="flex flex-wrap justify-center gap-2">
+                  {rowSeats.map((seat) => (
+                    <div
+                      key={seat.label}
+                      title={
+                        seat.status === 'available'
+                          ? `Seat ${seat.label} — Available`
+                          : `Seat ${seat.label} — Booked`
+                      }
+                      className={cn(
+                        'flex size-10 items-center justify-center rounded-lg text-[11px] font-semibold ring-1',
+                        seat.status === 'available'
+                          ? 'bg-[#dcfce7] text-[#166534] ring-[#86efac]'
+                          : 'bg-[#e8e8ed] text-[#86868b] ring-[#d2d2d7]',
+                      )}
+                    >
+                      {seat.label}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        </AppleCard>
       </div>
     </div>
   )
@@ -303,11 +305,9 @@ function DetailItem({
     <div>
       <div className="flex items-center gap-2">
         {icon}
-        <p className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
-          {label}
-        </p>
+        <p className="text-[12px] font-medium text-[#86868b] uppercase">{label}</p>
       </div>
-      <p className="mt-1 text-sm font-medium">{value}</p>
+      <p className="mt-1 text-[15px] font-medium text-[#1d1d1f]">{value}</p>
     </div>
   )
 }
@@ -324,16 +324,14 @@ function SummaryStat({
   return (
     <div
       className={cn(
-        'rounded-sm border px-4 py-3',
-        tone === 'available'
-          ? 'border-emerald-200 bg-emerald-50'
-          : 'border-slate-200 bg-slate-100',
+        'rounded-xl px-4 py-3',
+        tone === 'available' ? 'bg-[#f0fdf4]' : 'bg-[#f5f5f7]',
       )}
     >
-      <p className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
-        {label}
+      <p className="text-[12px] font-medium text-[#86868b] uppercase">{label}</p>
+      <p className="mt-1 text-[28px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">
+        {value}
       </p>
-      <p className="mt-1 text-2xl font-bold">{value}</p>
     </div>
   )
 }

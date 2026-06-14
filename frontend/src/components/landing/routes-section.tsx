@@ -45,8 +45,8 @@ export function RoutesSection() {
             Popular Routes
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-muted-foreground">
-            Door-to-door van trips from Casiguran, Aurora to key areas in Metro
-            Manila. Transparent pricing, no terminal transfers.
+            Door-to-door van trips between Aurora and Metro Manila, both ways.
+            Transparent pricing, no terminal transfers.
           </p>
         </div>
 

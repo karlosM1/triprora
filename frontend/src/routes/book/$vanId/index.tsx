@@ -1,14 +1,17 @@
 import { useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { motion } from 'framer-motion'
 import { BookingFooter } from '@/components/booking/booking-footer'
+import { ConciergeCard, TripSummaryCard } from '@/components/booking/trip-summary-card'
 import { DriverInfoCard } from '@/components/booking/driver-info-card'
 import { TripAddressForm } from '@/components/booking/trip-address-form'
-import { TripSummaryCard } from '@/components/booking/trip-summary-card'
 import { SeatMap } from '@/components/booking/seat-map'
+import { PageHeader } from '@/components/layout/page-header'
 import { Header } from '@/components/landing/header'
 import { Button } from '@/components/ui/button'
 import { loadVanBooking } from '@/lib/api/load-van-booking'
 import type { TripAddresses } from '@/lib/booking'
+import { fadeInUp, staggerContainer } from '@/lib/motion'
 
 export const Route = createFileRoute('/book/$vanId/')({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -50,13 +53,18 @@ function TripErrorLayout({
   message: string
 }) {
   return (
-    <div className="min-h-svh bg-[#F8F9FB]">
+    <div className="app-page min-h-svh bg-[#f5f5f7]">
       <Header activeLink="find-vans" />
-      <main className="mx-auto max-w-lg px-6 py-16 text-center lg:px-8">
-        <h1 className="text-2xl font-bold text-foreground">{title}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{message}</p>
-        <Button className="mt-6 rounded-lg" asChild>
-          <Link to="/find-vans">Back to available vans</Link>
+      <main className="mx-auto max-w-[980px] px-6 py-16 text-center lg:px-8">
+        <h1 className="text-[28px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">
+          {title}
+        </h1>
+        <p className="mt-2 text-[15px] text-[#86868b]">{message}</p>
+        <Button
+          className="mt-6 rounded-full bg-[#0071e3] px-6 hover:bg-[#0077ed]"
+          asChild
+        >
+          <Link to="/find-vans">Back to find vans</Link>
         </Button>
       </main>
       <BookingFooter />
@@ -104,58 +112,66 @@ function SeatSelectionPage() {
     addresses.dropoffAddress.trim().length >= 5
 
   return (
-    <div className="min-h-svh bg-[#F8F9FB]">
+    <div className="app-page min-h-svh bg-[#f5f5f7]">
       <Header activeLink="find-vans" />
 
-      <main className="mx-auto max-w-7xl px-6 py-8 lg:px-8">
-        <nav className="text-xs text-muted-foreground">
-          <Link to="/find-vans" className="hover:text-primary">
-            Find Vans
-          </Link>
-          <span className="mx-1.5">&gt;</span>
-          <span>{van.operator}</span>
-          <span className="mx-1.5">&gt;</span>
-          <span className="text-foreground">Book Trip</span>
-        </nav>
-
-        <div className="mt-4">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            Book Your Door-to-Door Trip
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {van.departureLocation} → {van.arrivalLocation} •{' '}
-            {van.vehicleName ?? van.classType.replace(' CLASS', '')}
-          </p>
-        </div>
-
-        <div className="mt-8 flex flex-col gap-6 lg:flex-row">
-          <div className="min-w-0 flex-1 space-y-6">
-            <TripAddressForm values={addresses} onChange={setAddresses} />
-            {!addressesValid && addressError && (
-              <p className="text-sm text-destructive">{addressError}</p>
-            )}
-            <SeatMap
-              seats={seatMap}
-              selectedSeatId={selectedSeatId}
-              onSelectSeat={setSelectedSeatId}
+      <main className="mx-auto max-w-[980px] px-6 py-10 lg:px-8 lg:py-14">
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={staggerContainer}
+          className="space-y-10"
+        >
+          <motion.div variants={fadeInUp}>
+            <nav className="mb-4 text-[12px] text-[#86868b]">
+              <Link to="/find-vans" className="transition-colors hover:text-[#0066cc]">
+                Find Vans
+              </Link>
+              <span className="mx-1.5">/</span>
+              <span className="text-[#1d1d1f]">Book trip</span>
+            </nav>
+            <PageHeader
+              eyebrow="Booking"
+              title="Book your trip"
+              subtitle={`${van.departureLocation} ↔ ${van.arrivalLocation} · ${van.vehicleName ?? van.classType.replace(' CLASS', '')}`}
             />
-          </div>
+          </motion.div>
 
-          <aside className="w-full shrink-0 space-y-4 lg:w-80">
-            <DriverInfoCard van={van} />
-            <TripSummaryCard
-              van={van}
-              vanId={vanId}
-              selectedSeat={selectedSeatId}
-              isPremium={isPremium}
-              addresses={addresses}
-              addressesValid={addressesValid}
-              onAddressError={() =>
-                setAddressError('Please enter your pickup and destination addresses.')
-              }
-            />
-          </aside>
-        </div>
+          <motion.div
+            variants={fadeInUp}
+            className="flex flex-col gap-8 lg:flex-row lg:items-start"
+          >
+            <div className="min-w-0 flex-1 space-y-6">
+              <TripAddressForm values={addresses} onChange={setAddresses} />
+              {!addressesValid && addressError && (
+                <p className="rounded-xl bg-[#fef2f2] px-4 py-3 text-[14px] text-[#b42318] ring-1 ring-[#fecaca]">
+                  {addressError}
+                </p>
+              )}
+              <SeatMap
+                seats={seatMap}
+                selectedSeatId={selectedSeatId}
+                onSelectSeat={setSelectedSeatId}
+              />
+            </div>
+
+            <aside className="w-full shrink-0 space-y-4 lg:w-[320px]">
+              <DriverInfoCard van={van} />
+              <TripSummaryCard
+                van={van}
+                vanId={vanId}
+                selectedSeat={selectedSeatId}
+                isPremium={isPremium}
+                addresses={addresses}
+                addressesValid={addressesValid}
+                onAddressError={() =>
+                  setAddressError('Please enter your pickup and destination addresses.')
+                }
+              />
+              <ConciergeCard />
+            </aside>
+          </motion.div>
+        </motion.div>
       </main>
 
       <BookingFooter />

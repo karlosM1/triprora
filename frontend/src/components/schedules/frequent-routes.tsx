@@ -1,8 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { Building2, Bus, Clock, Mountain, Timer } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
+import { motion } from 'framer-motion'
+import { AppleCard, SectionTitle } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { fetchSchedules, schedulesQueryKey } from '@/lib/api/schedules'
+import { fadeInUp, staggerContainer, viewportOnce } from '@/lib/motion'
 import type { RouteCard } from '@/lib/types/api'
 
 export function FrequentRoutes() {
@@ -14,7 +17,7 @@ export function FrequentRoutes() {
   if (isLoading || !data) {
     return (
       <section>
-        <p className="text-sm text-muted-foreground">Loading routes...</p>
+        <p className="text-[15px] text-[#86868b]">Loading routes...</p>
       </section>
     )
   }
@@ -23,26 +26,30 @@ export function FrequentRoutes() {
 
   return (
     <section>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xl font-bold text-foreground">Frequent Routes</h2>
-        <div className="flex gap-2">
-          <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-            Active Fleet
+      <SectionTitle
+        title="Frequent routes"
+        subtitle="Popular door-to-door connections across Aurora and Metro Manila."
+        action={
+          <span className="text-[13px] font-medium text-[#0066cc]">
+            Live fleet data
           </span>
-          <span className="rounded-full bg-teal-100 px-3 py-1 text-xs font-semibold text-teal-700">
-            Real-time Data
-          </span>
-        </div>
-      </div>
+        }
+      />
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-3">
+      <motion.div
+        className="grid gap-4 lg:grid-cols-3"
+        initial="hidden"
+        whileInView="visible"
+        viewport={viewportOnce}
+        variants={staggerContainer}
+      >
         <FeaturedRouteCard route={featuredRoute} />
         <BusinessRouteCard route={businessRoute} />
 
         {compactRoutes.map((route) => (
           <CompactRouteCard key={route.id} route={route} />
         ))}
-      </div>
+      </motion.div>
     </section>
   )
 }
@@ -59,42 +66,42 @@ function FeaturedRouteCard({
   }
 }) {
   return (
-    <div className="flex flex-col justify-between rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5 lg:col-span-2 lg:row-span-2">
-      <div>
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-[10px] font-bold tracking-widest text-primary uppercase">
-              {route.label}
-            </p>
-            <h3 className="mt-2 text-2xl font-bold text-foreground sm:text-3xl">
+    <motion.div variants={fadeInUp} className="lg:col-span-2 lg:row-span-2">
+      <AppleCard className="flex h-full flex-col justify-between p-8">
+        <div>
+          <p className="text-[13px] font-medium tracking-wide text-[#0066cc] uppercase">
+            {route.label}
+          </p>
+          <div className="mt-3 flex items-start justify-between gap-4">
+            <h3 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] text-[#1d1d1f] sm:text-[32px]">
               {route.title}
             </h3>
+            <p className="shrink-0 text-right text-[15px] font-medium text-[#86868b]">
+              {route.availability}
+            </p>
           </div>
-          <p className="shrink-0 text-right text-lg font-bold text-muted-foreground/60 sm:text-xl">
-            {route.availability}
-          </p>
         </div>
-      </div>
 
-      <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-2">
-          <p className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Clock className="size-4 text-primary" />
-            {route.departures}
-          </p>
-          <p className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Timer className="size-4 text-primary" />
-            {route.duration}
-          </p>
+        <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-2">
+            <p className="flex items-center gap-2 text-[15px] text-[#86868b]">
+              <Clock className="size-4 text-[#86868b]" />
+              {route.departures}
+            </p>
+            <p className="flex items-center gap-2 text-[15px] text-[#86868b]">
+              <Timer className="size-4 text-[#86868b]" />
+              {route.duration}
+            </p>
+          </div>
+          <Button
+            className="h-10 rounded-full bg-[#0071e3] px-6 text-[14px] font-normal hover:bg-[#0077ed]"
+            asChild
+          >
+            <Link to="/find-vans">Book now</Link>
+          </Button>
         </div>
-        <Button
-          className="rounded-lg bg-[#0f172a] px-6 hover:bg-[#0f172a]/90"
-          asChild
-        >
-          <Link to="/find-vans">Book Now</Link>
-        </Button>
-      </div>
-    </div>
+      </AppleCard>
+    </motion.div>
   )
 }
 
@@ -109,24 +116,30 @@ function BusinessRouteCard({
   }
 }) {
   return (
-    <div className="flex flex-col justify-between rounded-xl bg-white p-5 shadow-sm ring-1 ring-black/5 lg:col-span-1 lg:row-span-2">
-      <div>
-        <span className="rounded bg-sky-100 px-2 py-0.5 text-[10px] font-bold tracking-wide text-sky-700 uppercase">
-          {route.label}
-        </span>
-        <h3 className="mt-3 text-lg font-bold text-foreground">{route.title}</h3>
-        <p className="mt-2 text-sm text-muted-foreground">{route.description}</p>
-      </div>
-      <div className="mt-6">
-        <p className="text-xs text-muted-foreground">{route.frequency}</p>
-        <Button
-          variant="outline"
-          className="mt-4 w-full rounded-lg border-primary text-primary hover:bg-primary/5 hover:text-primary"
-        >
-          View Details
-        </Button>
-      </div>
-    </div>
+    <motion.div variants={fadeInUp} className="lg:col-span-1 lg:row-span-2">
+      <AppleCard className="flex h-full flex-col justify-between p-6">
+        <div>
+          <span className="text-[12px] font-medium text-[#0066cc] uppercase">
+            {route.label}
+          </span>
+          <h3 className="mt-3 text-[19px] font-semibold text-[#1d1d1f]">
+            {route.title}
+          </h3>
+          <p className="mt-2 text-[15px] leading-relaxed text-[#86868b]">
+            {route.description}
+          </p>
+        </div>
+        <div className="mt-6">
+          <p className="text-[13px] text-[#86868b]">{route.frequency}</p>
+          <Button
+            variant="ghost"
+            className="mt-4 h-10 w-full rounded-full text-[14px] text-[#0066cc] hover:bg-[#0071e3]/5 hover:text-[#0077ed]"
+          >
+            View details ›
+          </Button>
+        </div>
+      </AppleCard>
+    </motion.div>
   )
 }
 
@@ -139,21 +152,29 @@ function CompactRouteCard({ route }: { route: RouteCard }) {
         : Building2
 
   return (
-    <div className="flex flex-col justify-between rounded-xl bg-white p-5 shadow-sm ring-1 ring-black/5">
-      <div>
-        <div className="flex size-9 items-center justify-center rounded-lg bg-muted">
-          <Icon className="size-4 text-muted-foreground" />
+    <motion.div variants={fadeInUp}>
+      <AppleCard className="flex h-full flex-col justify-between p-5">
+        <div>
+          <div className="flex size-10 items-center justify-center rounded-xl bg-[#f5f5f7]">
+            <Icon className="size-4 text-[#86868b]" />
+          </div>
+          <h3 className="mt-4 text-[17px] font-semibold text-[#1d1d1f]">
+            {route.name}
+          </h3>
+          <p className="text-[13px] text-[#86868b]">{route.location}</p>
+          <div className="mt-3 flex gap-4 text-[13px] text-[#86868b]">
+            <span>{route.frequency}</span>
+            <span>{route.duration}</span>
+          </div>
         </div>
-        <h3 className="mt-3 font-bold text-foreground">{route.name}</h3>
-        <p className="text-xs text-muted-foreground">{route.location}</p>
-        <div className="mt-3 flex gap-4 text-xs text-muted-foreground">
-          <span>{route.frequency}</span>
-          <span>{route.duration}</span>
-        </div>
-      </div>
-      <Button variant="secondary" className="mt-4 w-full rounded-lg" asChild>
-        <Link to="/find-vans">Book</Link>
-      </Button>
-    </div>
+        <Button
+          variant="ghost"
+          className="mt-5 h-9 w-full rounded-full text-[14px] text-[#0066cc] hover:bg-[#0071e3]/5"
+          asChild
+        >
+          <Link to="/find-vans">Book ›</Link>
+        </Button>
+      </AppleCard>
+    </motion.div>
   )
 }

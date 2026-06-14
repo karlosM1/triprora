@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Car, CreditCard, Phone, User } from 'lucide-react'
+import { AppleCard } from '@/components/layout/page-header'
 import type { VanResult } from '@/lib/vans'
 
 type DriverInfoCardProps = {
@@ -10,48 +11,48 @@ export function DriverInfoCard({ van }: DriverInfoCardProps) {
   const driver = van.driver
 
   return (
-    <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-black/5">
-      <h2 className="text-base font-bold text-foreground">Driver & Vehicle</h2>
+    <AppleCard className="p-6">
+      <h2 className="text-[17px] font-semibold text-[#1d1d1f]">Driver & vehicle</h2>
 
-      <div className="mt-4 space-y-3">
+      <div className="mt-4 space-y-4">
         <InfoRow
-          icon={<User className="size-4 text-primary" />}
+          icon={<User className="size-4 text-[#86868b]" strokeWidth={1.75} />}
           label="Driver"
           value={driver?.name ?? van.operator}
         />
         {driver?.phone && (
           <InfoRow
-            icon={<Phone className="size-4 text-primary" />}
+            icon={<Phone className="size-4 text-[#86868b]" strokeWidth={1.75} />}
             label="Phone"
             value={driver.phone}
           />
         )}
         {driver?.licenseNo && (
           <InfoRow
-            icon={<CreditCard className="size-4 text-primary" />}
-            label="License No."
+            icon={<CreditCard className="size-4 text-[#86868b]" strokeWidth={1.75} />}
+            label="License"
             value={driver.licenseNo}
           />
         )}
         <InfoRow
-          icon={<Car className="size-4 text-primary" />}
+          icon={<Car className="size-4 text-[#86868b]" strokeWidth={1.75} />}
           label="Vehicle"
           value={van.vehicleName ?? driver?.vehicleInfo ?? 'Van'}
         />
         {van.plateNumber && (
           <InfoRow
-            icon={<Car className="size-4 text-primary" />}
-            label="Plate No."
+            icon={<Car className="size-4 text-[#86868b]" strokeWidth={1.75} />}
+            label="Plate no."
             value={van.plateNumber}
           />
         )}
       </div>
 
-      <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-        Door-to-door service — the driver will pick you up at your home in
-        Casiguran and drop you off at your destination in Metro Manila.
+      <p className="mt-5 text-[13px] leading-relaxed text-[#86868b]">
+        Door-to-door service — your driver picks you up at your door and drops
+        you off at your destination, Aurora or Metro Manila.
       </p>
-    </div>
+    </AppleCard>
   )
 }
 
@@ -68,10 +69,8 @@ function InfoRow({
     <div className="flex items-start gap-3">
       <div className="mt-0.5">{icon}</div>
       <div>
-        <p className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
-          {label}
-        </p>
-        <p className="text-sm font-medium text-foreground">{value}</p>
+        <p className="text-[12px] font-medium text-[#86868b]">{label}</p>
+        <p className="text-[15px] font-medium text-[#1d1d1f]">{value}</p>
       </div>
     </div>
   )

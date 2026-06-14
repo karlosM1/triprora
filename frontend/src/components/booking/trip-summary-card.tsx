@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { ArrowRight } from 'lucide-react'
+import { AppleCard } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { formatPrice } from '@/lib/booking'
 import type { TripAddresses } from '@/lib/booking'
@@ -47,81 +48,64 @@ export function TripSummaryCard({
   }
 
   return (
-    <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-black/5">
-      <h2 className="text-base font-bold text-foreground">Trip Summary</h2>
+    <AppleCard className="p-6">
+      <h2 className="text-[17px] font-semibold text-[#1d1d1f]">Trip summary</h2>
 
       <div className="mt-5 flex gap-3">
-        <div className="flex flex-col items-center">
-          <div className="size-2.5 rounded-full bg-primary" />
-          <div className="my-1 w-px flex-1 border-l border-dashed border-border" />
-          <div className="size-2.5 rounded-full border-2 border-border bg-white" />
+        <div className="flex flex-col items-center pt-1">
+          <div className="size-2.5 rounded-full bg-[#0071e3]" />
+          <div className="my-1 w-px flex-1 border-l border-dashed border-[#d2d2d7]" />
+          <div className="size-2.5 rounded-full border-2 border-[#d2d2d7] bg-white" />
         </div>
-        <div className="flex flex-1 flex-col justify-between gap-4">
+        <div className="flex flex-1 flex-col justify-between gap-5">
           <div>
-            <p className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
-              Service Area (Pickup)
-            </p>
-            <p className="text-sm font-medium text-foreground">
+            <p className="text-[12px] font-medium text-[#86868b]">Pickup</p>
+            <p className="text-[15px] font-medium text-[#1d1d1f]">
               {addresses?.pickupAddress.trim() || van.departureLocation}
             </p>
-            <p className="text-xs text-muted-foreground">
-              {tripDate} • Departs {van.departureTime}
+            <p className="mt-0.5 text-[13px] text-[#86868b]">
+              {tripDate} · Departs {van.departureTime}
             </p>
           </div>
           <div>
-            <p className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
-              Destination
-            </p>
-            <p className="text-sm font-medium text-foreground">
+            <p className="text-[12px] font-medium text-[#86868b]">Destination</p>
+            <p className="text-[15px] font-medium text-[#1d1d1f]">
               {addresses?.dropoffAddress.trim() || van.arrivalLocation}
             </p>
-            <p className="text-xs text-muted-foreground">
-              Est. arrival {van.arrivalTime} • {van.duration}
+            <p className="mt-0.5 text-[13px] text-[#86868b]">
+              Est. arrival {van.arrivalTime} · {van.duration}
             </p>
           </div>
         </div>
       </div>
 
-      <div className="mt-5 space-y-3 border-t border-border pt-4">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Selected Seat</span>
-          <span className="rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-medium text-sky-700">
+      <div className="mt-5 space-y-3 border-t border-black/5 pt-5">
+        <SummaryRow label="Seat">
+          <span className="inline-flex rounded-full bg-[#f0f7ff] px-3 py-1 text-[12px] font-medium text-[#0066cc]">
             {selectedSeat}
-            {isPremium ? ' (Premium)' : ''}
+            {isPremium ? ' · Premium' : ''}
           </span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Driver</span>
-          <span className="text-sm font-bold text-foreground">
-            {van.driver?.name ?? van.operator}
-          </span>
-        </div>
+        </SummaryRow>
+        <SummaryRow label="Driver" value={van.driver?.name ?? van.operator} />
         {van.plateNumber && (
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Plate No.</span>
-            <span className="text-sm font-medium text-foreground">
-              {van.plateNumber}
-            </span>
-          </div>
+          <SummaryRow label="Plate no." value={van.plateNumber} />
         )}
       </div>
 
-      <div className="mt-4 rounded-lg bg-muted/50 p-4">
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Base Fare</span>
-          <span className="text-foreground">{formatPrice(van.price)}</span>
+      <div className="mt-5 rounded-xl bg-[#f5f5f7] p-4">
+        <div className="flex justify-between text-[14px]">
+          <span className="text-[#86868b]">Base fare</span>
+          <span className="text-[#1d1d1f]">{formatPrice(van.price)}</span>
         </div>
         {isPremium && (
-          <div className="mt-2 flex justify-between text-sm">
-            <span className="text-muted-foreground">Premium Seat Selection</span>
-            <span className="text-foreground">{formatPrice(premiumFee)}</span>
+          <div className="mt-2 flex justify-between text-[14px]">
+            <span className="text-[#86868b]">Premium seat</span>
+            <span className="text-[#1d1d1f]">{formatPrice(premiumFee)}</span>
           </div>
         )}
-        <div className="mt-3 flex justify-between border-t border-border pt-3">
-          <span className="text-sm font-medium text-foreground">
-            Total Amount
-          </span>
-          <span className="text-lg font-bold text-primary">
+        <div className="mt-3 flex justify-between border-t border-[#d2d2d7] pt-3">
+          <span className="text-[15px] font-medium text-[#1d1d1f]">Total</span>
+          <span className="text-[20px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">
             {formatPrice(total)}
           </span>
         </div>
@@ -129,7 +113,10 @@ export function TripSummaryCard({
 
       {showProceed && (
         <>
-          <Button className="mt-5 w-full rounded-lg py-5" asChild>
+          <Button
+            className="mt-5 h-12 w-full rounded-full bg-[#0071e3] text-[15px] font-medium hover:bg-[#0077ed]"
+            asChild
+          >
             <Link
               to="/book/$vanId/checkout"
               params={{ vanId }}
@@ -140,14 +127,33 @@ export function TripSummaryCard({
               }}
               onClick={handleProceedClick}
             >
-              Proceed to Payment
+              Continue to payment
               <ArrowRight className="size-4" />
             </Link>
           </Button>
-          <p className="mt-3 text-center text-[11px] text-muted-foreground">
-            Secure checkout. No hidden booking fees.
+          <p className="mt-3 text-center text-[12px] text-[#86868b]">
+            Secure checkout. No hidden fees.
           </p>
         </>
+      )}
+    </AppleCard>
+  )
+}
+
+function SummaryRow({
+  label,
+  value,
+  children,
+}: {
+  label: string
+  value?: string
+  children?: React.ReactNode
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-[14px] text-[#86868b]">{label}</span>
+      {children ?? (
+        <span className="text-[14px] font-medium text-[#1d1d1f]">{value}</span>
       )}
     </div>
   )
@@ -155,14 +161,14 @@ export function TripSummaryCard({
 
 export function ConciergeCard() {
   return (
-    <div className="flex items-center gap-3 rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5">
-      <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+    <AppleCard className="flex items-center gap-3 p-4">
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#f0f7ff] text-[13px] font-semibold text-[#0066cc]">
         TP
       </div>
-      <p className="text-xs leading-relaxed text-muted-foreground">
-        <span className="font-semibold text-foreground">Need help?</span>{' '}
-        Contact your driver directly after booking for pickup coordination.
+      <p className="text-[13px] leading-relaxed text-[#86868b]">
+        <span className="font-medium text-[#1d1d1f]">Need help?</span> Contact
+        your driver after booking for pickup coordination.
       </p>
-    </div>
+    </AppleCard>
   )
 }

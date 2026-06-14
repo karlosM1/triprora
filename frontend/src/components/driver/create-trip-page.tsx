@@ -1,18 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
-import {
-  Briefcase,
-  Calendar,
-  Car,
-  Clock,
-  Info,
-  MapPin,
-  Users,
-  Zap,
-} from 'lucide-react'
+import { Briefcase, Calendar, Car, Clock, Info, MapPin, Users, Zap } from 'lucide-react'
+import { AppleCard, PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -77,6 +68,9 @@ const initialForm: FormState = {
   plateNumber: '',
   price: '',
 }
+
+const appleInputClass =
+  'h-11 rounded-xl border-[#d2d2d7] bg-white text-[15px] focus-visible:ring-[#0071e3]/40'
 
 export function DriverCreateTripPage() {
   const navigate = useNavigate()
@@ -143,57 +137,58 @@ export function DriverCreateTripPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Create New Trip</h1>
-          <p className="mt-1 text-muted-foreground">
-            Publish a door-to-door trip from Casiguran, Aurora to Metro Manila.
-          </p>
-        </div>
-        <div className="flex gap-2">
+        <PageHeader
+          eyebrow="Driver portal"
+          title="Create a trip."
+          subtitle="Publish a door-to-door trip between Aurora and Metro Manila."
+        />
+        <div className="flex shrink-0 gap-2 pt-2">
           <Button
-            variant="outline"
-            className="rounded-sm"
+            variant="ghost"
+            className="h-10 rounded-full px-5 text-[14px] text-[#0066cc] hover:bg-[#0071e3]/5"
             disabled={createMutation.isPending}
             onClick={() => handleSubmit('draft')}
           >
-            Save as Draft
+            Save draft
           </Button>
           <Button
-            className="rounded-sm"
+            className="h-10 rounded-full bg-[#0071e3] px-5 text-[14px] font-normal hover:bg-[#0077ed]"
             disabled={createMutation.isPending}
             onClick={() => handleSubmit('published')}
           >
-            Publish Trip
+            Publish trip
           </Button>
         </div>
       </div>
 
       {error && (
-        <p className="rounded-sm border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p className="rounded-xl bg-[#fff2f2] px-4 py-3 text-[14px] text-[#bf4800] ring-1 ring-[#bf4800]/15">
           {error}
         </p>
       )}
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_340px]">
+      <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
         <div className="space-y-6">
-          <Card className="rounded-sm border border-border bg-white py-0 shadow-none ring-0">
-            <CardHeader className="flex flex-row items-center gap-2 border-b border-border px-5 py-4">
-              <MapPin className="size-4 text-primary" />
-              <CardTitle className="text-base font-semibold">Route Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-5 px-5 py-5">
+          <AppleCard className="overflow-hidden">
+            <div className="flex items-center gap-2 border-b border-[#d2d2d7]/60 px-6 py-4">
+              <MapPin className="size-4 text-[#86868b]" />
+              <h2 className="text-[17px] font-semibold text-[#1d1d1f]">Route details</h2>
+            </div>
+            <div className="space-y-5 p-6">
               <div className="space-y-2">
-                <Label htmlFor="pickup-area">Pickup Service Area</Label>
+                <Label htmlFor="pickup-area" className="text-[13px] text-[#1d1d1f]">
+                  Pickup service area
+                </Label>
                 <Select
                   value={form.departureLocation}
                   onValueChange={(value) => updateField('departureLocation', value)}
                 >
-                  <SelectTrigger id="pickup-area" className="w-full rounded-sm">
-                    <SelectValue placeholder="Select pickup area in Casiguran" />
+                  <SelectTrigger id="pickup-area" className={cn('w-full', appleInputClass)}>
+                    <SelectValue placeholder="Select pickup area" />
                   </SelectTrigger>
-                  <SelectContent className="rounded-sm">
+                  <SelectContent className="rounded-xl">
                     {pickupAreas.map((area) => (
                       <SelectItem key={area} value={area}>
                         {area}
@@ -201,21 +196,23 @@ export function DriverCreateTripPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
-                  Passengers will enter their exact home address when booking.
+                <p className="text-[13px] text-[#86868b]">
+                  Passengers enter their exact home address when booking.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="destination">Metro Manila Drop-off Area</Label>
+                <Label htmlFor="destination" className="text-[13px] text-[#1d1d1f]">
+                  Metro Manila drop-off area
+                </Label>
                 <Select
                   value={form.arrivalLocation}
                   onValueChange={(value) => updateField('arrivalLocation', value)}
                 >
-                  <SelectTrigger id="destination" className="w-full rounded-sm">
+                  <SelectTrigger id="destination" className={cn('w-full', appleInputClass)}>
                     <SelectValue placeholder="Select Metro Manila area" />
                   </SelectTrigger>
-                  <SelectContent className="rounded-sm">
+                  <SelectContent className="rounded-xl">
                     {manilaDropOffAreas.map((area) => (
                       <SelectItem key={area} value={area}>
                         {area}
@@ -226,7 +223,7 @@ export function DriverCreateTripPage() {
               </div>
 
               <div className="space-y-3">
-                <Label>Trip Category</Label>
+                <Label className="text-[13px] text-[#1d1d1f]">Trip category</Label>
                 <div className="grid gap-3 sm:grid-cols-3">
                   {tripCategories.map((item) => (
                     <button
@@ -234,10 +231,10 @@ export function DriverCreateTripPage() {
                       type="button"
                       onClick={() => updateField('tripCategory', item.id)}
                       className={cn(
-                        'flex flex-col items-center gap-2 rounded-sm border px-4 py-4 text-sm font-medium transition-colors',
+                        'flex flex-col items-center gap-2 rounded-xl px-4 py-4 text-[14px] font-medium transition-all',
                         form.tripCategory === item.id
-                          ? 'border-primary bg-primary/5 text-primary'
-                          : 'border-border bg-white text-muted-foreground hover:border-primary/30',
+                          ? 'bg-[#1d1d1f] text-white ring-1 ring-[#1d1d1f]'
+                          : 'bg-[#f5f5f7] text-[#86868b] ring-1 ring-[#d2d2d7] hover:text-[#1d1d1f]',
                       )}
                     >
                       <item.icon className="size-5" />
@@ -246,156 +243,154 @@ export function DriverCreateTripPage() {
                   ))}
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </AppleCard>
 
-          <Card className="rounded-sm border border-border bg-white py-0 shadow-none ring-0">
-            <CardHeader className="flex flex-row items-center gap-2 border-b border-border px-5 py-4">
-              <Calendar className="size-4 text-primary" />
-              <CardTitle className="text-base font-semibold">Schedule</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-5 px-5 py-5 sm:grid-cols-2">
+          <AppleCard className="overflow-hidden">
+            <div className="flex items-center gap-2 border-b border-[#d2d2d7]/60 px-6 py-4">
+              <Calendar className="size-4 text-[#86868b]" />
+              <h2 className="text-[17px] font-semibold text-[#1d1d1f]">Schedule</h2>
+            </div>
+            <div className="grid gap-5 p-6 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="departure-date">Departure Date</Label>
+                <Label htmlFor="departure-date" className="text-[13px] text-[#1d1d1f]">
+                  Departure date
+                </Label>
                 <Input
                   id="departure-date"
                   type="date"
-                  className="rounded-sm"
+                  className={appleInputClass}
                   value={form.departureDate}
-                  onChange={(event) =>
-                    updateField('departureDate', event.target.value)
-                  }
+                  onChange={(event) => updateField('departureDate', event.target.value)}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="departure-time">Departure Time</Label>
+                <Label htmlFor="departure-time" className="text-[13px] text-[#1d1d1f]">
+                  Departure time
+                </Label>
                 <Input
                   id="departure-time"
                   type="time"
-                  className="rounded-sm"
+                  className={appleInputClass}
                   value={form.departureTime}
-                  onChange={(event) =>
-                    updateField('departureTime', event.target.value)
-                  }
+                  onChange={(event) => updateField('departureTime', event.target.value)}
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </AppleCard>
 
-          <Card className="rounded-sm border border-border bg-white py-0 shadow-none ring-0">
-            <CardHeader className="flex flex-row items-center gap-2 border-b border-border px-5 py-4">
-              <Car className="size-4 text-primary" />
-              <CardTitle className="text-base font-semibold">
-                Vehicle Assignment
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-5 px-5 py-5">
+          <AppleCard className="overflow-hidden">
+            <div className="flex items-center gap-2 border-b border-[#d2d2d7]/60 px-6 py-4">
+              <Car className="size-4 text-[#86868b]" />
+              <h2 className="text-[17px] font-semibold text-[#1d1d1f]">Vehicle</h2>
+            </div>
+            <div className="space-y-5 p-6">
               <div className="space-y-2">
-                <Label htmlFor="vehicle-name">Vehicle Name / Model</Label>
+                <Label htmlFor="vehicle-name" className="text-[13px] text-[#1d1d1f]">
+                  Vehicle name / model
+                </Label>
                 <Input
                   id="vehicle-name"
                   placeholder="e.g. Toyota Hiace GL Grandia"
-                  className="rounded-sm"
+                  className={appleInputClass}
                   value={form.vehicleName}
-                  onChange={(event) =>
-                    updateField('vehicleName', event.target.value)
-                  }
+                  onChange={(event) => updateField('vehicleName', event.target.value)}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="plate-number">Plate Number</Label>
+                <Label htmlFor="plate-number" className="text-[13px] text-[#1d1d1f]">
+                  Plate number
+                </Label>
                 <Input
                   id="plate-number"
                   placeholder="e.g. ABC 1234"
-                  className="rounded-sm"
+                  className={appleInputClass}
                   value={form.plateNumber}
-                  onChange={(event) =>
-                    updateField('plateNumber', event.target.value)
-                  }
+                  onChange={(event) => updateField('plateNumber', event.target.value)}
                 />
               </div>
               {profile?.driverApplication?.vehicleInfo && (
-                <p className="text-xs text-muted-foreground">
-                  Registered vehicle: {profile.driverApplication.vehicleInfo}
+                <p className="text-[13px] text-[#86868b]">
+                  Registered: {profile.driverApplication.vehicleInfo}
                   {profile.driverApplication.licenseNo &&
-                    ` • License: ${profile.driverApplication.licenseNo}`}
+                    ` · License ${profile.driverApplication.licenseNo}`}
                 </p>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </AppleCard>
         </div>
 
-        <div className="space-y-6">
-          <Card className="rounded-sm border border-border bg-white py-0 shadow-none ring-0">
-            <CardHeader className="flex flex-row items-center gap-2 border-b border-border px-5 py-4">
-              <Clock className="size-4 text-primary" />
-              <CardTitle className="text-base font-semibold">
-                Pricing & Capacity
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-5 px-5 py-5">
-              <div className="space-y-2">
-                <Label htmlFor="base-fare">Base Fare per Seat (₱)</Label>
-                <div className="relative">
-                  <span className="absolute top-1/2 left-3 -translate-y-1/2 text-sm text-muted-foreground">
-                    ₱
-                  </span>
-                  <Input
-                    id="base-fare"
-                    type="number"
-                    min="1"
-                    placeholder="850"
-                    className="rounded-sm pl-7"
-                    value={form.price}
-                    onChange={(event) => updateField('price', event.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label>Total Seats Available</Label>
-                  <span className="rounded-sm border border-border px-2 py-0.5 text-sm font-medium">
-                    {seats[0]}
-                  </span>
-                </div>
-                <Slider
-                  value={seats}
-                  onValueChange={setSeats}
-                  min={1}
-                  max={18}
-                  step={1}
-                  className="py-2"
+        <AppleCard className="h-fit overflow-hidden">
+          <div className="flex items-center gap-2 border-b border-[#d2d2d7]/60 px-6 py-4">
+            <Clock className="size-4 text-[#86868b]" />
+            <h2 className="text-[17px] font-semibold text-[#1d1d1f]">Pricing</h2>
+          </div>
+          <div className="space-y-5 p-6">
+            <div className="space-y-2">
+              <Label htmlFor="base-fare" className="text-[13px] text-[#1d1d1f]">
+                Base fare per seat (₱)
+              </Label>
+              <div className="relative">
+                <span className="absolute top-1/2 left-4 -translate-y-1/2 text-[15px] text-[#86868b]">
+                  ₱
+                </span>
+                <Input
+                  id="base-fare"
+                  type="number"
+                  min="1"
+                  placeholder="850"
+                  className={cn(appleInputClass, 'pl-8')}
+                  value={form.price}
+                  onChange={(event) => updateField('price', event.target.value)}
                 />
               </div>
+            </div>
 
-              <div className="space-y-2 border-t border-border pt-4 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Estimated Revenue</span>
-                  <span className="font-semibold">₱{estimatedRevenue.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">System Fee (8%)</span>
-                  <span className="text-destructive">-₱{systemFee.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between border-t border-border pt-2">
-                  <span className="font-medium">Expected Net</span>
-                  <span className="text-lg font-bold text-primary">
-                    ₱{expectedNet.toFixed(2)}
-                  </span>
-                </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-[13px] text-[#1d1d1f]">Total seats</Label>
+                <span className="rounded-full bg-[#f5f5f7] px-3 py-1 text-[14px] font-medium text-[#1d1d1f]">
+                  {seats[0]}
+                </span>
               </div>
+              <Slider
+                value={seats}
+                onValueChange={setSeats}
+                min={1}
+                max={18}
+                step={1}
+                className="py-2 accent-[#0071e3]"
+              />
+            </div>
 
-              <div className="flex gap-2 rounded-sm bg-primary/5 p-3 text-xs text-muted-foreground">
-                <Info className="mt-0.5 size-4 shrink-0 text-primary" />
-                <p>
-                  This is a door-to-door service. Passengers will provide their
-                  exact pickup and drop-off addresses when booking.
-                </p>
+            <div className="space-y-2 border-t border-[#d2d2d7]/60 pt-4 text-[14px]">
+              <div className="flex justify-between text-[#86868b]">
+                <span>Estimated revenue</span>
+                <span className="font-medium text-[#1d1d1f]">
+                  ₱{estimatedRevenue.toFixed(2)}
+                </span>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+              <div className="flex justify-between text-[#86868b]">
+                <span>System fee (8%)</span>
+                <span className="text-[#bf4800]">−₱{systemFee.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between border-t border-[#d2d2d7]/60 pt-3">
+                <span className="font-medium text-[#1d1d1f]">Expected net</span>
+                <span className="text-[19px] font-semibold text-[#1d1d1f]">
+                  ₱{expectedNet.toFixed(2)}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex gap-3 rounded-xl bg-[#f0f7ff] p-4 text-[13px] text-[#86868b]">
+              <Info className="mt-0.5 size-4 shrink-0 text-[#0066cc]" />
+              <p>
+                Door-to-door service — passengers provide exact pickup and drop-off
+                addresses when booking.
+              </p>
+            </div>
+          </div>
+        </AppleCard>
       </div>
     </div>
   )

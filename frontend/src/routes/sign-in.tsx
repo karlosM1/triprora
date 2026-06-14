@@ -1,18 +1,17 @@
-import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
 import { AuthField } from '@/components/auth/auth-field'
-import { Header } from '@/components/landing/header'
-import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+  AuthAlert,
+  AuthDivider,
+  AuthLayout,
+  AuthLink,
+} from '@/components/auth/auth-layout'
+import { GoogleAuthButton } from '@/components/auth/google-auth-button'
+import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth-context'
-import { supabase } from '@/lib/supabase'
+import { getRememberedEmail, setRememberMePreference, supabase } from '@/lib/supabase'
+import { cn } from '@/lib/utils'
 
 type SignInSearch = {
   redirect?: string
@@ -37,18 +36,31 @@ export const Route = createFileRoute('/sign-in')({
 function SignInPage() {
   const { redirect } = Route.useSearch()
   const navigate = useNavigate()
-  const { signIn, refreshProfile } = useAuth()
+  const { signIn, signInWithGoogle, resetPassword, refreshProfile } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [rememberMe, setRememberMe] = useState(true)
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
+
+  useEffect(() => {
+    const rememberedEmail = getRememberedEmail()
+    if (rememberedEmail) {
+      setEmail(rememberedEmail)
+      setRememberMe(true)
+    }
+  }, [])
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
     setError(null)
+    setSuccess(null)
     setSubmitting(true)
 
-    const result = await signIn(email, password)
+    const result = await signIn(email, password, rememberMe)
     setSubmitting(false)
 
     if (result.error) {
@@ -60,65 +72,160 @@ function SignInPage() {
     await navigate({ to: redirect ?? '/my-bookings' })
   }
 
+  async function handleForgotPassword(event: React.FormEvent) {
+    event.preventDefault()
+    setError(null)
+    setSuccess(null)
+
+    if (!email.trim()) {
+      setError('Enter your email address to reset your password.')
+      return
+    }
+
+    setSubmitting(true)
+    const result = await resetPassword(email.trim())
+    setSubmitting(false)
+
+    if (result.error) {
+      setError(result.error)
+      return
+    }
+
+    setSuccess('Check your email for a password reset link.')
+    setShowForgotPassword(false)
+  }
+
+  async function handleGoogleSignIn() {
+    setError(null)
+    setGoogleLoading(true)
+    setRememberMePreference(rememberMe)
+    const result = await signInWithGoogle(redirect ?? '/my-bookings')
+    setGoogleLoading(false)
+
+    if (result.error) {
+      setError(result.error)
+    }
+  }
+
+  const linkSearch = redirect ? { redirect } : undefined
+
   return (
-    <div className="min-h-svh bg-[#F8F9FB]">
-      <Header />
+    <AuthLayout
+      title={showForgotPassword ? 'Reset password' : 'Sign in'}
+      subtitle={
+        showForgotPassword
+          ? 'Enter your email and we’ll send you a reset link.'
+          : 'Access your bookings and continue your journey with Triprora.'
+      }
+      footer={
+        <>
+          Don&apos;t have an account?{' '}
+          <AuthLink to="/sign-up" search={linkSearch}>
+            Create one
+          </AuthLink>
+        </>
+      }
+    >
+      {error && <AuthAlert variant="error">{error}</AuthAlert>}
+      {success && <AuthAlert variant="success">{success}</AuthAlert>}
 
-      <main className="mx-auto flex max-w-md flex-col px-6 py-16">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">Sign in</CardTitle>
-            <CardDescription>
-              Access your bookings and continue your journey with Triprora.
-            </CardDescription>
-          </CardHeader>
+      {showForgotPassword ? (
+        <form onSubmit={handleForgotPassword} className="space-y-5">
+          <AuthField
+            label="Email"
+            type="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={setEmail}
+            autoComplete="email"
+            required
+          />
 
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
-              {error && (
-                <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                  {error}
-                </p>
+          <Button
+            type="submit"
+            disabled={submitting}
+            className="h-11 w-full rounded-full bg-[#0071e3] text-[15px] font-normal hover:bg-[#0077ed]"
+          >
+            {submitting ? 'Sending link...' : 'Send reset link'}
+          </Button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setShowForgotPassword(false)
+              setError(null)
+            }}
+            className="w-full text-center text-[14px] text-[#0066cc] hover:underline"
+          >
+            Back to sign in
+          </button>
+        </form>
+      ) : (
+        <>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <AuthField
+              label="Email"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={setEmail}
+              autoComplete="email"
+              required
+            />
+            <AuthField
+              label="Password"
+              type="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={setPassword}
+              autoComplete="current-password"
+              required
+            />
+
+            <div className="flex items-center justify-between gap-4">
+              <label className="inline-flex cursor-pointer items-center gap-2.5">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(event) => setRememberMe(event.target.checked)}
+                  className="size-4 rounded border-[#d2d2d7] text-[#0071e3] focus:ring-[#0071e3]/40"
+                />
+                <span className="text-[14px] text-[#1d1d1f]">Remember me</span>
+              </label>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForgotPassword(true)
+                  setError(null)
+                  setSuccess(null)
+                }}
+                className="text-[14px] text-[#0066cc] transition-colors hover:text-[#0077ed] hover:underline"
+              >
+                Forgot password?
+              </button>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={submitting}
+              className={cn(
+                'h-11 w-full rounded-full bg-[#0071e3] text-[15px] font-normal hover:bg-[#0077ed]',
               )}
-
-              <AuthField
-                label="Email"
-                type="email"
-                placeholder="you@company.com"
-                value={email}
-                onChange={setEmail}
-                autoComplete="email"
-                required
-              />
-              <AuthField
-                label="Password"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={setPassword}
-                autoComplete="current-password"
-                required
-              />
-            </CardContent>
-
-            <CardFooter className="flex flex-col gap-4 border-t-0 bg-transparent">
-              <Button type="submit" className="w-full" disabled={submitting}>
-                {submitting ? 'Signing in...' : 'Sign in'}
-              </Button>
-              <p className="text-center text-sm text-muted-foreground">
-                Don&apos;t have an account?{' '}
-                <Link
-                  to="/sign-up"
-                  search={redirect ? { redirect } : undefined}
-                  className="font-medium text-primary hover:underline"
-                >
-                  Create one
-                </Link>
-              </p>
-            </CardFooter>
+            >
+              {submitting ? 'Signing in...' : 'Sign in'}
+            </Button>
           </form>
-        </Card>
-      </main>
-    </div>
+
+          <AuthDivider label="or" />
+
+          <GoogleAuthButton
+            label="Continue with Google"
+            onClick={handleGoogleSignIn}
+            disabled={submitting || googleLoading}
+          />
+        </>
+      )}
+    </AuthLayout>
   )
 }

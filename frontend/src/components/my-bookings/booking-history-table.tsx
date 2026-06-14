@@ -1,4 +1,4 @@
-import { History } from 'lucide-react'
+import { AppleCard, SectionTitle } from '@/components/layout/page-header'
 import { cn } from '@/lib/utils'
 import type { HistoryBooking } from '@/lib/types/api'
 
@@ -9,26 +9,23 @@ type BookingHistoryTableProps = {
 export function BookingHistoryTable({ bookings }: BookingHistoryTableProps) {
   return (
     <section>
-      <div className="flex items-center gap-2">
-        <History className="size-5 text-primary" />
-        <h2 className="text-base font-bold text-foreground">Booking History</h2>
-      </div>
+      <SectionTitle title="Booking history" />
 
-      <div className="mt-4 overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-black/5">
+      <AppleCard className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] text-left text-sm">
+          <table className="w-full min-w-[640px] text-left">
             <thead>
-              <tr className="border-b border-border bg-muted/40">
-                <th className="px-5 py-3 text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+              <tr className="border-b border-[#d2d2d7]/60 bg-[#f5f5f7]/50">
+                <th className="px-6 py-3 text-[12px] font-medium text-[#86868b] uppercase">
                   Date
                 </th>
-                <th className="px-5 py-3 text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+                <th className="px-6 py-3 text-[12px] font-medium text-[#86868b] uppercase">
                   Route
                 </th>
-                <th className="px-5 py-3 text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+                <th className="px-6 py-3 text-[12px] font-medium text-[#86868b] uppercase">
                   Status
                 </th>
-                <th className="px-5 py-3 text-right text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+                <th className="px-6 py-3 text-right text-[12px] font-medium text-[#86868b] uppercase">
                   Price
                 </th>
               </tr>
@@ -37,28 +34,28 @@ export function BookingHistoryTable({ bookings }: BookingHistoryTableProps) {
               {bookings.map((booking) => (
                 <tr
                   key={booking.id}
-                  className="border-b border-border last:border-b-0"
+                  className="border-b border-[#d2d2d7]/40 last:border-b-0"
                 >
-                  <td className="px-5 py-4">
-                    <p className="font-semibold text-foreground">
+                  <td className="px-6 py-4">
+                    <p className="text-[15px] font-medium text-[#1d1d1f]">
                       {booking.date}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      Booking #{booking.reference}
+                    <p className="text-[13px] text-[#86868b]">
+                      #{booking.reference}
                     </p>
                   </td>
-                  <td className="px-5 py-4">
-                    <p className="font-semibold text-foreground">
+                  <td className="px-6 py-4">
+                    <p className="text-[15px] font-medium text-[#1d1d1f]">
                       {booking.route}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-[13px] text-[#86868b]">
                       {booking.tripType}
                     </p>
                   </td>
-                  <td className="px-5 py-4">
+                  <td className="px-6 py-4">
                     <StatusBadge status={booking.status} />
                   </td>
-                  <td className="px-5 py-4 text-right font-semibold text-foreground">
+                  <td className="px-6 py-4 text-right text-[15px] font-medium text-[#1d1d1f]">
                     {booking.price}
                   </td>
                 </tr>
@@ -66,7 +63,7 @@ export function BookingHistoryTable({ bookings }: BookingHistoryTableProps) {
             </tbody>
           </table>
         </div>
-      </div>
+      </AppleCard>
     </section>
   )
 }
@@ -75,9 +72,9 @@ function StatusBadge({ status }: { status: HistoryBooking['status'] }) {
   return (
     <span
       className={cn(
-        'inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold',
-        status === 'completed' && 'bg-emerald-100 text-emerald-700',
-        status === 'cancelled' && 'bg-red-100 text-red-600',
+        'inline-flex rounded-full px-3 py-1 text-[12px] font-medium',
+        status === 'completed' && 'bg-[#f0fdf4] text-[#248a3d]',
+        status === 'cancelled' && 'bg-[#fff2f2] text-[#bf4800]',
       )}
     >
       {status === 'completed' ? 'Completed' : 'Cancelled'}

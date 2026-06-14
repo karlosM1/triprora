@@ -15,7 +15,7 @@ export function FindVansFooter() {
             </a>
             <p className="mt-3 max-w-sm text-sm text-muted-foreground">
               &copy; {new Date().getFullYear()} Triprora — Door-to-door van
-              service from Casiguran, Aurora to Metro Manila.
+              service between Aurora and Metro Manila, both ways.
             </p>
           </div>
 

@@ -1,18 +1,17 @@
-import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { AuthField } from '@/components/auth/auth-field'
-import { Header } from '@/components/landing/header'
-import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+  AuthAlert,
+  AuthDivider,
+  AuthLayout,
+  AuthLink,
+} from '@/components/auth/auth-layout'
+import { GoogleAuthButton } from '@/components/auth/google-auth-button'
+import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth-context'
-import { supabase } from '@/lib/supabase'
+import { setRememberMePreference, supabase } from '@/lib/supabase'
+import { cn } from '@/lib/utils'
 
 type SignUpSearch = {
   redirect?: string
@@ -37,31 +36,32 @@ export const Route = createFileRoute('/sign-up')({
 function SignUpPage() {
   const { redirect } = Route.useSearch()
   const navigate = useNavigate()
-  const { signUp } = useAuth()
+  const { signUp, signInWithGoogle } = useAuth()
   const [email, setEmail] = useState('')
+  const [fullName, setFullName] = useState('')
   const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
     setError(null)
     setSuccess(null)
 
+    if (!fullName.trim()) {
+      setError('Please enter your full name.')
+      return
+    }
+
     if (password.length < 8) {
       setError('Password must be at least 8 characters.')
       return
     }
 
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.')
-      return
-    }
-
     setSubmitting(true)
-    const result = await signUp(email, password)
+    const result = await signUp(email, password, fullName.trim())
     setSubmitting(false)
 
     if (result.error) {
@@ -77,79 +77,83 @@ function SignUpPage() {
     await navigate({ to: redirect ?? '/my-bookings' })
   }
 
+  async function handleGoogleSignUp() {
+    setError(null)
+    setGoogleLoading(true)
+    setRememberMePreference(true)
+    const result = await signInWithGoogle(redirect ?? '/my-bookings')
+    setGoogleLoading(false)
+
+    if (result.error) {
+      setError(result.error)
+    }
+  }
+
+  const linkSearch = redirect ? { redirect } : undefined
+
   return (
-    <div className="min-h-svh bg-[#F8F9FB]">
-      <Header />
+    <AuthLayout
+      title="Create account"
+      subtitle="Register to book door-to-door vans between Aurora and Metro Manila, both ways."
+      footer={
+        <>
+          Already have an account?{' '}
+          <AuthLink to="/sign-in" search={linkSearch}>
+            Sign in
+          </AuthLink>
+        </>
+      }
+    >
+      {error && <AuthAlert variant="error">{error}</AuthAlert>}
+      {success && <AuthAlert variant="success">{success}</AuthAlert>}
 
-      <main className="mx-auto flex max-w-md flex-col px-6 py-16">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">Create account</CardTitle>
-            <CardDescription>
-              Register to book door-to-door vans from Casiguran to Metro Manila.
-            </CardDescription>
-          </CardHeader>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <AuthField
+          label="Email"
+          type="email"
+          placeholder="you@example.com"
+          value={email}
+          onChange={setEmail}
+          autoComplete="email"
+          required
+        />
+        <AuthField
+          label="Full name"
+          type="text"
+          placeholder="Your full name"
+          value={fullName}
+          onChange={setFullName}
+          autoComplete="name"
+          required
+        />
+        <AuthField
+          label="Password"
+          type="password"
+          placeholder="At least 8 characters"
+          value={password}
+          onChange={setPassword}
+          autoComplete="new-password"
+          required
+        />
 
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
-              {error && (
-                <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                  {error}
-                </p>
-              )}
-              {success && (
-                <p className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm text-primary">
-                  {success}
-                </p>
-              )}
+        <Button
+          type="submit"
+          disabled={submitting}
+          className={cn(
+            'h-11 w-full rounded-full bg-[#0071e3] text-[15px] font-normal hover:bg-[#0077ed]',
+          )}
+        >
+          {submitting ? 'Creating account...' : 'Create account'}
+        </Button>
+      </form>
 
-              <AuthField
-                label="Email"
-                type="email"
-                placeholder="you@company.com"
-                value={email}
-                onChange={setEmail}
-                autoComplete="email"
-                required
-              />
-              <AuthField
-                label="Password"
-                type="password"
-                placeholder="At least 8 characters"
-                value={password}
-                onChange={setPassword}
-                autoComplete="new-password"
-                required
-              />
-              <AuthField
-                label="Confirm password"
-                type="password"
-                placeholder="Re-enter your password"
-                value={confirmPassword}
-                onChange={setConfirmPassword}
-                autoComplete="new-password"
-                required
-              />
-            </CardContent>
+      <AuthDivider label="or" />
 
-            <CardFooter className="flex flex-col gap-4 border-t-0 bg-transparent">
-              <Button type="submit" className="w-full" disabled={submitting}>
-                {submitting ? 'Creating account...' : 'Create account'}
-              </Button>
-              <p className="text-center text-sm text-muted-foreground">
-                Already have an account?{' '}
-                <Link
-                  to="/sign-in"
-                  search={redirect ? { redirect } : undefined}
-                  className="font-medium text-primary hover:underline"
-                >
-                  Sign in
-                </Link>
-              </p>
-            </CardFooter>
-          </form>
-        </Card>
-      </main>
-    </div>
+      <GoogleAuthButton
+        label="Sign up with Google"
+        onClick={handleGoogleSignUp}
+        disabled={submitting || googleLoading}
+      />
+    </AuthLayout>
   )
 }

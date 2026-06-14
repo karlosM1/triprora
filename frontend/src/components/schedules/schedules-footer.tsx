@@ -15,8 +15,8 @@ export function SchedulesFooter() {
             Triprora
           </a>
           <p className="mt-1 text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} Triprora — Door-to-door van
-            service, Casiguran, Aurora.
+            &copy; {new Date().getFullYear()} Triprora — Aurora ↔ Metro Manila
+            van service.
           </p>
         </div>
         <div className="flex flex-wrap gap-x-6 gap-y-2">

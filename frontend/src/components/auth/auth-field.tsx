@@ -1,12 +1,10 @@
+import type { InputHTMLAttributes } from 'react'
+import { cn } from '@/lib/utils'
+
 type AuthFieldProps = {
   label: string
-  type?: string
-  placeholder: string
-  value: string
   onChange: (value: string) => void
-  autoComplete?: string
-  required?: boolean
-}
+} & Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'className'>
 
 export function AuthField({
   label,
@@ -16,18 +14,29 @@ export function AuthField({
   onChange,
   autoComplete,
   required,
+  id,
+  ...props
 }: AuthFieldProps) {
+  const fieldId = id ?? label.toLowerCase().replace(/\s+/g, '-')
+
   return (
-    <label className="block">
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+    <label htmlFor={fieldId} className="block">
+      <span className="mb-2 block text-[13px] font-medium text-[#1d1d1f]">
+        {label}
+      </span>
       <input
+        id={fieldId}
         type={type}
         placeholder={placeholder}
         value={value}
         required={required}
         autoComplete={autoComplete}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-1.5 w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+        className={cn(
+          'h-11 w-full rounded-xl bg-white px-4 text-[15px] text-[#1d1d1f] placeholder:text-[#86868b]/70 ring-1 ring-[#d2d2d7] transition-all outline-none',
+          'focus:ring-2 focus:ring-[#0071e3]/40 focus:ring-offset-0',
+        )}
+        {...props}
       />
     </label>
   )
