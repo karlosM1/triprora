@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
-import { MapPin, Navigation, Shield, Snowflake, Star, Wifi } from 'lucide-react'
+import { Car, CreditCard, MapPin, Navigation, Phone, Shield, Snowflake, User, Wifi } from 'lucide-react'
 import { calculateTotals, formatPrice } from '@/lib/booking'
+import type { TripAddresses } from '@/lib/booking'
 import type { VanResult } from '@/lib/vans'
 
 const VAN_IMAGE =
@@ -9,13 +10,25 @@ const VAN_IMAGE =
 type CheckoutSummaryProps = {
   van: VanResult
   isPremium: boolean
+  addresses?: TripAddresses
 }
 
-export function CheckoutSummary({ van, isPremium }: CheckoutSummaryProps) {
+function formatTripDate(departureDate?: string) {
+  if (!departureDate) return 'Date TBD'
+  return new Date(`${departureDate}T00:00:00`).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
+export function CheckoutSummary({ van, isPremium, addresses }: CheckoutSummaryProps) {
   const { baseFare, premiumFee, serviceFee, tax, total } = calculateTotals(
     van.price,
     isPremium,
   )
+  const tripDate = formatTripDate(van.departureDate)
+  const driver = van.driver
 
   return (
     <div className="space-y-4">
@@ -23,39 +36,65 @@ export function CheckoutSummary({ van, isPremium }: CheckoutSummaryProps) {
         <div className="relative aspect-[16/10]">
           <img
             src={VAN_IMAGE}
-            alt={van.operator}
+            alt={van.vehicleName ?? van.operator}
             className="size-full object-cover"
           />
-          <span className="absolute top-3 left-3 flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-[10px] font-semibold text-white">
-            <Star className="size-3 fill-white" />
-            Premium Executive
+          <span className="absolute top-3 left-3 rounded-md bg-primary px-2 py-1 text-[10px] font-semibold text-white">
+            Door-to-Door
           </span>
         </div>
 
         <div className="p-5">
-          <h3 className="text-base font-bold text-foreground">{van.operator}</h3>
+          <h3 className="text-base font-bold text-foreground">
+            {van.vehicleName ?? 'Van'}
+          </h3>
           <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-            <span>12 Seats</span>
-            <span className="flex items-center gap-1">
-              <Wifi className="size-3" /> WiFi
-            </span>
-            <span className="flex items-center gap-1">
-              <Snowflake className="size-3" /> AC
-            </span>
+            <span>{van.totalSeats ?? 12} Seats</span>
+            {van.amenities.some((a) => a.label.includes('WiFi')) && (
+              <span className="flex items-center gap-1">
+                <Wifi className="size-3" /> WiFi
+              </span>
+            )}
+            {van.amenities.some((a) => a.label.includes('AC')) && (
+              <span className="flex items-center gap-1">
+                <Snowflake className="size-3" /> AC
+              </span>
+            )}
+          </div>
+
+          <div className="mt-5 space-y-3 rounded-lg bg-muted/40 p-4">
+            <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              Driver Information
+            </p>
+            <DriverDetail icon={<User className="size-3.5" />} label="Name" value={driver?.name ?? van.operator} />
+            {driver?.phone && (
+              <DriverDetail icon={<Phone className="size-3.5" />} label="Phone" value={driver.phone} />
+            )}
+            {driver?.licenseNo && (
+              <DriverDetail icon={<CreditCard className="size-3.5" />} label="License No." value={driver.licenseNo} />
+            )}
+            <DriverDetail
+              icon={<Car className="size-3.5" />}
+              label="Vehicle"
+              value={van.vehicleName ?? driver?.vehicleInfo ?? 'Van'}
+            />
+            {van.plateNumber && (
+              <DriverDetail icon={<Car className="size-3.5" />} label="Plate No." value={van.plateNumber} />
+            )}
           </div>
 
           <div className="mt-5 space-y-4">
             <LocationRow
               icon={<MapPin className="size-4 text-primary" />}
-              label="Pickup"
-              location={van.departureLocation}
-              datetime={`Oct 24, 2024 • ${van.departureTime} AM`}
+              label="Pickup Address"
+              location={addresses?.pickupAddress.trim() || van.departureLocation}
+              datetime={`${tripDate} • ${van.departureTime}`}
             />
             <LocationRow
               icon={<Navigation className="size-4 text-primary" />}
-              label="Destination"
-              location={van.arrivalLocation}
-              datetime={`Oct 24, 2024 • ${van.arrivalTime} AM`}
+              label="Destination Address"
+              location={addresses?.dropoffAddress.trim() || van.arrivalLocation}
+              datetime={`Est. arrival ${van.arrivalTime}`}
             />
           </div>
 
@@ -96,6 +135,24 @@ export function CheckoutSummary({ van, isPremium }: CheckoutSummaryProps) {
           policy. Cancel for free up to 24 hours before pickup.
         </p>
       </div>
+    </div>
+  )
+}
+
+function DriverDetail({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode
+  label: string
+  value: string
+}) {
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      <span className="text-primary">{icon}</span>
+      <span className="text-muted-foreground">{label}:</span>
+      <span className="font-medium text-foreground">{value}</span>
     </div>
   )
 }

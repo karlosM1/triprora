@@ -53,7 +53,7 @@ function MyBookingsPage() {
             My Bookings
           </h1>
           <p className="mt-2 text-muted-foreground">
-            Manage your institutional travel and track upcoming journeys.
+            Manage your trips and track upcoming journeys to Metro Manila.
           </p>
         </div>
 

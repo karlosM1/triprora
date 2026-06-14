@@ -14,6 +14,7 @@ export async function createDriverTrip(req: Request, res: Response) {
     departureTime: req.body.departureTime,
     tripCategory: req.body.tripCategory,
     vehicleName: req.body.vehicleName,
+    plateNumber: req.body.plateNumber,
     price: req.body.price,
     totalSeats: req.body.totalSeats,
     status: req.body.status,

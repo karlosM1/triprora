@@ -1,34 +1,35 @@
 import { ArrowRight, Clock } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
 
 const routes = [
   {
-    name: 'London – Paris',
+    name: 'Casiguran — Cubao',
     transit: '6h 30m Transit',
-    price: '£248',
+    price: '₱850',
     badge: 'Daily',
     image:
       'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=600&q=80&auto=format&fit=crop',
   },
   {
-    name: 'New York – Boston',
-    transit: '4h 15m Transit',
-    price: '$189',
-    badge: 'Hourly',
+    name: 'Casiguran — Makati',
+    transit: '7h Transit',
+    price: '₱900',
+    badge: 'Daily',
     image:
       'https://images.unsplash.com/photo-1496442226666-8d0d0e62e6e9?w=600&q=80&auto=format&fit=crop',
   },
   {
-    name: 'Zurich – Milan',
-    transit: '3h 45m Transit',
-    price: 'CHF 312',
+    name: 'Casiguran — Pasay',
+    transit: '7h 15m Transit',
+    price: '₱880',
     badge: 'Daily',
     image:
       'https://images.unsplash.com/photo-1530122037265-a5f1f32fcb39?w=600&q=80&auto=format&fit=crop',
   },
   {
-    name: 'Los Angeles – San Diego',
-    transit: '2h 10m Transit',
-    price: '$156',
+    name: 'Casiguran — Quezon City',
+    transit: '6h 45m Transit',
+    price: '₱850',
     badge: 'Limited',
     image:
       'https://images.unsplash.com/photo-1515896773771-04f8a6c0e4c8?w=600&q=80&auto=format&fit=crop',
@@ -41,11 +42,11 @@ export function RoutesSection() {
       <div className="mx-auto max-w-7xl">
         <div className="text-center">
           <h2 className="text-3xl font-bold tracking-tight text-foreground">
-            Global Routes
+            Popular Routes
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-muted-foreground">
-            Pre-configured intercity corridors with transparent pricing and
-            guaranteed availability for corporate accounts.
+            Door-to-door van trips from Casiguran, Aurora to key areas in Metro
+            Manila. Transparent pricing, no terminal transfers.
           </p>
         </div>
 
@@ -71,13 +72,13 @@ export function RoutesSection() {
                   <Clock className="size-3.5" />
                   {route.transit}
                 </div>
-                <a
-                  href="#"
+                <Link
+                  to="/find-vans"
                   className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-primary/80"
                 >
                   From {route.price}
                   <ArrowRight className="size-3.5" />
-                </a>
+                </Link>
               </div>
             </article>
           ))}

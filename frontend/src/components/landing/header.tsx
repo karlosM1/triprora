@@ -2,12 +2,13 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth-context'
 import { cn } from '@/lib/utils'
+import heroLogo from '@/assets/hero.png'
 
 const baseNavLinks = [
+  { label: 'Home', to: '/' as const, key: 'home' },
   { label: 'Find Vans', to: '/find-vans' as const, key: 'find-vans' },
-  { label: 'My Bookings', to: '/my-bookings' as const, key: 'my-bookings' },
   { label: 'Schedules', to: '/schedules' as const, key: 'schedules' },
-  { label: 'Become a Driver', to: '/driver/register' as const, key: 'driver-register' },
+  { label: 'My Bookings', to: '/my-bookings' as const, key: 'my-bookings' },
   { label: 'Support', to: '/' as const, key: 'support' },
 ] as const
 
@@ -20,6 +21,7 @@ type HeaderProps = {
     | 'driver-register'
     | 'driver-portal'
     | 'admin-drivers'
+  variant?: 'default' | 'hero'
 }
 
 function getInitials(email: string) {
@@ -27,14 +29,13 @@ function getInitials(email: string) {
   return name.slice(0, 2).toUpperCase()
 }
 
-export function Header({ activeLink = 'home' }: HeaderProps) {
+export function Header({ activeLink = 'home', variant = 'default' }: HeaderProps) {
   const navigate = useNavigate()
   const { user, loading, signOut, isAdmin, isDriver } = useAuth()
+  const isHero = variant === 'hero'
 
   const navLinks = [
-    ...baseNavLinks.filter(
-      (link) => link.key !== 'driver-register' || !isDriver,
-    ),
+    ...baseNavLinks,
     ...(isDriver
       ? [{ label: 'Driver Portal', to: '/driver' as const, key: 'driver-portal' as const }]
       : []),
@@ -49,37 +50,84 @@ export function Header({ activeLink = 'home' }: HeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/60 bg-white">
-      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 lg:px-8">
-        <Link to="/" className="text-xl font-bold tracking-tight text-foreground">
+    <header
+      className={cn(
+        'z-50',
+        isHero
+          ? 'absolute inset-x-0 top-0 bg-transparent'
+          : 'sticky top-0 border-b border-border/60 bg-white',
+      )}
+    >
+      <nav className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-8">
+        <Link
+          to="/"
+          className={cn(
+            'flex items-center gap-2 text-xl font-bold tracking-tight',
+            isHero ? 'text-white' : 'text-foreground',
+          )}
+        >
+          <span
+            className={cn(
+              'flex size-8 items-center justify-center overflow-hidden rounded-lg',
+              isHero ? 'bg-white/15 ring-1 ring-white/25' : 'bg-primary/10',
+            )}
+          >
+            <img src={heroLogo} alt="" className="size-6 object-contain" />
+          </span>
           Triprora
         </Link>
 
-        <ul className="hidden items-center gap-8 md:flex">
-          {navLinks.map((link) => (
-            <li key={link.label}>
+        <ul className="hidden items-center md:flex">
+          <li
+            className={cn(
+              'flex items-center gap-1 rounded-full px-2 py-1.5',
+              isHero ? 'bg-primary/90 shadow-lg backdrop-blur-sm' : '',
+            )}
+          >
+            {navLinks.slice(0, 5).map((link) => (
               <Link
+                key={link.label}
                 to={link.to}
                 className={cn(
-                  'text-sm font-medium transition-colors hover:text-primary',
-                  activeLink === link.key
-                    ? 'text-primary underline decoration-primary decoration-2 underline-offset-8'
-                    : 'text-muted-foreground',
+                  'rounded-full px-4 py-2 text-sm font-medium transition-colors',
+                  isHero
+                    ? cn(
+                        'text-white/90 hover:bg-white/15 hover:text-white',
+                        activeLink === link.key && 'bg-white/20 text-white',
+                      )
+                    : cn(
+                        'hover:text-primary',
+                        activeLink === link.key
+                          ? 'text-primary underline decoration-primary decoration-2 underline-offset-8'
+                          : 'text-muted-foreground',
+                      ),
                 )}
               >
                 {link.label}
               </Link>
-            </li>
-          ))}
+            ))}
+          </li>
         </ul>
 
         <div className="flex items-center gap-3">
           {loading ? (
-            <span className="text-sm text-muted-foreground">...</span>
+            <span
+              className={cn(
+                'text-sm',
+                isHero ? 'text-white/70' : 'text-muted-foreground',
+              )}
+            >
+              ...
+            </span>
           ) : user ? (
             <>
               <div
-                className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary ring-2 ring-border"
+                className={cn(
+                  'flex size-9 items-center justify-center rounded-full text-xs font-semibold ring-2',
+                  isHero
+                    ? 'bg-white/20 text-white ring-white/30'
+                    : 'bg-primary/10 text-primary ring-border',
+                )}
                 title={user.email ?? 'Account'}
               >
                 {getInitials(user.email ?? 'user')}
@@ -87,7 +135,12 @@ export function Header({ activeLink = 'home' }: HeaderProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="hidden text-muted-foreground sm:inline-flex"
+                className={cn(
+                  'hidden sm:inline-flex',
+                  isHero
+                    ? 'text-white/90 hover:bg-white/10 hover:text-white'
+                    : 'text-muted-foreground',
+                )}
                 onClick={handleSignOut}
               >
                 Sign out
@@ -97,12 +150,24 @@ export function Header({ activeLink = 'home' }: HeaderProps) {
             <>
               <Link
                 to="/sign-in"
-                className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline"
+                className={cn(
+                  'hidden text-sm font-medium transition-colors sm:inline',
+                  isHero
+                    ? 'text-white/90 hover:text-white'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
               >
                 Sign In
               </Link>
-              <Button size="sm" className="rounded-lg px-4" asChild>
-                <Link to="/sign-up">Register</Link>
+              <Button
+                size="sm"
+                className={cn(
+                  'rounded-full px-5',
+                  isHero && 'bg-white text-primary hover:bg-white/90',
+                )}
+                asChild
+              >
+                <Link to="/sign-up">Sign Up</Link>
               </Button>
             </>
           )}

@@ -8,6 +8,8 @@ export async function createBooking(req: Request, res: Response) {
     userId: profile.id,
     vanId: req.body.vanId,
     seat: req.body.seat,
+    pickupAddress: req.body.pickupAddress,
+    dropoffAddress: req.body.dropoffAddress,
   })
 
   res.status(201).json(booking)

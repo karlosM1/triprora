@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatPrice } from '@/lib/booking'
+import type { TripAddresses } from '@/lib/booking'
 import type { VanResult } from '@/lib/vans'
 
 type TripSummaryCardProps = {
@@ -9,6 +10,9 @@ type TripSummaryCardProps = {
   vanId: string
   selectedSeat: string
   isPremium: boolean
+  addresses?: TripAddresses
+  addressesValid?: boolean
+  onAddressError?: () => void
   showProceed?: boolean
 }
 
@@ -26,11 +30,21 @@ export function TripSummaryCard({
   vanId,
   selectedSeat,
   isPremium,
+  addresses,
+  addressesValid = true,
+  onAddressError,
   showProceed = true,
 }: TripSummaryCardProps) {
   const premiumFee = isPremium ? 150 : 0
   const total = van.price + premiumFee
   const tripDate = formatTripDate(van.departureDate)
+
+  function handleProceedClick(event: React.MouseEvent) {
+    if (!addressesValid) {
+      event.preventDefault()
+      onAddressError?.()
+    }
+  }
 
   return (
     <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-black/5">
@@ -45,24 +59,24 @@ export function TripSummaryCard({
         <div className="flex flex-1 flex-col justify-between gap-4">
           <div>
             <p className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
-              Departure
+              Service Area (Pickup)
             </p>
             <p className="text-sm font-medium text-foreground">
-              {van.departureLocation}
+              {addresses?.pickupAddress.trim() || van.departureLocation}
             </p>
             <p className="text-xs text-muted-foreground">
-              {tripDate} • {van.departureTime}
+              {tripDate} • Departs {van.departureTime}
             </p>
           </div>
           <div>
             <p className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
-              Arrival
+              Destination
             </p>
             <p className="text-sm font-medium text-foreground">
-              {van.arrivalLocation}
+              {addresses?.dropoffAddress.trim() || van.arrivalLocation}
             </p>
             <p className="text-xs text-muted-foreground">
-              {tripDate} • {van.arrivalTime}
+              Est. arrival {van.arrivalTime} • {van.duration}
             </p>
           </div>
         </div>
@@ -77,11 +91,19 @@ export function TripSummaryCard({
           </span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Vehicle Class</span>
+          <span className="text-sm text-muted-foreground">Driver</span>
           <span className="text-sm font-bold text-foreground">
-            {van.operator}
+            {van.driver?.name ?? van.operator}
           </span>
         </div>
+        {van.plateNumber && (
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Plate No.</span>
+            <span className="text-sm font-medium text-foreground">
+              {van.plateNumber}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="mt-4 rounded-lg bg-muted/50 p-4">
@@ -111,14 +133,19 @@ export function TripSummaryCard({
             <Link
               to="/book/$vanId/checkout"
               params={{ vanId }}
-              search={{ seat: selectedSeat }}
+              search={{
+                seat: selectedSeat,
+                pickupAddress: addresses?.pickupAddress ?? '',
+                dropoffAddress: addresses?.dropoffAddress ?? '',
+              }}
+              onClick={handleProceedClick}
             >
               Proceed to Payment
               <ArrowRight className="size-4" />
             </Link>
           </Button>
           <p className="mt-3 text-center text-[11px] text-muted-foreground">
-            Secure checkout powered by Stripe. No hidden booking fees.
+            Secure checkout. No hidden booking fees.
           </p>
         </>
       )}
@@ -129,14 +156,12 @@ export function TripSummaryCard({
 export function ConciergeCard() {
   return (
     <div className="flex items-center gap-3 rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5">
-      <img
-        src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&h=80&fit=crop&crop=face"
-        alt=""
-        className="size-10 rounded-full object-cover"
-      />
+      <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+        TP
+      </div>
       <p className="text-xs leading-relaxed text-muted-foreground">
-        <span className="font-semibold text-foreground">Need assistance?</span>{' '}
-        Our concierge is online and ready to help with your booking.
+        <span className="font-semibold text-foreground">Need help?</span>{' '}
+        Contact your driver directly after booking for pickup coordination.
       </p>
     </div>
   )

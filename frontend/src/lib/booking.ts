@@ -14,6 +14,11 @@ export type PassengerDetails = {
   phone: string
 }
 
+export type TripAddresses = {
+  pickupAddress: string
+  dropoffAddress: string
+}
+
 export type PaymentMethod = 'card' | 'bank' | 'wallet'
 
 export const PREMIUM_SEAT_FEE = 150

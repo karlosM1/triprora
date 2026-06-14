@@ -41,7 +41,7 @@ export function PassengerForm({
         <div className="sm:col-span-2">
           <Field
             label="Email Address"
-            placeholder="john.doe@corporate.com"
+            placeholder="john.doe@email.com"
             type="email"
             value={values.email}
             onChange={(v) => update('email', v)}

@@ -12,6 +12,8 @@ export const Route = createFileRoute('/book/$vanId/confirmation')({
     seat: (search.seat as string) || '1A',
     name: (search.name as string) || 'Guest',
     ref: (search.ref as string) || '',
+    pickupAddress: (search.pickupAddress as string) || '',
+    dropoffAddress: (search.dropoffAddress as string) || '',
   }),
   loader: async ({ params }) => {
     return loadVanBooking(params.vanId)
@@ -30,12 +32,13 @@ function formatTripDate(departureDate?: string) {
 
 function ConfirmationPage() {
   const { van, seats } = Route.useLoaderData()
-  const { seat, name, ref } = Route.useSearch()
+  const { seat, name, ref, pickupAddress, dropoffAddress } = Route.useSearch()
 
   const selectedSeat = seats.find((s) => s.id === seat)
   const isPremium = selectedSeat?.premium ?? false
   const { total } = calculateTotals(van.price, isPremium)
   const tripDate = formatTripDate(van.departureDate)
+  const driver = van.driver
 
   return (
     <div className="min-h-svh bg-[#F8F9FB]">
@@ -51,7 +54,8 @@ function ConfirmationPage() {
           Booking Confirmed!
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Thank you, {name}. Your reservation has been successfully processed.
+          Thank you, {name}. Your door-to-door trip from Casiguran to Metro Manila
+          has been booked.
         </p>
 
         <div className="mt-8 rounded-xl bg-white p-6 text-left shadow-sm ring-1 ring-black/5">
@@ -63,17 +67,22 @@ function ConfirmationPage() {
           </div>
 
           <dl className="mt-4 space-y-3 text-sm">
-            <Row label="Route" value={`${van.departureLocation} → ${van.arrivalLocation}`} />
+            <Row label="Pickup Address" value={pickupAddress || van.departureLocation} />
+            <Row label="Destination Address" value={dropoffAddress || van.arrivalLocation} />
             <Row label="Date" value={tripDate} />
-            <Row label="Departure" value={van.departureTime} />
+            <Row label="Departure Time" value={van.departureTime} />
             <Row label="Seat" value={`${seat}${isPremium ? ' (Premium)' : ''}`} />
-            <Row label="Operator" value={van.operator} />
+            <Row label="Driver" value={driver?.name ?? van.operator} />
+            {driver?.phone && <Row label="Driver Phone" value={driver.phone} />}
+            {van.plateNumber && <Row label="Plate No." value={van.plateNumber} />}
+            <Row label="Vehicle" value={van.vehicleName ?? 'Van'} />
             <Row label="Total Paid" value={`₱${total.toLocaleString()}`} bold />
           </dl>
         </div>
 
         <p className="mt-4 text-xs text-muted-foreground">
-          A confirmation email has been sent to your registered email address.
+          Your driver will contact you before departure to confirm your exact
+          pickup time and location.
         </p>
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
@@ -107,7 +116,7 @@ function Row({
   return (
     <div className="flex justify-between gap-4">
       <dt className="text-muted-foreground">{label}</dt>
-      <dd className={bold ? 'font-bold text-primary' : 'font-medium text-foreground'}>
+      <dd className={`text-right ${bold ? 'font-bold text-primary' : 'font-medium text-foreground'}`}>
         {value}
       </dd>
     </div>

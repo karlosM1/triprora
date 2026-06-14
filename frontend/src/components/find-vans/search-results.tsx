@@ -112,7 +112,8 @@ export function SearchResults() {
           <div className="rounded-xl bg-white p-8 text-center shadow-sm ring-1 ring-black/5">
             <p className="font-medium text-foreground">No trips available yet</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Published driver routes will appear here for passengers to book.
+              Door-to-door van trips from Casiguran, Aurora to Metro Manila will
+              appear here when drivers publish them.
             </p>
           </div>
         ) : (

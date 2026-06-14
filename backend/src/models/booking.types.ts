@@ -7,7 +7,8 @@ export type UpcomingBooking = {
   date: string
   time: string
   seat: string
-  gate: string
+  pickupAddress: string
+  dropoffAddress: string
   route: string
   vehicle: string
   status: 'confirmed'
@@ -30,7 +31,8 @@ export type CreatedBooking = {
   date: string
   time: string
   seat: string
-  gate: string
+  pickupAddress: string
+  dropoffAddress: string
   vehicle: string
   operator: string
   price: string
@@ -41,4 +43,6 @@ export type CreateBookingInput = {
   userId: string
   vanId: string
   seat: string
+  pickupAddress: string
+  dropoffAddress: string
 }

@@ -86,7 +86,7 @@ function SignUpPage() {
           <CardHeader>
             <CardTitle className="text-2xl">Create account</CardTitle>
             <CardDescription>
-              Register to book vans and manage your institutional travel.
+              Register to book door-to-door vans from Casiguran to Metro Manila.
             </CardDescription>
           </CardHeader>
 

@@ -22,9 +22,15 @@ import { requireAuth } from '@/lib/route-guards'
 export const Route = createFileRoute('/book/$vanId/checkout')({
   validateSearch: (search: Record<string, unknown>) => ({
     seat: (search.seat as string) || '1A',
+    pickupAddress: (search.pickupAddress as string) || '',
+    dropoffAddress: (search.dropoffAddress as string) || '',
   }),
   beforeLoad: async ({ params, search }) => {
-    await requireAuth(`/book/${params.vanId}/checkout?seat=${search.seat ?? '1A'}`)
+    const pickup = (search.pickupAddress as string) || ''
+    const dropoff = (search.dropoffAddress as string) || ''
+    await requireAuth(
+      `/book/${params.vanId}/checkout?seat=${search.seat ?? '1A'}&pickupAddress=${encodeURIComponent(pickup)}&dropoffAddress=${encodeURIComponent(dropoff)}`,
+    )
   },
   loader: async ({ params }) => {
     return loadVanBooking(params.vanId)
@@ -42,7 +48,7 @@ const emptyPassenger: PassengerDetails = {
 function CheckoutPage() {
   const { van, seats } = Route.useLoaderData()
   const { vanId } = Route.useParams()
-  const { seat } = Route.useSearch()
+  const { seat, pickupAddress, dropoffAddress } = Route.useSearch()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
@@ -53,8 +59,16 @@ function CheckoutPage() {
   const [checkoutStep, setCheckoutStep] = useState<1 | 2>(1)
   const [error, setError] = useState<string | null>(null)
 
+  const addresses = { pickupAddress, dropoffAddress }
+
   const bookingMutation = useMutation({
-    mutationFn: () => createBooking({ vanId, seat }),
+    mutationFn: () =>
+      createBooking({
+        vanId,
+        seat,
+        pickupAddress,
+        dropoffAddress,
+      }),
     onSuccess: (booking) => {
       queryClient.invalidateQueries({ queryKey: upcomingBookingQueryKey })
       queryClient.invalidateQueries({ queryKey: bookingHistoryQueryKey })
@@ -68,6 +82,8 @@ function CheckoutPage() {
           seat,
           name: `${passenger.firstName} ${passenger.lastName}`.trim(),
           ref: booking.reference,
+          pickupAddress,
+          dropoffAddress,
         },
       })
     },
@@ -85,6 +101,26 @@ function CheckoutPage() {
   function handleCompleteBooking() {
     setError(null)
     bookingMutation.mutate()
+  }
+
+  if (!pickupAddress.trim() || !dropoffAddress.trim()) {
+    return (
+      <div className="min-h-svh bg-[#F8F9FB]">
+        <CheckoutHeader />
+        <main className="mx-auto max-w-lg px-6 py-16 text-center lg:px-8">
+          <h1 className="text-xl font-bold text-foreground">Addresses Required</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Please enter your pickup and destination addresses before checkout.
+          </p>
+          <Button className="mt-6 rounded-lg" asChild>
+            <Link to="/book/$vanId" params={{ vanId }} search={{ seat }}>
+              Back to booking
+            </Link>
+          </Button>
+        </main>
+        <CheckoutFooter />
+      </div>
+    )
   }
 
   return (
@@ -128,7 +164,7 @@ function CheckoutPage() {
               <Link
                 to="/book/$vanId"
                 params={{ vanId }}
-                search={{ seat }}
+                search={{ seat, pickupAddress, dropoffAddress }}
                 className="text-primary hover:underline"
               >
                 ← Back to seat selection
@@ -137,7 +173,7 @@ function CheckoutPage() {
           </div>
 
           <aside className="w-full shrink-0 lg:w-96">
-            <CheckoutSummary van={van} isPremium={isPremium} />
+            <CheckoutSummary van={van} isPremium={isPremium} addresses={addresses} />
           </aside>
         </div>
       </main>

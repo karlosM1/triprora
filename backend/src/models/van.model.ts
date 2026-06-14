@@ -1,4 +1,4 @@
-import type { AmenityKey, Van, VanClassType, VanClassVariant } from './van.types.js'
+import type { AmenityKey, Van, VanClassType, VanClassVariant, VanDriver } from './van.types.js'
 import { prisma } from '../lib/prisma.js'
 
 export type { AmenityKey, Van, VanClassType, VanClassVariant }
@@ -20,10 +20,52 @@ const vanSelect = {
   departureDate: true,
   tripCategory: true,
   vehicleName: true,
+  plateNumber: true,
   status: true,
   driverId: true,
   createdAt: true,
+  driver: {
+    select: {
+      fullName: true,
+      phone: true,
+      driverApplication: {
+        select: {
+          licenseNo: true,
+          vehicleInfo: true,
+        },
+      },
+    },
+  },
 } as const
+
+function mapDriverInfo(
+  driver: {
+    fullName: string | null
+    phone: string | null
+    driverApplication: { licenseNo: string; vehicleInfo: string | null } | null
+  } | null,
+): VanDriver | null {
+  if (!driver) return null
+  return {
+    name: driver.fullName?.trim() || 'Driver',
+    phone: driver.phone,
+    licenseNo: driver.driverApplication?.licenseNo ?? null,
+    vehicleInfo: driver.driverApplication?.vehicleInfo ?? null,
+  }
+}
+
+function mapVanRecord(
+  van: {
+    driver?: Parameters<typeof mapDriverInfo>[0]
+    [key: string]: unknown
+  },
+): Van {
+  const { driver, ...fields } = van
+  return {
+    ...(fields as Omit<Van, 'driver'>),
+    driver: mapDriverInfo(driver ?? null),
+  }
+}
 
 export type DriverTrip = {
   id: string
@@ -81,6 +123,7 @@ type CreateDriverTripInput = {
   departureTime: string
   tripCategory: 'express' | 'business' | 'standard'
   vehicleName: string
+  plateNumber?: string
   price: number
   totalSeats: number
   status: 'draft' | 'published'
@@ -91,19 +134,19 @@ const categoryConfig = {
     classType: 'EXECUTIVE CLASS' as const,
     classVariant: 'executive' as const,
     amenityKeys: ['wifi', 'ac'] as AmenityKey[],
-    durationHours: 2,
+    durationHours: 6,
   },
   business: {
     classType: 'EXECUTIVE CLASS' as const,
     classVariant: 'executive' as const,
     amenityKeys: ['wifi', 'ac', 'reclining'] as AmenityKey[],
-    durationHours: 3,
+    durationHours: 7,
   },
   standard: {
     classType: 'STANDARD CLASS' as const,
     classVariant: 'standard' as const,
     amenityKeys: ['ac', 'legroom'] as AmenityKey[],
-    durationHours: 4,
+    durationHours: 8,
   },
 }
 
@@ -148,7 +191,7 @@ export const VanModel = {
       select: vanSelect,
       orderBy: [{ departureDate: 'asc' }, { departureTime: 'asc' }],
     })
-    return vans as Van[]
+    return vans.map(mapVanRecord)
   },
 
   async findByDriverId(driverId: string): Promise<DriverTrip[]> {
@@ -157,7 +200,11 @@ export const VanModel = {
       select: vanSelect,
       orderBy: [{ departureDate: 'desc' }, { departureTime: 'desc' }],
     })
-    return vans as DriverTrip[]
+    return vans.map((van) => {
+      const mapped = mapVanRecord(van)
+      const { driver: _driver, ...trip } = mapped
+      return trip as DriverTrip
+    })
   },
 
   async findDriverTripDetails(
@@ -224,7 +271,7 @@ export const VanModel = {
       },
       select: vanSelect,
     })
-    return van as Van | null
+    return van ? mapVanRecord(van) : null
   },
 
   async findSeatsByVanId(vanId: string) {
@@ -268,6 +315,7 @@ export const VanModel = {
         departureDate: input.departureDate,
         tripCategory: input.tripCategory,
         vehicleName: input.vehicleName,
+        plateNumber: input.plateNumber?.trim() || null,
         status: input.status,
         driverId: input.driverId,
         seats: {

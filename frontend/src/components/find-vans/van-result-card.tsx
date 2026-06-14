@@ -1,4 +1,4 @@
-import { Clock } from 'lucide-react'
+import { Clock, Phone, User } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -68,6 +68,9 @@ function DetailsColumn({ result }: { result: VanResult }) {
         >
           {result.classType}
         </span>
+        <span className="rounded bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+          Door-to-Door
+        </span>
         <span className="flex items-center gap-1 text-xs text-muted-foreground">
           <Clock className="size-3" />
           {result.duration}
@@ -75,11 +78,29 @@ function DetailsColumn({ result }: { result: VanResult }) {
       </div>
 
       <h3 className="mt-2 text-base font-bold text-foreground">
-        {result.operator}
+        {result.driver?.name ?? result.operator}
       </h3>
       {result.vehicleName && (
-        <p className="mt-1 text-xs text-muted-foreground">{result.vehicleName}</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {result.vehicleName}
+          {result.plateNumber ? ` • ${result.plateNumber}` : ''}
+        </p>
       )}
+      {result.driver?.phone && (
+        <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+          <Phone className="size-3" />
+          {result.driver.phone}
+        </p>
+      )}
+      {result.driver?.licenseNo && (
+        <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+          <User className="size-3" />
+          License: {result.driver.licenseNo}
+        </p>
+      )}
+      <p className="mt-1 text-xs text-muted-foreground">
+        {result.departureLocation} → {result.arrivalLocation}
+      </p>
       {result.departureDate && (
         <p className="mt-1 text-xs text-muted-foreground">
           {new Date(`${result.departureDate}T00:00:00`).toLocaleDateString(undefined, {

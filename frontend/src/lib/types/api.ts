@@ -7,7 +7,8 @@ export type UpcomingBooking = {
   date: string
   time: string
   seat: string
-  gate: string
+  pickupAddress: string
+  dropoffAddress: string
   route: string
   vehicle: string
   status: 'confirmed'
@@ -30,7 +31,8 @@ export type CreatedBooking = {
   date: string
   time: string
   seat: string
-  gate: string
+  pickupAddress: string
+  dropoffAddress: string
   vehicle: string
   operator: string
   price: string
@@ -84,6 +86,13 @@ export type AmenityKey =
   | 'snacks'
   | 'monitor'
 
+export type VanDriver = {
+  name: string
+  phone: string | null
+  licenseNo: string | null
+  vehicleInfo: string | null
+}
+
 export type ApiVan = {
   id: string
   classType: 'EXECUTIVE CLASS' | 'STANDARD CLASS'
@@ -101,6 +110,8 @@ export type ApiVan = {
   departureDate?: string
   tripCategory?: string | null
   vehicleName?: string | null
+  plateNumber?: string | null
+  driver?: VanDriver | null
 }
 
 export type SeatStatus = 'available' | 'occupied' | 'selected'

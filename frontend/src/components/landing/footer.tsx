@@ -1,9 +1,21 @@
 import { Globe, Share2 } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
 
 const footerLinks = {
-  PRODUCT: ['Find Vans', 'My Bookings', 'Schedules'],
-  RESOURCES: ['Support', 'Developer API', 'Fleet Guide'],
-  LEGAL: ['Privacy Policy', 'Terms of Service'],
+  PRODUCT: [
+    { label: 'Find Vans', to: '/find-vans' as const },
+    { label: 'My Bookings', to: '/my-bookings' as const },
+    { label: 'Schedules', to: '/schedules' as const },
+  ],
+  RESOURCES: [
+    { label: 'Support', to: '/' as const },
+    { label: 'Become a Driver', to: '/sign-up' as const },
+    { label: 'Driver Portal', to: '/driver' as const },
+  ],
+  LEGAL: [
+    { label: 'Privacy Policy', to: '/' as const },
+    { label: 'Terms of Service', to: '/' as const },
+  ],
 }
 
 export function Footer() {
@@ -12,13 +24,13 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
           <div className="sm:col-span-2 lg:col-span-2">
-            <a href="/" className="text-xl font-bold tracking-tight text-foreground">
+            <Link to="/" className="text-xl font-bold tracking-tight text-foreground">
               Triprora
-            </a>
+            </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
-              Institutional-grade executive transport for modern enterprises.
-              Reliable, comfortable, and effortless to book across global
-              corridors.
+              Door-to-door van service from Casiguran, Aurora to Metro Manila.
+              Safe, comfortable, and convenient travel with no terminal
+              transfers.
             </p>
           </div>
 
@@ -29,13 +41,13 @@ export function Footer() {
               </h3>
               <ul className="mt-4 space-y-3">
                 {links.map((link) => (
-                  <li key={link}>
-                    <a
-                      href="#"
+                  <li key={link.label}>
+                    <Link
+                      to={link.to}
                       className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                     >
-                      {link}
-                    </a>
+                      {link.label}
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -45,7 +57,8 @@ export function Footer() {
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 sm:flex-row">
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} Triprora. All rights reserved.
+            &copy; {new Date().getFullYear()} Triprora — Casiguran, Aurora. All
+            rights reserved.
           </p>
           <div className="flex items-center gap-4">
             <a

@@ -14,8 +14,8 @@ export function BookingFooter() {
               Triprora
             </a>
             <p className="mt-3 max-w-sm text-sm text-muted-foreground">
-              Institutional-grade mobility solutions for the modern executive.
-              Reliability at every turn.
+              Door-to-door van service from Casiguran, Aurora to Metro Manila.
+              Safe, comfortable, and reliable.
             </p>
             <p className="mt-4 text-xs text-muted-foreground">
               &copy; {new Date().getFullYear()} Triprora. All rights reserved.
@@ -64,7 +64,7 @@ export function CheckoutFooter() {
               &copy; {new Date().getFullYear()} Triprora
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Institutional-grade mobility solutions.
+              Casiguran to Metro Manila van service.
             </p>
           </div>
 

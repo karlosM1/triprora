@@ -37,7 +37,7 @@ export function UpcomingTripCard({ booking }: UpcomingTripCardProps) {
               <DetailItem label="Date" value={booking.date} />
               <DetailItem label="Time" value={booking.time} />
               <DetailItem label="Seat" value={booking.seat} />
-              <DetailItem label="Gate" value={booking.gate} />
+              <DetailItem label="Vehicle" value={booking.vehicle} />
             </div>
 
             <div className="mt-5 flex flex-col gap-4 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
@@ -45,8 +45,11 @@ export function UpcomingTripCard({ booking }: UpcomingTripCardProps) {
                 <h3 className="text-lg font-bold text-foreground">
                   {booking.route}
                 </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Pickup: {booking.pickupAddress}
+                </p>
                 <p className="mt-0.5 text-sm text-muted-foreground">
-                  {booking.vehicle}
+                  Drop-off: {booking.dropoffAddress}
                 </p>
               </div>
               <div className="flex shrink-0 gap-2">

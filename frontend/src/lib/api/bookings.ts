@@ -4,6 +4,8 @@ import type { CreatedBooking, HistoryBooking, UpcomingBooking } from '@/lib/type
 export type CreateBookingInput = {
   vanId: string
   seat: string
+  pickupAddress: string
+  dropoffAddress: string
 }
 
 export async function createBooking(input: CreateBookingInput) {

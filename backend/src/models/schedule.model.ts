@@ -35,52 +35,52 @@ export type SchedulesResponse = {
 }
 
 const featuredRoute: FeaturedRoute = {
-  id: 'express-1',
-  label: 'Express Network',
-  title: 'Central Hub — Port Maritime',
-  availability: '24/7 Availability',
-  departures: 'Departures every 15 minutes',
-  duration: 'Approx. 45 min duration',
+  id: 'casiguran-manila',
+  label: 'Main Route',
+  title: 'Casiguran, Aurora — Metro Manila',
+  availability: 'Daily Departures',
+  departures: 'Morning & evening trips available',
+  duration: 'Approx. 6–8 hours',
 }
 
 const businessRoute: BusinessRoute = {
-  id: 'business-1',
-  label: 'Business Class',
-  title: 'North Terminal — Tech District',
-  description: 'Direct executive shuttles with onboard Wi-Fi.',
-  frequency: 'Frequency: Every 30 mins',
+  id: 'express-casiguran',
+  label: 'Express Service',
+  title: 'Casiguran — Cubao / Makati',
+  description: 'Direct door-to-door vans with air-conditioning and comfortable seating.',
+  frequency: 'Frequency: Daily departures',
 }
 
 const compactRoutes: RouteCard[] = [
   {
-    id: 'airport',
+    id: 'cubao',
     icon: 'bus',
-    name: 'Airport Link',
-    location: 'Terminal 1 – 4',
-    frequency: 'Hourly',
-    duration: '20 min trip',
+    name: 'Casiguran — Cubao',
+    location: 'Quezon City drop-offs',
+    frequency: 'Daily',
+    duration: '6h 30m trip',
   },
   {
-    id: 'suburban',
-    icon: 'mountains',
-    name: 'Suburban Loop',
-    location: 'Metro Ring',
-    frequency: 'Every 2 hrs',
-    duration: '55 min trip',
-  },
-  {
-    id: 'financial',
+    id: 'makati',
     icon: 'building',
-    name: 'Financial District',
-    location: 'CBD Core',
-    frequency: 'Every 20 mins',
-    duration: '15 min trip',
+    name: 'Casiguran — Makati',
+    location: 'Makati & BGC area',
+    frequency: 'Daily',
+    duration: '7h trip',
+  },
+  {
+    id: 'pasay',
+    icon: 'mountains',
+    name: 'Casiguran — Pasay',
+    location: 'Pasay & NAIA area',
+    frequency: 'Daily',
+    duration: '7h 15m trip',
   },
 ]
 
 const networkStats = {
-  activeTrips: '1,240+',
-  avgWait: '02m',
+  activeTrips: '12+',
+  avgWait: '15m',
 }
 
 export const ScheduleModel = {

@@ -7,6 +7,7 @@ export const createDriverTripSchema = z.object({
   departureTime: z.string().regex(/^\d{2}:\d{2}$/),
   tripCategory: z.enum(['express', 'business', 'standard']),
   vehicleName: z.string().trim().min(2).max(200),
+  plateNumber: z.string().trim().min(2).max(20).optional(),
   price: z.number().int().positive().max(1_000_000),
   totalSeats: z.number().int().min(1).max(18),
   status: z.enum(['draft', 'published']).default('published'),

@@ -55,6 +55,7 @@ model Van {
   departureDate     String    @default("")
   tripCategory      String?
   vehicleName       String?
+  plateNumber       String?
   status            VanStatus @default(published)
   driverId          String?   @db.Uuid
   driver            Profile?  @relation(fields: [driverId], references: [id], onDelete: SetNull)
@@ -118,9 +119,10 @@ model Booking {
   image     String?
   date      String
   time      String?
-  seat      String?
-  gate      String?
-  route     String
+  seat           String?
+  pickupAddress  String?
+  dropoffAddress String?
+  route          String
   vehicle   String?
   tripType  String?
   status    BookingStatus

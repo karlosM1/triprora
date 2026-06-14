@@ -38,14 +38,22 @@ const tripCategories = [
   { id: 'standard', label: 'Standard', icon: Users },
 ] as const
 
-const terminals = [
-  'Manila (PITX)',
-  'Cubao Terminal',
-  'Pasay (PITX)',
-  'NAIA Terminal 3',
-  'Makati CBD Terminal',
-  'Baguio (Victory)',
-  'Baguio Plaza',
+const pickupAreas = [
+  'Casiguran, Aurora (Door-to-Door)',
+  'Brgy. Poblacion, Casiguran',
+  'Brgy. Calabgan, Casiguran',
+  'Brgy. Dibacong, Casiguran',
+  'Brgy. Esteves, Casiguran',
+]
+
+const manilaDropOffAreas = [
+  'Cubao, Quezon City',
+  'Makati CBD',
+  'Pasay / NAIA Area',
+  'Quezon City',
+  'Manila City',
+  'Taguig / BGC',
+  'Pasig City',
 ]
 
 type FormState = {
@@ -55,16 +63,18 @@ type FormState = {
   departureTime: string
   tripCategory: CreateDriverTripPayload['tripCategory']
   vehicleName: string
+  plateNumber: string
   price: string
 }
 
 const initialForm: FormState = {
-  departureLocation: '',
+  departureLocation: 'Casiguran, Aurora (Door-to-Door)',
   arrivalLocation: '',
   departureDate: '',
   departureTime: '',
-  tripCategory: 'express',
+  tripCategory: 'standard',
   vehicleName: '',
+  plateNumber: '',
   price: '',
 }
 
@@ -90,6 +100,7 @@ export function DriverCreateTripPage() {
         departureTime: form.departureTime,
         tripCategory: form.tripCategory,
         vehicleName: form.vehicleName,
+        plateNumber: form.plateNumber.trim() || undefined,
         price: Math.round(baseFare),
         totalSeats: seats[0]!,
         status,
@@ -112,11 +123,12 @@ export function DriverCreateTripPage() {
   }
 
   function validateForm() {
-    if (!form.departureLocation.trim()) return 'Select a starting point.'
-    if (!form.arrivalLocation.trim()) return 'Enter a destination.'
+    if (!form.departureLocation.trim()) return 'Select a pickup service area.'
+    if (!form.arrivalLocation.trim()) return 'Select a Metro Manila drop-off area.'
     if (!form.departureDate) return 'Select a departure date.'
     if (!form.departureTime) return 'Select a departure time.'
     if (!form.vehicleName.trim()) return 'Enter a vehicle name.'
+    if (!form.plateNumber.trim()) return 'Enter the plate number.'
     if (!baseFare || baseFare <= 0) return 'Enter a valid base fare.'
     return null
   }
@@ -136,7 +148,7 @@ export function DriverCreateTripPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Create New Trip</h1>
           <p className="mt-1 text-muted-foreground">
-            Configure a new route assignment for the premium fleet.
+            Publish a door-to-door trip from Casiguran, Aurora to Metro Manila.
           </p>
         </div>
         <div className="flex gap-2">
@@ -173,35 +185,44 @@ export function DriverCreateTripPage() {
             </CardHeader>
             <CardContent className="space-y-5 px-5 py-5">
               <div className="space-y-2">
-                <Label htmlFor="starting-point">Starting Point</Label>
+                <Label htmlFor="pickup-area">Pickup Service Area</Label>
                 <Select
                   value={form.departureLocation}
                   onValueChange={(value) => updateField('departureLocation', value)}
                 >
-                  <SelectTrigger id="starting-point" className="w-full rounded-sm">
-                    <SelectValue placeholder="Select Terminal" />
+                  <SelectTrigger id="pickup-area" className="w-full rounded-sm">
+                    <SelectValue placeholder="Select pickup area in Casiguran" />
                   </SelectTrigger>
                   <SelectContent className="rounded-sm">
-                    {terminals.map((terminal) => (
-                      <SelectItem key={terminal} value={terminal}>
-                        {terminal}
+                    {pickupAreas.map((area) => (
+                      <SelectItem key={area} value={area}>
+                        {area}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">
+                  Passengers will enter their exact home address when booking.
+                </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="destination">Destination</Label>
-                <Input
-                  id="destination"
-                  placeholder="e.g. Downtown Plaza"
-                  className="rounded-sm"
+                <Label htmlFor="destination">Metro Manila Drop-off Area</Label>
+                <Select
                   value={form.arrivalLocation}
-                  onChange={(event) =>
-                    updateField('arrivalLocation', event.target.value)
-                  }
-                />
+                  onValueChange={(value) => updateField('arrivalLocation', value)}
+                >
+                  <SelectTrigger id="destination" className="w-full rounded-sm">
+                    <SelectValue placeholder="Select Metro Manila area" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-sm">
+                    {manilaDropOffAreas.map((area) => (
+                      <SelectItem key={area} value={area}>
+                        {area}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-3">
@@ -268,24 +289,38 @@ export function DriverCreateTripPage() {
                 Vehicle Assignment
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-5 py-5">
+            <CardContent className="space-y-5 px-5 py-5">
               <div className="space-y-2">
-                <Label htmlFor="vehicle-name">Vehicle Name</Label>
+                <Label htmlFor="vehicle-name">Vehicle Name / Model</Label>
                 <Input
                   id="vehicle-name"
-                  placeholder="e.g. Toyota Coaster"
+                  placeholder="e.g. Toyota Hiace GL Grandia"
                   className="rounded-sm"
                   value={form.vehicleName}
                   onChange={(event) =>
                     updateField('vehicleName', event.target.value)
                   }
                 />
-                {profile?.driverApplication?.vehicleInfo && (
-                  <p className="text-xs text-muted-foreground">
-                    Registered vehicle: {profile.driverApplication.vehicleInfo}
-                  </p>
-                )}
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="plate-number">Plate Number</Label>
+                <Input
+                  id="plate-number"
+                  placeholder="e.g. ABC 1234"
+                  className="rounded-sm"
+                  value={form.plateNumber}
+                  onChange={(event) =>
+                    updateField('plateNumber', event.target.value)
+                  }
+                />
+              </div>
+              {profile?.driverApplication?.vehicleInfo && (
+                <p className="text-xs text-muted-foreground">
+                  Registered vehicle: {profile.driverApplication.vehicleInfo}
+                  {profile.driverApplication.licenseNo &&
+                    ` • License: ${profile.driverApplication.licenseNo}`}
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -300,7 +335,7 @@ export function DriverCreateTripPage() {
             </CardHeader>
             <CardContent className="space-y-5 px-5 py-5">
               <div className="space-y-2">
-                <Label htmlFor="base-fare">Base Fare (₱)</Label>
+                <Label htmlFor="base-fare">Base Fare per Seat (₱)</Label>
                 <div className="relative">
                   <span className="absolute top-1/2 left-3 -translate-y-1/2 text-sm text-muted-foreground">
                     ₱
@@ -354,8 +389,8 @@ export function DriverCreateTripPage() {
               <div className="flex gap-2 rounded-sm bg-primary/5 p-3 text-xs text-muted-foreground">
                 <Info className="mt-0.5 size-4 shrink-0 text-primary" />
                 <p>
-                  Publishing this trip will make it instantly visible to passengers
-                  on Find Vans.
+                  This is a door-to-door service. Passengers will provide their
+                  exact pickup and drop-off addresses when booking.
                 </p>
               </div>
             </CardContent>

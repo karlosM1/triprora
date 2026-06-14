@@ -16,7 +16,6 @@ export type {
 } from './booking.types.js'
 
 const PREMIUM_SEAT_FEE = 150
-const DEFAULT_GATE = 'Gate A'
 const DEFAULT_IMAGE =
   'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&h=500&fit=crop'
 
@@ -55,7 +54,8 @@ function toUpcomingBooking(booking: {
   date: string
   time: string | null
   seat: string | null
-  gate: string | null
+  pickupAddress: string | null
+  dropoffAddress: string | null
   route: string
   vehicle: string | null
 }): UpcomingBooking | null {
@@ -64,7 +64,8 @@ function toUpcomingBooking(booking: {
     !booking.image ||
     !booking.time ||
     !booking.seat ||
-    !booking.gate ||
+    !booking.pickupAddress ||
+    !booking.dropoffAddress ||
     !booking.vehicle
   ) {
     return null
@@ -77,7 +78,8 @@ function toUpcomingBooking(booking: {
     date: booking.date,
     time: booking.time,
     seat: booking.seat,
-    gate: booking.gate,
+    pickupAddress: booking.pickupAddress,
+    dropoffAddress: booking.dropoffAddress,
     route: booking.route,
     vehicle: booking.vehicle,
     status: 'confirmed',
@@ -139,7 +141,8 @@ export const BookingModel = {
           date,
           time: van.departureTime,
           seat: input.seat,
-          gate: DEFAULT_GATE,
+          pickupAddress: input.pickupAddress.trim(),
+          dropoffAddress: input.dropoffAddress.trim(),
           route,
           vehicle,
           tripType: van.tripCategory ?? van.classType,
@@ -155,7 +158,8 @@ export const BookingModel = {
         date,
         time: van.departureTime,
         seat: input.seat,
-        gate: DEFAULT_GATE,
+        pickupAddress: input.pickupAddress.trim(),
+        dropoffAddress: input.dropoffAddress.trim(),
         vehicle,
         operator: van.operator,
         price: formatPrice(total),

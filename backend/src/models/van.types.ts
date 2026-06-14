@@ -11,6 +11,13 @@ export type AmenityKey =
   | 'snacks'
   | 'monitor'
 
+export type VanDriver = {
+  name: string
+  phone: string | null
+  licenseNo: string | null
+  vehicleInfo: string | null
+}
+
 export type Van = {
   id: string
   classType: VanClassType
@@ -28,6 +35,8 @@ export type Van = {
   departureDate?: string
   tripCategory?: string | null
   vehicleName?: string | null
+  plateNumber?: string | null
+  driver?: VanDriver | null
 }
 
 export type SeatStatus = 'available' | 'occupied' | 'selected'

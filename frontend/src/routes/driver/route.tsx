@@ -24,7 +24,7 @@ function DriverRouteLayout() {
       : pathname === '/driver/trips'
         ? 'Search trips, locations, or IDs...'
         : pathname === '/driver/create'
-          ? 'Search terminals or destinations...'
+          ? 'Search pickup areas or Metro Manila destinations...'
           : 'Search trips or documents...'
 
   return <DriverLayout searchPlaceholder={searchPlaceholder} />

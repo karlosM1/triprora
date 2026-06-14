@@ -24,9 +24,8 @@ export function NetworkMonitoring() {
             Network Monitoring
           </h2>
           <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-            Our predictive scheduling engine monitors fleet movement across all
-            corridors in real time, ensuring 99.8% on-time performance for
-            institutional clients.
+            Real-time trip monitoring for our Casiguran to Metro Manila fleet.
+            Track active departures and estimated travel times.
           </p>
 
           <div className="mt-8 grid grid-cols-2 gap-6">

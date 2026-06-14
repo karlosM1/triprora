@@ -54,6 +54,7 @@ export type CreateDriverTripPayload = {
   departureTime: string
   tripCategory: 'express' | 'business' | 'standard'
   vehicleName: string
+  plateNumber?: string
   price: number
   totalSeats: number
   status: 'draft' | 'published'
