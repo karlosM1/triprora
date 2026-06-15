@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { supabase } from '@/lib/supabase'
+import { getCachedAccessToken } from '@/lib/auth-session'
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? '/api',
@@ -8,13 +8,11 @@ export const api = axios.create({
   },
 })
 
-api.interceptors.request.use(async (config) => {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+api.interceptors.request.use((config) => {
+  const accessToken = getCachedAccessToken()
 
-  if (session?.access_token) {
-    config.headers.Authorization = `Bearer ${session.access_token}`
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`
   }
 
   return config

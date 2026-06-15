@@ -10,7 +10,8 @@ import {
 import { GoogleAuthButton } from '@/components/auth/google-auth-button'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth-context'
-import { getRememberedEmail, setRememberMePreference, supabase } from '@/lib/supabase'
+import { resolveSession } from '@/lib/auth-session'
+import { getRememberedEmail, setRememberMePreference } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 
 type SignInSearch = {
@@ -22,9 +23,7 @@ export const Route = createFileRoute('/sign-in')({
     redirect: typeof search.redirect === 'string' ? search.redirect : undefined,
   }),
   beforeLoad: async ({ search }) => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
+    const session = await resolveSession()
 
     if (session) {
       throw redirect({ to: search.redirect ?? '/my-bookings' })

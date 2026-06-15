@@ -6,10 +6,15 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
 import { fetchProfile, profileQueryKey } from '@/lib/api/profile'
+import {
+  getCachedSession,
+  setCachedSession,
+} from '@/lib/auth-session'
 import {
   clearRememberedEmail,
   getAuthRedirectUrl,
@@ -26,6 +31,7 @@ type AuthContextValue = {
   role: Role | null
   loading: boolean
   profileLoading: boolean
+  profileReady: boolean
   isAdmin: boolean
   isDriver: boolean
   isPassenger: boolean
@@ -50,33 +56,43 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
+const PROFILE_STALE_TIME = 1000 * 60 * 5
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
-  const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [session, setSession] = useState<Session | null>(() => getCachedSession())
+  const [loading, setLoading] = useState(() => !getCachedSession())
+  const previousUserIdRef = useRef(session?.user?.id ?? null)
+
+  const userId = session?.user?.id ?? null
 
   const profileQuery = useQuery({
-    queryKey: profileQueryKey,
+    queryKey: profileQueryKey(userId),
     queryFn: fetchProfile,
-    enabled: Boolean(session),
-    retry: 2,
+    enabled: Boolean(userId),
+    retry: 1,
+    staleTime: PROFILE_STALE_TIME,
+    placeholderData: (previousData) => previousData,
   })
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      setSession(currentSession)
-      setLoading(false)
-    })
-
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      const previousUserId = previousUserIdRef.current
+      const nextUserId = nextSession?.user?.id ?? null
+
+      setCachedSession(nextSession)
       setSession(nextSession)
       setLoading(false)
-      if (nextSession) {
-        void queryClient.invalidateQueries({ queryKey: profileQueryKey })
-      } else {
-        queryClient.removeQueries({ queryKey: profileQueryKey })
+      previousUserIdRef.current = nextUserId
+
+      if (
+        event === 'SIGNED_OUT' ||
+        (previousUserId && nextUserId && previousUserId !== nextUserId) ||
+        (previousUserId && !nextUserId)
+      ) {
+        queryClient.removeQueries({ queryKey: ['profile'] })
       }
     })
 
@@ -141,15 +157,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut()
-    queryClient.removeQueries({ queryKey: profileQueryKey })
+    queryClient.removeQueries({ queryKey: ['profile'] })
   }, [queryClient])
 
   const refreshProfile = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: profileQueryKey })
-  }, [queryClient])
+    if (!userId) return
+    await queryClient.invalidateQueries({ queryKey: profileQueryKey(userId) })
+  }, [queryClient, userId])
 
-  const profile = profileQuery.data ?? null
+  const profile = profileQuery.isSuccess ? (profileQuery.data ?? null) : null
   const role = profile?.role ?? null
+  const profileReady = Boolean(userId) && profileQuery.isSuccess
+  const profileLoading =
+    Boolean(userId) && profileQuery.isLoading && !profileQuery.data
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -158,10 +178,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       role,
       loading,
-      profileLoading: Boolean(session) && profileQuery.isLoading,
-      isAdmin: profile?.role === 'admin',
-      isDriver: profile?.role === 'driver',
-      isPassenger: profile?.role === 'passenger',
+      profileLoading,
+      profileReady,
+      isAdmin: profileReady && profile?.role === 'admin',
+      isDriver: profileReady && profile?.role === 'driver',
+      isPassenger: profileReady && profile?.role === 'passenger',
       signIn,
       signUp,
       signInWithGoogle,
@@ -174,7 +195,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       role,
       loading,
-      profileQuery.isLoading,
+      profileLoading,
+      profileReady,
       signIn,
       signUp,
       signInWithGoogle,

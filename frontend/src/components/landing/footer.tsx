@@ -16,11 +16,11 @@ const legalLinks = [
 ] as const
 
 export function Footer() {
-  const { user, profileLoading, isDriver } = useAuth()
+  const { user, profileReady, isDriver } = useAuth()
 
   const resourceLinks = [
     { label: 'Support', to: '/' as const },
-    ...(user && !profileLoading && isDriver
+    ...(profileReady && isDriver
       ? [{ label: 'Driver Portal', to: '/driver' as const }]
       : [{ label: 'Become a Driver', to: user ? '/driver/register' : '/sign-up' }]),
   ] as const

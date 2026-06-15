@@ -37,5 +37,7 @@ export async function reviewDriverApplication(
   return data
 }
 
-export const profileQueryKey = ['profile', 'me'] as const
+export function profileQueryKey(userId?: string | null) {
+  return ['profile', 'me', userId] as const
+}
 export const pendingApplicationsQueryKey = ['admin', 'driver-applications'] as const

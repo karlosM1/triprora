@@ -1,10 +1,10 @@
 import { createFileRoute, Outlet, useRouterState } from '@tanstack/react-router'
 import { DriverLayout } from '@/components/driver/driver-layout'
-import { requireRole } from '@/lib/route-guards'
+import { isDriverRegisterPath, requireRole } from '@/lib/route-guards'
 
 export const Route = createFileRoute('/driver')({
   beforeLoad: async ({ location }) => {
-    if (location.pathname !== '/driver/register') {
+    if (!isDriverRegisterPath(location.pathname)) {
       await requireRole('/driver', 'driver')
     }
   },

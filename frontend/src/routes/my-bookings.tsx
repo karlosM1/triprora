@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { PageHeader } from '@/components/layout/page-header'
 import { BookingHistoryTable } from '@/components/my-bookings/booking-history-table'
 import { PlanTripCta } from '@/components/my-bookings/plan-trip-cta'
@@ -12,20 +12,11 @@ import {
   fetchUpcomingBooking,
   upcomingBookingQueryKey,
 } from '@/lib/api/bookings'
-import { supabase } from '@/lib/supabase'
+import { requireAuth } from '@/lib/route-guards'
 
 export const Route = createFileRoute('/my-bookings')({
   beforeLoad: async () => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
-    if (!session) {
-      throw redirect({
-        to: '/sign-in',
-        search: { redirect: '/my-bookings' },
-      })
-    }
+    await requireAuth('/my-bookings')
   },
   component: MyBookingsPage,
 })
