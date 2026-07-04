@@ -5,9 +5,9 @@ import { ArrowLeft, Calendar, Car, Users } from 'lucide-react'
 import { AppleCard, PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import {
-  driverTripDetailsQueryKey,
-  fetchDriverTripDetails,
+  driverTripDetailsQueryOptions,
 } from '@/lib/api/driver-trips'
+import { queryClient } from '@/lib/query-client'
 import {
   formatTripDateTime,
   getTripRouteLabel,
@@ -18,7 +18,9 @@ import { cn } from '@/lib/utils'
 export const Route = createFileRoute('/driver/trips/$tripId')({
   loader: async ({ params }) => {
     try {
-      return await fetchDriverTripDetails(params.tripId)
+      return await queryClient.ensureQueryData(
+        driverTripDetailsQueryOptions(params.tripId),
+      )
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 404) {
         throw notFound()
@@ -118,12 +120,7 @@ function StatusPill({ label, tone }: { label: string; tone: 'draft' | 'cancelled
 
 function DriverTripDetailsPage() {
   const { tripId } = Route.useParams()
-  const initialData = Route.useLoaderData()
-  const detailsQuery = useQuery({
-    queryKey: driverTripDetailsQueryKey(tripId),
-    queryFn: () => fetchDriverTripDetails(tripId),
-    initialData,
-  })
+  const detailsQuery = useQuery(driverTripDetailsQueryOptions(tripId))
 
   const details = detailsQuery.data
 

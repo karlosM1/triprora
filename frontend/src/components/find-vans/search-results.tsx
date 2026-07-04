@@ -4,7 +4,7 @@ import { useSearch } from '@tanstack/react-router'
 import { Calendar } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { PageHeader } from '@/components/layout/page-header'
-import { fetchVans, vansQueryKey } from '@/lib/api/vans'
+import { vansQueryOptions } from '@/lib/api/vans'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
 import {
   filterVansByTripSearch,
@@ -54,8 +54,7 @@ export function SearchResults() {
   const search = resolveTripSearch(useSearch({ from: '/find-vans' }))
   const [sortBy, setSortBy] = useState<SortOption>('price')
   const { data: vans = [], isLoading } = useQuery({
-    queryKey: vansQueryKey,
-    queryFn: fetchVans,
+    ...vansQueryOptions(),
     select: mapApiVans,
   })
 

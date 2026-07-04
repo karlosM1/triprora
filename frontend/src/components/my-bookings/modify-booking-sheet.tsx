@@ -15,6 +15,7 @@ import {
   upcomingBookingQueryKey,
   updateBooking,
 } from '@/lib/api/bookings'
+import { vanBookingQueryKey } from '@/lib/api/load-van-booking'
 import { fetchVanSeats, vanSeatsQueryKey, vansQueryKey } from '@/lib/api/vans'
 import type { TripAddresses } from '@/lib/booking'
 import type { UpcomingBooking } from '@/lib/types/api'
@@ -66,6 +67,9 @@ export function ModifyBookingSheet({
       queryClient.invalidateQueries({ queryKey: upcomingBookingQueryKey })
       queryClient.invalidateQueries({ queryKey: bookingHistoryQueryKey })
       queryClient.invalidateQueries({ queryKey: vansQueryKey })
+      queryClient.invalidateQueries({
+        queryKey: vanBookingQueryKey(booking.routeCode),
+      })
       queryClient.invalidateQueries({
         queryKey: vanSeatsQueryKey(booking.routeCode),
       })

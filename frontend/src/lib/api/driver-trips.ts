@@ -80,3 +80,10 @@ export async function createDriverTrip(payload: CreateDriverTripPayload) {
 export const driverTripsQueryKey = ['driver', 'trips'] as const
 export const driverTripDetailsQueryKey = (tripId: string) =>
   ['driver', 'trips', tripId] as const
+
+export function driverTripDetailsQueryOptions(tripId: string) {
+  return {
+    queryKey: driverTripDetailsQueryKey(tripId),
+    queryFn: () => fetchDriverTripDetails(tripId),
+  }
+}

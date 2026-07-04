@@ -22,3 +22,10 @@ export const vansQueryKey = ['vans'] as const
 export const vanQueryKey = (vanId: string) => ['vans', vanId] as const
 export const vanSeatsQueryKey = (vanId: string) =>
   ['vans', vanId, 'seats'] as const
+
+export function vansQueryOptions() {
+  return {
+    queryKey: vansQueryKey,
+    queryFn: fetchVans,
+  }
+}

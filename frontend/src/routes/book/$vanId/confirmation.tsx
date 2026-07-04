@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
 import { CheckCircle2, Download } from 'lucide-react'
@@ -6,7 +7,7 @@ import { CheckoutFooter } from '@/components/booking/booking-footer'
 import { AppleCard, PageHeader } from '@/components/layout/page-header'
 import { Header } from '@/components/landing/header'
 import { Button } from '@/components/ui/button'
-import { loadVanBooking } from '@/lib/api/load-van-booking'
+import { loadVanBooking, vanBookingQueryOptions } from '@/lib/api/load-van-booking'
 import { calculateTotals } from '@/lib/booking'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
 
@@ -34,8 +35,10 @@ function formatTripDate(departureDate?: string) {
 }
 
 function ConfirmationPage() {
-  const { van } = Route.useLoaderData()
+  const { vanId } = Route.useParams()
   const { seat, name, ref, pickupAddress, dropoffAddress } = Route.useSearch()
+  const bookingQuery = useQuery(vanBookingQueryOptions(vanId))
+  const { van } = bookingQuery.data!
 
   const { total } = calculateTotals(van.price)
   const tripDate = formatTripDate(van.departureDate)

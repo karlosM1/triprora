@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
 import { BookingFooter } from '@/components/booking/booking-footer'
@@ -9,7 +10,7 @@ import { SeatMap } from '@/components/booking/seat-map'
 import { PageHeader } from '@/components/layout/page-header'
 import { Header } from '@/components/landing/header'
 import { Button } from '@/components/ui/button'
-import { loadVanBooking } from '@/lib/api/load-van-booking'
+import { loadVanBooking, vanBookingQueryOptions } from '@/lib/api/load-van-booking'
 import type { TripAddresses } from '@/lib/booking'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
 
@@ -78,9 +79,10 @@ const emptyAddresses: TripAddresses = {
 }
 
 function SeatSelectionPage() {
-  const { van, seats } = Route.useLoaderData()
   const { vanId } = Route.useParams()
   const search = Route.useSearch()
+  const bookingQuery = useQuery(vanBookingQueryOptions(vanId))
+  const { van, seats } = bookingQuery.data!
   const defaultSeat =
     seats.find((s) => s.status === 'available')?.id ?? seats[0]?.id ?? '1A'
   const [selectedSeatId, setSelectedSeatId] = useState(

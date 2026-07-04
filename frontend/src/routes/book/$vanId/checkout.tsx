@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
@@ -16,7 +16,7 @@ import {
   createBooking,
   upcomingBookingQueryKey,
 } from '@/lib/api/bookings'
-import { loadVanBooking } from '@/lib/api/load-van-booking'
+import { loadVanBooking, vanBookingQueryKey, vanBookingQueryOptions } from '@/lib/api/load-van-booking'
 import { vansQueryKey } from '@/lib/api/vans'
 import type { PassengerDetails } from '@/lib/booking'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
@@ -49,9 +49,10 @@ const emptyPassenger: PassengerDetails = {
 }
 
 function CheckoutPage() {
-  const { van } = Route.useLoaderData()
   const { vanId } = Route.useParams()
   const { seat, pickupAddress, dropoffAddress } = Route.useSearch()
+  const bookingQuery = useQuery(vanBookingQueryOptions(vanId))
+  const { van } = bookingQuery.data!
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
@@ -73,7 +74,7 @@ function CheckoutPage() {
       queryClient.invalidateQueries({ queryKey: upcomingBookingQueryKey })
       queryClient.invalidateQueries({ queryKey: bookingHistoryQueryKey })
       queryClient.invalidateQueries({ queryKey: vansQueryKey })
-      queryClient.invalidateQueries({ queryKey: ['vans', vanId] })
+      queryClient.invalidateQueries({ queryKey: vanBookingQueryKey(vanId) })
 
       navigate({
         to: '/book/$vanId/confirmation',
