@@ -76,7 +76,7 @@ export function SeatMap({ seats, selectedSeatId, onSelectSeat }: SeatMapProps) {
     <AppleCard className="p-6 sm:p-8">
       <SectionTitle
         title="Choose your seat"
-        subtitle="Select an available seat. Premium seats include extra legroom."
+        subtitle="Select any available seat — all seats are the same price."
       />
 
       <div className="flex flex-wrap items-center gap-4 text-[12px] text-[#86868b]">

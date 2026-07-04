@@ -24,3 +24,13 @@ export async function getBookingHistory(req: Request, res: Response) {
   const history = await BookingModel.getHistory(req.profile!.id)
   res.json(history)
 }
+
+export async function updateBooking(req: Request, res: Response) {
+  const booking = await BookingModel.update(
+    req.profile!.id,
+    req.params.bookingId,
+    req.body,
+  )
+
+  res.json(booking)
+}

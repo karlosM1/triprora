@@ -1,5 +1,10 @@
 import { api } from '@/lib/axios'
-import type { CreatedBooking, HistoryBooking, UpcomingBooking } from '@/lib/types/api'
+import type {
+  CreatedBooking,
+  HistoryBooking,
+  UpcomingBooking,
+  UpdateBookingInput,
+} from '@/lib/types/api'
 
 export type CreateBookingInput = {
   vanId: string
@@ -20,6 +25,17 @@ export async function fetchUpcomingBooking() {
 
 export async function fetchBookingHistory() {
   const { data } = await api.get<HistoryBooking[]>('/bookings/history')
+  return data
+}
+
+export async function updateBooking(
+  bookingId: string,
+  input: UpdateBookingInput,
+) {
+  const { data } = await api.patch<UpcomingBooking>(
+    `/bookings/${encodeURIComponent(bookingId)}`,
+    input,
+  )
   return data
 }
 

@@ -34,12 +34,10 @@ function formatTripDate(departureDate?: string) {
 }
 
 function ConfirmationPage() {
-  const { van, seats } = Route.useLoaderData()
+  const { van } = Route.useLoaderData()
   const { seat, name, ref, pickupAddress, dropoffAddress } = Route.useSearch()
 
-  const selectedSeat = seats.find((s) => s.id === seat)
-  const isPremium = selectedSeat?.premium ?? false
-  const { total } = calculateTotals(van.price, isPremium)
+  const { total } = calculateTotals(van.price)
   const tripDate = formatTripDate(van.departureDate)
   const driver = van.driver
 
@@ -84,10 +82,7 @@ function ConfirmationPage() {
                 <Row label="Destination" value={dropoffAddress || van.arrivalLocation} />
                 <Row label="Date" value={tripDate} />
                 <Row label="Departure" value={van.departureTime} />
-                <Row
-                  label="Seat"
-                  value={`${seat}${isPremium ? ' (Premium)' : ''}`}
-                />
+                <Row label="Seat" value={seat} />
                 <Row label="Driver" value={driver?.name ?? van.operator} />
                 {driver?.phone && <Row label="Driver phone" value={driver.phone} />}
                 {van.plateNumber && <Row label="Plate no." value={van.plateNumber} />}

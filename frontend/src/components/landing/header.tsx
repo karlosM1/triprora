@@ -190,11 +190,7 @@ export function Header({
           ) : user ? (
             <>
               <div
-                className={cn(
-                  "inline-flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] leading-none font-semibold",
-                  !isHero && "bg-[#f5f5f7] text-[#1d1d1f]",
-                  isHero && "bg-white/20 text-white",
-                )}
+                className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-[#0071e3] text-[10px] leading-none font-semibold text-white ring-1 ring-black/5"
                 title={user.email ?? "Account"}
               >
                 {getInitials(user.email ?? "user")}
@@ -202,12 +198,7 @@ export function Header({
               <Button
                 variant="ghost"
                 size="sm"
-                className={cn(
-                  "hidden h-8 px-3 text-xs leading-none sm:inline-flex",
-                  !isHero &&
-                    "text-[#0066cc] hover:bg-transparent hover:text-[#0077ed]",
-                  isHero && "text-white/90 hover:bg-white/10 hover:text-white",
-                )}
+                className="hidden h-8 cursor-pointer rounded-full px-3 text-xs leading-none text-[#0066cc] hover:bg-[#0071e3]/10 hover:text-[#0077ed] sm:inline-flex"
                 onClick={handleSignOut}
               >
                 Sign out

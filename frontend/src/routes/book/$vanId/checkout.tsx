@@ -49,14 +49,11 @@ const emptyPassenger: PassengerDetails = {
 }
 
 function CheckoutPage() {
-  const { van, seats } = Route.useLoaderData()
+  const { van } = Route.useLoaderData()
   const { vanId } = Route.useParams()
   const { seat, pickupAddress, dropoffAddress } = Route.useSearch()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-
-  const selectedSeat = seats.find((s) => s.id === seat)
-  const isPremium = selectedSeat?.premium ?? false
 
   const [passenger, setPassenger] = useState<PassengerDetails>(emptyPassenger)
   const [checkoutStep, setCheckoutStep] = useState<1 | 2>(1)
@@ -198,7 +195,7 @@ function CheckoutPage() {
             </div>
 
             <aside className="w-full shrink-0 lg:w-[360px]">
-              <CheckoutSummary van={van} isPremium={isPremium} addresses={addresses} />
+              <CheckoutSummary van={van} addresses={addresses} />
             </aside>
           </motion.div>
         </motion.div>

@@ -319,9 +319,9 @@ export const VanModel = {
         status: input.status,
         driverId: input.driverId,
         seats: {
-          create: seatLabels.map((label, index) => ({
+          create: seatLabels.map((label) => ({
             label,
-            premium: index === 0,
+            premium: false,
           })),
         },
       },

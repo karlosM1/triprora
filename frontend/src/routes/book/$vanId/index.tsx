@@ -94,9 +94,6 @@ function SeatSelectionPage() {
   })
   const [addressError, setAddressError] = useState<string | null>(null)
 
-  const selectedSeat = seats.find((s) => s.id === selectedSeatId)
-  const isPremium = selectedSeat?.premium ?? false
-
   const seatMap = seats.map((s) => ({
     ...s,
     status:
@@ -161,7 +158,6 @@ function SeatSelectionPage() {
                 van={van}
                 vanId={vanId}
                 selectedSeat={selectedSeatId}
-                isPremium={isPremium}
                 addresses={addresses}
                 addressesValid={addressesValid}
                 onAddressError={() =>

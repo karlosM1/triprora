@@ -1,17 +1,31 @@
 import { useState } from 'react'
 import { ArrowLeftRight, MapPin, Navigation } from 'lucide-react'
-import { Link } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
+import { DEFAULT_TRIP_SEARCH } from '@/lib/trip-search'
 
 export function ScheduleHero() {
-  const [from, setFrom] = useState('Aurora')
-  const [to, setTo] = useState('Metro Manila')
+  const navigate = useNavigate()
+  const [from, setFrom] = useState(DEFAULT_TRIP_SEARCH.from)
+  const [to, setTo] = useState(DEFAULT_TRIP_SEARCH.to)
 
   function swapLocations() {
     setFrom(to)
     setTo(from)
+  }
+
+  function handleSearch() {
+    navigate({
+      to: '/find-vans',
+      search: {
+        from,
+        to,
+        passengers: DEFAULT_TRIP_SEARCH.passengers,
+        tripType: DEFAULT_TRIP_SEARCH.tripType,
+      },
+    })
   }
 
   return (
@@ -51,7 +65,10 @@ export function ScheduleHero() {
       >
         <form
           className="flex flex-col gap-3 rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 backdrop-blur-xl sm:flex-row sm:items-center"
-          onSubmit={(e) => e.preventDefault()}
+          onSubmit={(event) => {
+            event.preventDefault()
+            handleSearch()
+          }}
         >
           <label className="flex flex-1 items-center gap-3 rounded-xl bg-white px-4 py-3">
             <MapPin className="size-4 shrink-0 text-[#86868b]" />
@@ -85,10 +102,10 @@ export function ScheduleHero() {
           </label>
 
           <Button
+            type="submit"
             className="h-11 shrink-0 rounded-full bg-[#0071e3] px-6 text-[15px] font-normal hover:bg-[#0077ed] sm:ml-1"
-            asChild
           >
-            <Link to="/find-vans">Find vans</Link>
+            Find vans
           </Button>
         </form>
       </motion.div>

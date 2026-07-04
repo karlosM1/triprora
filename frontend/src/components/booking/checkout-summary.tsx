@@ -10,7 +10,6 @@ const VAN_IMAGE =
 
 type CheckoutSummaryProps = {
   van: VanResult
-  isPremium: boolean
   addresses?: TripAddresses
 }
 
@@ -23,11 +22,8 @@ function formatTripDate(departureDate?: string) {
   })
 }
 
-export function CheckoutSummary({ van, isPremium, addresses }: CheckoutSummaryProps) {
-  const { baseFare, premiumFee, serviceFee, tax, total } = calculateTotals(
-    van.price,
-    isPremium,
-  )
+export function CheckoutSummary({ van, addresses }: CheckoutSummaryProps) {
+  const { baseFare, serviceFee, tax, total } = calculateTotals(van.price)
   const tripDate = formatTripDate(van.departureDate)
   const driver = van.driver
 
@@ -101,12 +97,6 @@ export function CheckoutSummary({ van, isPremium, addresses }: CheckoutSummaryPr
               <span className="text-[#86868b]">Base fare</span>
               <span className="text-[#1d1d1f]">{formatPrice(baseFare)}</span>
             </div>
-            {isPremium && (
-              <div className="mt-2 flex justify-between text-[14px]">
-                <span className="text-[#86868b]">Premium seat</span>
-                <span className="text-[#1d1d1f]">{formatPrice(premiumFee)}</span>
-              </div>
-            )}
             <div className="mt-2 flex justify-between text-[14px]">
               <span className="text-[#86868b]">Service fee</span>
               <span className="text-[#1d1d1f]">{formatPrice(serviceFee)}</span>

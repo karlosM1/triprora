@@ -1,5 +1,8 @@
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { AppleCard, SectionTitle } from '@/components/layout/page-header'
+import { BookingTicketSheet } from '@/components/my-bookings/booking-ticket-sheet'
+import { ModifyBookingSheet } from '@/components/my-bookings/modify-booking-sheet'
 import type { UpcomingBooking } from '@/lib/types/api'
 
 type UpcomingTripCardProps = {
@@ -7,6 +10,9 @@ type UpcomingTripCardProps = {
 }
 
 export function UpcomingTripCard({ booking }: UpcomingTripCardProps) {
+  const [ticketOpen, setTicketOpen] = useState(false)
+  const [modifyOpen, setModifyOpen] = useState(false)
+
   return (
     <section>
       <SectionTitle
@@ -55,10 +61,14 @@ export function UpcomingTripCard({ booking }: UpcomingTripCardProps) {
                 <Button
                   variant="ghost"
                   className="h-10 rounded-full px-5 text-[14px] text-[#0066cc] hover:bg-[#0071e3]/5"
+                  onClick={() => setModifyOpen(true)}
                 >
                   Modify
                 </Button>
-                <Button className="h-10 rounded-full bg-[#0071e3] px-5 text-[14px] font-normal hover:bg-[#0077ed]">
+                <Button
+                  className="h-10 rounded-full bg-[#0071e3] px-5 text-[14px] font-normal hover:bg-[#0077ed]"
+                  onClick={() => setTicketOpen(true)}
+                >
                   View ticket
                 </Button>
               </div>
@@ -66,6 +76,17 @@ export function UpcomingTripCard({ booking }: UpcomingTripCardProps) {
           </div>
         </div>
       </AppleCard>
+
+      <BookingTicketSheet
+        booking={booking}
+        open={ticketOpen}
+        onOpenChange={setTicketOpen}
+      />
+      <ModifyBookingSheet
+        booking={booking}
+        open={modifyOpen}
+        onOpenChange={setModifyOpen}
+      />
     </section>
   )
 }

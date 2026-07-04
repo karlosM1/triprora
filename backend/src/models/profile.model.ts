@@ -21,9 +21,13 @@ export const ProfileModel = {
       return existingById
     }
 
+    // A profile with this email but a different id means the previous auth user
+    // was deleted and re-created (same email, new UUID). Treat it as a brand-new
+    // account: drop the stale profile (its driver application cascades away) so
+    // the recreated user does not inherit the old role.
     const existingByEmail = await prisma.profile.findUnique({ where: { email } })
     if (existingByEmail) {
-      return existingByEmail
+      await prisma.profile.delete({ where: { id: existingByEmail.id } })
     }
 
     try {
@@ -39,9 +43,19 @@ export const ProfileModel = {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        const profile = await prisma.profile.findUnique({ where: { email } })
-        if (profile) {
-          return profile
+        const conflicting = await prisma.profile.findUnique({ where: { email } })
+        if (conflicting && conflicting.id !== id) {
+          await prisma.profile.delete({ where: { id: conflicting.id } })
+          return await prisma.profile.create({
+            data: {
+              id,
+              email,
+              role: resolveInitialRole(email),
+            },
+          })
+        }
+        if (conflicting) {
+          return conflicting
         }
       }
 

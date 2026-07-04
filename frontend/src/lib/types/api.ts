@@ -2,6 +2,7 @@ export type BookingStatus = 'confirmed' | 'completed' | 'cancelled'
 
 export type UpcomingBooking = {
   id: string
+  reference: string
   routeCode: string
   image: string
   date: string
@@ -11,7 +12,14 @@ export type UpcomingBooking = {
   dropoffAddress: string
   route: string
   vehicle: string
+  price: string
   status: 'confirmed'
+}
+
+export type UpdateBookingInput = {
+  seat?: string
+  pickupAddress?: string
+  dropoffAddress?: string
 }
 
 export type HistoryBooking = {
@@ -36,7 +44,6 @@ export type CreatedBooking = {
   vehicle: string
   operator: string
   price: string
-  isPremium: boolean
 }
 
 export type RouteCard = {
@@ -120,5 +127,4 @@ export type Seat = {
   id: string
   label: string
   status: SeatStatus
-  premium?: boolean
 }

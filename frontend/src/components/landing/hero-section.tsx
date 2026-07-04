@@ -1,28 +1,62 @@
 import { useState } from 'react'
-import type { ReactNode } from 'react'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
 import {
   ArrowLeftRight,
-  Calendar,
-  ChevronDown,
   MapPin,
   Users,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { DatePicker } from '@/components/ui/date-picker'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   fadeInUp,
   scaleIn,
   staggerContainer,
 } from '@/lib/motion'
+import {
+  DEFAULT_TRIP_SEARCH,
+  todayDateInputValue,
+  TRIP_TYPES,
+  type TripType,
+} from '@/lib/trip-search'
 import { cn } from '@/lib/utils'
 import heroBackground from '@/assets/beach-view.jpg'
 
-const TRIP_TYPES = ['One Way Trip', 'Round Trip', 'Multi City'] as const
-
 export function HeroSection() {
-  const [activeTrip, setActiveTrip] =
-    useState<(typeof TRIP_TYPES)[number]>('One Way Trip')
+  const navigate = useNavigate()
+  const [activeTrip, setActiveTrip] = useState<TripType>(DEFAULT_TRIP_SEARCH.tripType)
+  const [from, setFrom] = useState(DEFAULT_TRIP_SEARCH.from)
+  const [to, setTo] = useState(DEFAULT_TRIP_SEARCH.to)
+  const [departureDate, setDepartureDate] = useState('')
+  const [returnDate, setReturnDate] = useState('')
+  const [passengers, setPassengers] = useState(String(DEFAULT_TRIP_SEARCH.passengers))
+
+  function swapLocations() {
+    setFrom(to)
+    setTo(from)
+  }
+
+  function handleSearch() {
+    navigate({
+      to: '/find-vans',
+      search: {
+        from,
+        to,
+        departureDate: departureDate || undefined,
+        returnDate:
+          activeTrip === 'Round Trip' && returnDate ? returnDate : undefined,
+        passengers: Number(passengers),
+        tripType: activeTrip,
+      },
+    })
+  }
 
   return (
     <section className="relative min-h-svh overflow-hidden bg-black">
@@ -65,9 +99,9 @@ export function HeroSection() {
             <Button
               size="lg"
               className="h-11 rounded-full bg-[#0071e3] px-7 text-[17px] font-normal hover:bg-[#0077ed]"
-              asChild
+              onClick={handleSearch}
             >
-              <Link to="/find-vans">Find a van</Link>
+              Find a van
             </Button>
             <Button
               size="lg"
@@ -80,12 +114,16 @@ export function HeroSection() {
           </motion.div>
         </motion.div>
 
-        <motion.div
+        <motion.form
           variants={scaleIn}
           initial="hidden"
           animate="visible"
           transition={{ delay: 0.35, duration: 0.9, ease: [0.25, 0.1, 0.25, 1] }}
           className="mt-12 w-full rounded-2xl bg-white/10 p-4 ring-1 ring-white/20 backdrop-blur-2xl lg:p-5"
+          onSubmit={(event) => {
+            event.preventDefault()
+            handleSearch()
+          }}
         >
           <div className="mb-4 flex flex-wrap gap-2">
             {TRIP_TYPES.map((type) => (
@@ -108,78 +146,124 @@ export function HeroSection() {
           <div className="flex flex-col gap-3 xl:flex-row xl:items-stretch">
             <div className="flex flex-1 flex-col gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:flex xl:flex-row xl:gap-3">
               <div className="relative flex min-w-0 gap-3 sm:col-span-2 lg:col-span-2 xl:flex-[2] xl:basis-0">
-                <SearchField
+                <LocationField
                   className="min-w-0 flex-1 basis-0"
-                  icon={<MapPin className="size-4 shrink-0 text-[#86868b]" />}
+                  value={from}
+                  onChange={setFrom}
                   placeholder="Aurora"
                 />
-                <SearchField
+                <LocationField
                   className="min-w-0 flex-1 basis-0"
-                  icon={<MapPin className="size-4 shrink-0 text-[#86868b]" />}
+                  value={to}
+                  onChange={setTo}
                   placeholder="Metro Manila"
                 />
-                <span className="pointer-events-none absolute top-1/2 left-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
-                  <span className="pointer-events-auto flex size-7 items-center justify-center rounded-full bg-[#1d1d1f] text-white shadow-md ring-2 ring-white/20">
-                    <ArrowLeftRight className="size-3.5" />
-                  </span>
-                </span>
+                <button
+                  type="button"
+                  onClick={swapLocations}
+                  aria-label="Swap locations"
+                  className="absolute top-1/2 left-1/2 z-10 flex size-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[#1d1d1f] text-white shadow-md ring-2 ring-white/20 transition-colors hover:bg-[#2d2d2f]"
+                >
+                  <ArrowLeftRight className="size-3.5" />
+                </button>
               </div>
-              <SearchField
+              <DatePicker
                 className="xl:flex-1 xl:basis-0"
-                icon={<Calendar className="size-4 shrink-0 text-[#86868b]" />}
+                value={departureDate}
+                onChange={setDepartureDate}
+                min={todayDateInputValue()}
                 placeholder="Select date"
               />
-              <SearchField
+              {activeTrip !== 'One Way Trip' ? (
+                <DatePicker
+                  className="xl:flex-1 xl:basis-0"
+                  value={returnDate}
+                  onChange={setReturnDate}
+                  min={departureDate || todayDateInputValue()}
+                  placeholder="Return date"
+                />
+              ) : null}
+              <PassengerField
                 className="xl:flex-1 xl:basis-0"
-                icon={<Calendar className="size-4 shrink-0 text-[#86868b]" />}
-                placeholder="Return date"
-              />
-              <SearchField
-                className="xl:flex-1 xl:basis-0"
-                icon={<Users className="size-4 shrink-0 text-[#86868b]" />}
-                placeholder="1–14 Passengers"
-                trailing={<ChevronDown className="size-4 shrink-0 text-[#86868b]" />}
+                value={passengers}
+                onChange={setPassengers}
               />
             </div>
 
             <Button
+              type="submit"
               size="lg"
               className="h-12 shrink-0 rounded-xl bg-[#0071e3] px-8 text-[15px] font-normal hover:bg-[#0077ed] xl:w-36"
-              asChild
             >
-              <Link to="/find-vans">Search</Link>
+              Search
             </Button>
           </div>
-        </motion.div>
+        </motion.form>
       </div>
     </section>
   )
 }
 
-function SearchField({
-  icon,
+function LocationField({
+  value,
+  onChange,
   placeholder,
-  trailing,
   className,
 }: {
-  icon: ReactNode
+  value: string
+  onChange: (value: string) => void
   placeholder: string
-  trailing?: ReactNode
   className?: string
 }) {
   return (
-    <button
-      type="button"
+    <label
       className={cn(
-        'flex h-12 w-full min-w-0 items-center gap-2 rounded-xl bg-white/95 px-3 text-left transition-colors hover:bg-white',
+        'flex h-12 w-full min-w-0 items-center gap-2 rounded-xl bg-white/95 px-3 transition-colors focus-within:bg-white',
         className,
       )}
     >
-      {icon}
-      <span className="min-w-0 flex-1 truncate text-[13px] font-normal text-[#1d1d1f]/80">
-        {placeholder}
-      </span>
-      {trailing}
-    </button>
+      <MapPin className="size-4 shrink-0 text-[#86868b]" />
+      <input
+        type="text"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        className="min-w-0 flex-1 bg-transparent text-[13px] font-normal text-[#1d1d1f] placeholder:text-[#1d1d1f]/50 focus:outline-none"
+      />
+    </label>
+  )
+}
+
+function PassengerField({
+  value,
+  onChange,
+  className,
+}: {
+  value: string
+  onChange: (value: string) => void
+  className?: string
+}) {
+  return (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger
+        className={cn(
+          'flex h-12 w-full min-w-0 items-center gap-2 rounded-xl border-0 bg-white/95 px-3 text-left shadow-none transition-colors hover:bg-white focus-visible:border-0 focus-visible:ring-0 data-[size=default]:h-12 [&_svg:last-child]:text-[#86868b]',
+          className,
+        )}
+      >
+        <Users className="size-4 shrink-0 text-[#86868b]" />
+        <SelectValue placeholder="1–14 Passengers" />
+      </SelectTrigger>
+      <SelectContent>
+        {Array.from({ length: 14 }, (_, index) => {
+          const count = index + 1
+          return (
+            <SelectItem key={count} value={String(count)}>
+              {count} passenger{count === 1 ? '' : 's'}
+            </SelectItem>
+          )
+        })}
+      </SelectContent>
+    </Select>
   )
 }

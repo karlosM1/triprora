@@ -6,8 +6,10 @@ import {
 import { SearchResults } from '@/components/find-vans/search-results'
 import { Footer } from '@/components/landing/footer'
 import { Header } from '@/components/landing/header'
+import { validateTripSearch } from '@/lib/trip-search'
 
 export const Route = createFileRoute('/find-vans')({
+  validateSearch: validateTripSearch,
   component: FindVansPage,
 })
 

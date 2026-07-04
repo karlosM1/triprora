@@ -1,10 +1,16 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useSearch } from '@tanstack/react-router'
 import { Calendar } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { PageHeader } from '@/components/layout/page-header'
 import { fetchVans, vansQueryKey } from '@/lib/api/vans'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
+import {
+  filterVansByTripSearch,
+  formatTripSearchDate,
+  resolveTripSearch,
+} from '@/lib/trip-search'
 import { mapApiVans } from '@/lib/vans'
 import { cn } from '@/lib/utils'
 import { VanResultCard } from '@/components/find-vans/van-result-card'
@@ -45,6 +51,7 @@ function formatDisplayDate(departureDate?: string) {
 }
 
 export function SearchResults() {
+  const search = resolveTripSearch(useSearch({ from: '/find-vans' }))
   const [sortBy, setSortBy] = useState<SortOption>('price')
   const { data: vans = [], isLoading } = useQuery({
     queryKey: vansQueryKey,
@@ -52,19 +59,27 @@ export function SearchResults() {
     select: mapApiVans,
   })
 
+  const filteredResults = useMemo(
+    () => filterVansByTripSearch(vans, search),
+    [search, vans],
+  )
+
   const sortedResults = useMemo(
     () =>
-      [...vans].sort((a, b) => {
+      [...filteredResults].sort((a, b) => {
         if (sortBy === 'price') return a.price - b.price
         const aKey = `${a.departureDate ?? ''}T${a.departureTime}`
         const bKey = `${b.departureDate ?? ''}T${b.departureTime}`
         return aKey.localeCompare(bKey)
       }),
-    [sortBy, vans],
+    [filteredResults, sortBy],
   )
 
-  const heading = getRouteHeading(vans)
-  const displayDate = formatDisplayDate(vans[0]?.departureDate)
+  const heading = getRouteHeading(filteredResults)
+  const displayDate =
+    formatTripSearchDate(search.departureDate) ??
+    formatDisplayDate(filteredResults[0]?.departureDate)
+  const passengerLabel = `${search.passengers} passenger${search.passengers === 1 ? '' : 's'}`
 
   const sortControl = (
     <div className="flex rounded-full bg-[#e8e8ed] p-1">
@@ -99,8 +114,12 @@ export function SearchResults() {
     <div className="min-w-0 flex-1">
       <PageHeader
         eyebrow="Find vans"
-        title={heading.title}
-        subtitle={`${displayDate} · ${heading.subtitle}`}
+        title={
+          search.from && search.to
+            ? `${search.from} to ${search.to}`
+            : heading.title
+        }
+        subtitle={`${displayDate} · ${passengerLabel} · ${heading.subtitle}`}
         action={sortControl}
       />
 
@@ -119,11 +138,14 @@ export function SearchResults() {
           >
             <Calendar className="mx-auto size-10 text-[#86868b]/60" />
             <p className="mt-4 text-[19px] font-semibold text-[#1d1d1f]">
-              No trips available yet
+              {search.tripType === 'Multi City'
+                ? 'Multi-city trips are coming soon'
+                : 'No trips match your search'}
             </p>
             <p className="mx-auto mt-2 max-w-sm text-[15px] leading-relaxed text-[#86868b]">
-              Door-to-door van trips between Aurora and Metro Manila will appear
-              here when drivers publish them.
+              {search.tripType === 'Multi City'
+                ? 'For now, try a one-way or round-trip search between Aurora and Metro Manila.'
+                : 'Try different dates or locations, or check back when drivers publish new trips.'}
             </p>
           </motion.div>
         ) : (

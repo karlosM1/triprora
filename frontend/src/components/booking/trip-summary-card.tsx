@@ -10,7 +10,6 @@ type TripSummaryCardProps = {
   van: VanResult
   vanId: string
   selectedSeat: string
-  isPremium: boolean
   addresses?: TripAddresses
   addressesValid?: boolean
   onAddressError?: () => void
@@ -30,14 +29,12 @@ export function TripSummaryCard({
   van,
   vanId,
   selectedSeat,
-  isPremium,
   addresses,
   addressesValid = true,
   onAddressError,
   showProceed = true,
 }: TripSummaryCardProps) {
-  const premiumFee = isPremium ? 150 : 0
-  const total = van.price + premiumFee
+  const total = van.price
   const tripDate = formatTripDate(van.departureDate)
 
   function handleProceedClick(event: React.MouseEvent) {
@@ -83,7 +80,6 @@ export function TripSummaryCard({
         <SummaryRow label="Seat">
           <span className="inline-flex rounded-full bg-[#f0f7ff] px-3 py-1 text-[12px] font-medium text-[#0066cc]">
             {selectedSeat}
-            {isPremium ? ' · Premium' : ''}
           </span>
         </SummaryRow>
         <SummaryRow label="Driver" value={van.driver?.name ?? van.operator} />
@@ -97,12 +93,6 @@ export function TripSummaryCard({
           <span className="text-[#86868b]">Base fare</span>
           <span className="text-[#1d1d1f]">{formatPrice(van.price)}</span>
         </div>
-        {isPremium && (
-          <div className="mt-2 flex justify-between text-[14px]">
-            <span className="text-[#86868b]">Premium seat</span>
-            <span className="text-[#1d1d1f]">{formatPrice(premiumFee)}</span>
-          </div>
-        )}
         <div className="mt-3 flex justify-between border-t border-[#d2d2d7] pt-3">
           <span className="text-[15px] font-medium text-[#1d1d1f]">Total</span>
           <span className="text-[20px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">

@@ -8,16 +8,9 @@ const departureTimes = [
   { id: 'evening', label: 'Evening (18:00 – 00:00)' },
 ]
 
-const vanTypes = [
-  { id: 'standard', label: 'Standard (14-seater)' },
-  { id: 'executive', label: 'Executive (9-seater)' },
-  { id: 'luxury', label: 'Luxury (6-seater)' },
-]
-
 export function SearchFilters() {
   const [selectedTimes, setSelectedTimes] = useState<string[]>([])
   const [priceMax, setPriceMax] = useState(2500)
-  const [vanType, setVanType] = useState<string | null>(null)
 
   function toggleTime(id: string) {
     setSelectedTimes((prev) =>
@@ -28,7 +21,6 @@ export function SearchFilters() {
   function resetFilters() {
     setSelectedTimes([])
     setPriceMax(2500)
-    setVanType(null)
   }
 
   return (
@@ -79,29 +71,6 @@ export function SearchFilters() {
               </span>
               <span>₱2,500</span>
             </div>
-          </div>
-        </fieldset>
-
-        <fieldset>
-          <legend className="text-[13px] font-medium text-[#1d1d1f]">
-            Van type
-          </legend>
-          <div className="mt-3 space-y-3">
-            {vanTypes.map((type) => (
-              <label
-                key={type.id}
-                className="flex cursor-pointer items-center gap-3"
-              >
-                <input
-                  type="radio"
-                  name="vanType"
-                  checked={vanType === type.id}
-                  onChange={() => setVanType(type.id)}
-                  className="size-4 border-[#d2d2d7] text-[#0071e3] accent-[#0071e3]"
-                />
-                <span className="text-[14px] text-[#86868b]">{type.label}</span>
-              </label>
-            ))}
           </div>
         </fieldset>
       </div>

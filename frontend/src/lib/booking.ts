@@ -4,7 +4,6 @@ export type Seat = {
   id: string
   label: string
   status: SeatStatus
-  premium?: boolean
 }
 
 export type PassengerDetails = {
@@ -21,17 +20,14 @@ export type TripAddresses = {
 
 export type PaymentMethod = 'card' | 'bank' | 'wallet'
 
-export const PREMIUM_SEAT_FEE = 150
-
 export function formatPrice(amount: number): string {
   return `₱${amount.toLocaleString()}`
 }
 
-export function calculateTotals(baseFare: number, premiumSeat: boolean) {
-  const premiumFee = premiumSeat ? PREMIUM_SEAT_FEE : 0
+export function calculateTotals(baseFare: number) {
   const serviceFee = Math.round(baseFare * 0.05)
-  const tax = Math.round((baseFare + premiumFee + serviceFee) * 0.05)
-  const total = baseFare + premiumFee + serviceFee + tax
+  const tax = Math.round((baseFare + serviceFee) * 0.05)
+  const total = baseFare + serviceFee + tax
 
-  return { baseFare, premiumFee, serviceFee, tax, total }
+  return { baseFare, serviceFee, tax, total }
 }

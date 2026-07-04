@@ -3,6 +3,7 @@ import type {
   CreatedBooking,
   HistoryBooking,
   UpcomingBooking,
+  UpdateBookingInput,
 } from './booking.types.js'
 import { prisma } from '../lib/prisma.js'
 import { AppError } from '../utils/app-error.js'
@@ -13,9 +14,9 @@ export type {
   CreatedBooking,
   HistoryBooking,
   UpcomingBooking,
+  UpdateBookingInput,
 } from './booking.types.js'
 
-const PREMIUM_SEAT_FEE = 150
 const DEFAULT_IMAGE =
   'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&h=500&fit=crop'
 
@@ -28,11 +29,10 @@ function formatDisplayDate(dateStr: string) {
   })
 }
 
-function calculateTotal(baseFare: number, isPremium: boolean) {
-  const premiumFee = isPremium ? PREMIUM_SEAT_FEE : 0
+function calculateTotal(baseFare: number) {
   const serviceFee = Math.round(baseFare * 0.05)
-  const tax = Math.round((baseFare + premiumFee + serviceFee) * 0.05)
-  return baseFare + premiumFee + serviceFee + tax
+  const tax = Math.round((baseFare + serviceFee) * 0.05)
+  return baseFare + serviceFee + tax
 }
 
 function createBookingId() {
@@ -49,6 +49,7 @@ function formatPrice(amount: number) {
 
 function toUpcomingBooking(booking: {
   id: string
+  reference: string | null
   routeCode: string | null
   image: string | null
   date: string
@@ -58,21 +59,25 @@ function toUpcomingBooking(booking: {
   dropoffAddress: string | null
   route: string
   vehicle: string | null
+  price: string | null
 }): UpcomingBooking | null {
   if (
+    !booking.reference ||
     !booking.routeCode ||
     !booking.image ||
     !booking.time ||
     !booking.seat ||
     !booking.pickupAddress ||
     !booking.dropoffAddress ||
-    !booking.vehicle
+    !booking.vehicle ||
+    !booking.price
   ) {
     return null
   }
 
   return {
     id: booking.id,
+    reference: booking.reference,
     routeCode: booking.routeCode,
     image: booking.image,
     date: booking.date,
@@ -82,6 +87,7 @@ function toUpcomingBooking(booking: {
     dropoffAddress: booking.dropoffAddress,
     route: booking.route,
     vehicle: booking.vehicle,
+    price: booking.price,
     status: 'confirmed',
   }
 }
@@ -113,8 +119,7 @@ export const BookingModel = {
         throw new AppError('No seats remaining on this trip', 409)
       }
 
-      const isPremium = seat.premium
-      const total = calculateTotal(van.price, isPremium)
+      const total = calculateTotal(van.price)
       const reference = createReference()
       const route = `${van.departureLocation} → ${van.arrivalLocation}`
       const vehicle = van.vehicleName ?? van.operator
@@ -163,7 +168,6 @@ export const BookingModel = {
         vehicle,
         operator: van.operator,
         price: formatPrice(total),
-        isPremium,
       }
     })
   },
@@ -196,5 +200,75 @@ export const BookingModel = {
       status: booking.status as 'completed' | 'cancelled',
       price: booking.price ?? '',
     }))
+  },
+
+  async update(
+    userId: string,
+    bookingId: string,
+    input: UpdateBookingInput,
+  ): Promise<UpcomingBooking> {
+    return prisma.$transaction(async (tx) => {
+      const booking = await tx.booking.findFirst({
+        where: { id: bookingId, userId, status: 'confirmed' },
+        include: {
+          van: {
+            include: { seats: true },
+          },
+        },
+      })
+
+      if (!booking || !booking.van) {
+        throw new AppError('Booking not found', 404)
+      }
+
+      const pickupAddress = input.pickupAddress?.trim() ?? booking.pickupAddress
+      const dropoffAddress = input.dropoffAddress?.trim() ?? booking.dropoffAddress
+      const nextSeat = input.seat?.trim() ?? booking.seat
+
+      if (!pickupAddress || !dropoffAddress || !nextSeat) {
+        throw new AppError('Booking details are incomplete', 400)
+      }
+
+      if (nextSeat !== booking.seat) {
+        const currentSeat = booking.van.seats.find((seat) => seat.label === booking.seat)
+        const targetSeat = booking.van.seats.find((seat) => seat.label === nextSeat)
+
+        if (!targetSeat) {
+          throw new AppError('Seat not found', 404)
+        }
+
+        if (targetSeat.status === 'occupied') {
+          throw new AppError('This seat is no longer available', 409)
+        }
+
+        if (currentSeat) {
+          await tx.seat.update({
+            where: { id: currentSeat.id },
+            data: { status: 'available' },
+          })
+        }
+
+        await tx.seat.update({
+          where: { id: targetSeat.id },
+          data: { status: 'occupied' },
+        })
+      }
+
+      const updated = await tx.booking.update({
+        where: { id: bookingId },
+        data: {
+          pickupAddress,
+          dropoffAddress,
+          seat: nextSeat,
+        },
+      })
+
+      const upcoming = toUpcomingBooking(updated)
+      if (!upcoming) {
+        throw new AppError('Unable to load updated booking', 500)
+      }
+
+      return upcoming
+    })
   },
 }
