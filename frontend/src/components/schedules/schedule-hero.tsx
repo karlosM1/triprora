@@ -23,8 +23,6 @@ export function ScheduleHero() {
       search: {
         from,
         to,
-        passengers: DEFAULT_TRIP_SEARCH.passengers,
-        tripType: DEFAULT_TRIP_SEARCH.tripType,
       },
     })
   }

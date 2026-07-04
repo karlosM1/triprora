@@ -1,14 +1,13 @@
 import { locationMatchesPlace } from '@/lib/places'
 import type { ApiVan } from '@/lib/types/api'
 
-export const TRIP_TYPES = ['One Way Trip', 'Round Trip', 'Multi City'] as const
-export type TripType = (typeof TRIP_TYPES)[number]
+export const TRIP_TYPE = 'One Way Trip' as const
+export type TripType = typeof TRIP_TYPE
 
 export type TripSearchParams = {
   from: string
   to: string
   departureDate?: string
-  returnDate?: string
   passengers: number
   tripType: TripType
 }
@@ -19,16 +18,12 @@ export const DEFAULT_TRIP_SEARCH: TripSearchParams = {
   from: 'Aurora',
   to: 'Metro Manila',
   passengers: 1,
-  tripType: 'One Way Trip',
+  tripType: TRIP_TYPE,
 }
 
 export function validateTripSearch(
   search: Record<string, unknown>,
 ): TripSearchInput {
-  const tripType = TRIP_TYPES.includes(search.tripType as TripType)
-    ? (search.tripType as TripType)
-    : undefined
-
   const passengers = Number(search.passengers)
   const normalizedPassengers =
     Number.isFinite(passengers) && passengers >= 1 && passengers <= 14
@@ -48,12 +43,8 @@ export function validateTripSearch(
       typeof search.departureDate === 'string' && search.departureDate
         ? search.departureDate
         : undefined,
-    returnDate:
-      typeof search.returnDate === 'string' && search.returnDate
-        ? search.returnDate
-        : undefined,
     passengers: normalizedPassengers,
-    tripType,
+    tripType: TRIP_TYPE,
   }
 }
 
@@ -75,10 +66,6 @@ export function filterVansByTripSearch<T extends Pick<
   vans: T[],
   search: TripSearchParams,
 ): T[] {
-  if (search.tripType === 'Multi City') {
-    return []
-  }
-
   return vans.filter((van) => {
     if (!locationMatchesPlace(van.departureLocation, search.from)) return false
     if (!locationMatchesPlace(van.arrivalLocation, search.to)) return false

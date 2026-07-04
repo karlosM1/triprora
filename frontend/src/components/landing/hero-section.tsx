@@ -1,17 +1,10 @@
 import { useState } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
-import { ArrowLeftRight, Users } from 'lucide-react'
+import { ArrowLeftRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/ui/date-picker'
 import { PlaceInput } from '@/components/ui/place-input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import {
   fadeInUp,
   scaleIn,
@@ -20,20 +13,14 @@ import {
 import {
   DEFAULT_TRIP_SEARCH,
   todayDateInputValue,
-  TRIP_TYPES,
-  type TripType,
 } from '@/lib/trip-search'
-import { cn } from '@/lib/utils'
 import heroBackground from '@/assets/beach-view.jpg'
 
 export function HeroSection() {
   const navigate = useNavigate()
-  const [activeTrip, setActiveTrip] = useState<TripType>(DEFAULT_TRIP_SEARCH.tripType)
   const [from, setFrom] = useState(DEFAULT_TRIP_SEARCH.from)
   const [to, setTo] = useState(DEFAULT_TRIP_SEARCH.to)
   const [departureDate, setDepartureDate] = useState('')
-  const [returnDate, setReturnDate] = useState('')
-  const [passengers, setPassengers] = useState(String(DEFAULT_TRIP_SEARCH.passengers))
 
   function swapLocations() {
     setFrom(to)
@@ -47,10 +34,6 @@ export function HeroSection() {
         from,
         to,
         departureDate: departureDate || undefined,
-        returnDate:
-          activeTrip === 'Round Trip' && returnDate ? returnDate : undefined,
-        passengers: Number(passengers),
-        tripType: activeTrip,
       },
     })
   }
@@ -122,26 +105,6 @@ export function HeroSection() {
             handleSearch()
           }}
         >
-          <div className="-mx-1 mb-3 overflow-x-auto px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:mb-4 sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden">
-            <div className="flex w-max min-w-full gap-2 sm:w-auto sm:flex-wrap">
-            {TRIP_TYPES.map((type) => (
-              <button
-                key={type}
-                type="button"
-                onClick={() => setActiveTrip(type)}
-                className={cn(
-                  'shrink-0 rounded-full px-3.5 py-2 text-[12px] font-medium whitespace-nowrap transition-all duration-300 sm:px-4 sm:text-[13px]',
-                  activeTrip === type
-                    ? 'bg-white text-[#1d1d1f] shadow-sm'
-                    : 'bg-white/10 text-white/90 hover:bg-white/20',
-                )}
-              >
-                {type}
-              </button>
-            ))}
-            </div>
-          </div>
-
           <div className="flex flex-col gap-3 xl:flex-row xl:items-stretch">
             <div className="flex flex-1 flex-col gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:flex xl:flex-row xl:gap-3">
               <div className="relative flex min-w-0 flex-col gap-2 sm:col-span-2 sm:flex-row sm:gap-3 lg:col-span-2 xl:flex-[2] xl:basis-0">
@@ -175,20 +138,6 @@ export function HeroSection() {
                 min={todayDateInputValue()}
                 placeholder="Select date"
               />
-              {activeTrip !== 'One Way Trip' ? (
-                <DatePicker
-                  className="xl:flex-1 xl:basis-0"
-                  value={returnDate}
-                  onChange={setReturnDate}
-                  min={departureDate || todayDateInputValue()}
-                  placeholder="Return date"
-                />
-              ) : null}
-              <PassengerField
-                className="xl:flex-1 xl:basis-0"
-                value={passengers}
-                onChange={setPassengers}
-              />
             </div>
 
             <Button
@@ -202,39 +151,5 @@ export function HeroSection() {
         </motion.form>
       </div>
     </section>
-  )
-}
-
-function PassengerField({
-  value,
-  onChange,
-  className,
-}: {
-  value: string
-  onChange: (value: string) => void
-  className?: string
-}) {
-  return (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger
-        className={cn(
-          'flex h-12 w-full min-w-0 items-center gap-2 rounded-xl border-0 bg-white/95 px-3 text-left shadow-none transition-colors hover:bg-white focus-visible:border-0 focus-visible:ring-0 data-[size=default]:h-12 [&_svg:last-child]:text-[#86868b]',
-          className,
-        )}
-      >
-        <Users className="size-4 shrink-0 text-[#86868b]" />
-        <SelectValue placeholder="1–14 Passengers" />
-      </SelectTrigger>
-      <SelectContent>
-        {Array.from({ length: 14 }, (_, index) => {
-          const count = index + 1
-          return (
-            <SelectItem key={count} value={String(count)}>
-              {count} passenger{count === 1 ? '' : 's'}
-            </SelectItem>
-          )
-        })}
-      </SelectContent>
-    </Select>
   )
 }

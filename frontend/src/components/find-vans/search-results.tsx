@@ -98,7 +98,6 @@ export function SearchResults() {
     search.to,
     search.departureDate,
     search.passengers,
-    search.tripType,
     sortBy,
     sortedResults.length,
   ])
@@ -112,7 +111,6 @@ export function SearchResults() {
   const displayDate =
     formatTripSearchDate(search.departureDate) ??
     formatDisplayDate(filteredResults[0]?.departureDate)
-  const passengerLabel = `${search.passengers} passenger${search.passengers === 1 ? '' : 's'}`
 
   const sortControl = (
     <div className="shrink-0 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -154,7 +152,7 @@ export function SearchResults() {
             ? `${search.from} to ${search.to}`
             : heading.title
         }
-        subtitle={`${displayDate} · ${passengerLabel} · ${heading.subtitle}`}
+        subtitle={`${displayDate} · ${heading.subtitle}`}
         action={sortControl}
       />
 
@@ -173,14 +171,10 @@ export function SearchResults() {
           >
             <Calendar className="mx-auto size-10 text-[#86868b]/60" />
             <p className="mt-4 text-[19px] font-semibold text-[#1d1d1f]">
-              {search.tripType === 'Multi City'
-                ? 'Multi-city trips are coming soon'
-                : 'No trips match your search'}
+              No trips match your search
             </p>
             <p className="mx-auto mt-2 max-w-sm text-[15px] leading-relaxed text-[#86868b]">
-              {search.tripType === 'Multi City'
-                ? 'For now, try a one-way or round-trip search between Aurora and Metro Manila.'
-                : 'Try different dates or locations, or check back when drivers publish new trips.'}
+              Try different dates or locations, or check back when drivers publish new trips.
             </p>
           </motion.div>
         ) : (
