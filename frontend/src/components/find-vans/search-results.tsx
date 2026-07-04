@@ -81,12 +81,13 @@ export function SearchResults() {
   const passengerLabel = `${search.passengers} passenger${search.passengers === 1 ? '' : 's'}`
 
   const sortControl = (
-    <div className="flex rounded-full bg-[#e8e8ed] p-1">
+    <div className="w-full overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] sm:w-auto [&::-webkit-scrollbar]:hidden">
+      <div className="flex w-max min-w-full rounded-full bg-[#e8e8ed] p-1 sm:min-w-0">
       <button
         type="button"
         onClick={() => setSortBy('price')}
         className={cn(
-          'rounded-full px-4 py-1.5 text-[13px] font-medium transition-all',
+          'shrink-0 rounded-full px-3 py-1.5 text-[12px] font-medium whitespace-nowrap transition-all sm:px-4 sm:text-[13px]',
           sortBy === 'price'
             ? 'bg-white text-[#1d1d1f] shadow-sm'
             : 'text-[#86868b] hover:text-[#1d1d1f]',
@@ -98,7 +99,7 @@ export function SearchResults() {
         type="button"
         onClick={() => setSortBy('departure')}
         className={cn(
-          'rounded-full px-4 py-1.5 text-[13px] font-medium transition-all',
+          'shrink-0 rounded-full px-3 py-1.5 text-[12px] font-medium whitespace-nowrap transition-all sm:px-4 sm:text-[13px]',
           sortBy === 'departure'
             ? 'bg-white text-[#1d1d1f] shadow-sm'
             : 'text-[#86868b] hover:text-[#1d1d1f]',
@@ -106,6 +107,7 @@ export function SearchResults() {
       >
         Earliest departure
       </button>
+      </div>
     </div>
   )
 

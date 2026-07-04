@@ -15,7 +15,7 @@ function SchedulesPage() {
       <Header activeLink="schedules" />
       <ScheduleHero />
 
-      <main className="mx-auto max-w-[980px] space-y-16 px-6 py-14 lg:px-8 lg:py-20">
+      <main className="mx-auto max-w-[980px] space-y-12 px-4 py-10 sm:space-y-16 sm:px-6 sm:py-14 lg:px-8 lg:py-20">
         <FrequentRoutes />
         <NetworkMonitoring />
       </main>

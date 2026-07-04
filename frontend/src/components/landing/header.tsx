@@ -1,7 +1,16 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { motion, useScroll, useTransform } from "framer-motion";
-import type { ReactNode } from "react";
+import { Menu } from "lucide-react";
+import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 import heroLogo from "@/assets/crabi-logo.png";
@@ -106,8 +115,8 @@ export function Header({
       animate={isHero ? { y: 0, opacity: 1 } : undefined}
       transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
     >
-      <nav className="mx-auto grid h-11 max-w-245 grid-cols-[1fr_auto_1fr] items-center px-6 lg:px-8">
-        <div className="flex items-center justify-self-start">
+      <nav className="relative mx-auto flex h-11 max-w-245 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+        <div className="flex min-w-0 shrink-0 items-center">
           <Link
             to="/"
             className={cn(
@@ -126,7 +135,7 @@ export function Header({
           </Link>
         </div>
 
-        <ul className="hidden items-center gap-0.5 justify-self-center md:flex">
+        <ul className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-0.5 md:flex">
           {navLinks.map((link) => (
             <li key={link.key}>
               <Link
@@ -148,41 +157,15 @@ export function Header({
           ))}
         </ul>
 
-        <div className="flex items-center justify-self-end gap-2">
-          {showDriverPortal && (
-            <Link
-              to="/driver"
-              className={cn(
-                "inline-flex h-8 items-center rounded-md px-2.5 text-xs leading-none font-normal transition-colors md:hidden",
-                !isHero &&
-                  cn(
-                    "text-[#1d1d1f]/80 hover:text-[#0066cc]",
-                    activeLink === "driver-portal" && "text-[#0066cc]",
-                  ),
-              )}
-            >
-              <HeroText isHero={isHero} scrollProgress={textDark}>
-                Driver
-              </HeroText>
-            </Link>
-          )}
-          {showAdminPortal && (
-            <Link
-              to="/admin"
-              className={cn(
-                "inline-flex h-8 items-center rounded-md px-2.5 text-xs leading-none font-normal transition-colors md:hidden",
-                !isHero &&
-                  cn(
-                    "text-[#1d1d1f]/80 hover:text-[#0066cc]",
-                    activeLink === "admin" && "text-[#0066cc]",
-                  ),
-              )}
-            >
-              <HeroText isHero={isHero} scrollProgress={textDark}>
-                Admin
-              </HeroText>
-            </Link>
-          )}
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <MobileNavMenu
+            navLinks={navLinks}
+            activeLink={activeLink}
+            isHero={isHero}
+            scrollProgress={textDark}
+            user={user}
+            onSignOut={handleSignOut}
+          />
           {loading ? (
             <HeroMuted isHero={isHero} scrollProgress={textDark}>
               ...
@@ -209,7 +192,7 @@ export function Header({
               <Link
                 to="/sign-in"
                 className={cn(
-                  "hidden h-8 items-center text-xs leading-none transition-colors sm:inline-flex",
+                  "hidden h-8 items-center text-xs leading-none transition-colors md:inline-flex",
                   !isHero && "text-[#1d1d1f]/80 hover:text-[#0066cc]",
                 )}
               >
@@ -222,7 +205,7 @@ export function Header({
               ) : (
                 <Button
                   size="sm"
-                  className="inline-flex h-8 items-center rounded-full bg-[#0071e3] px-4 text-xs leading-none font-normal text-white hover:bg-[#0077ed]"
+                  className="hidden h-8 items-center rounded-full bg-[#0071e3] px-4 text-xs leading-none font-normal text-white hover:bg-[#0077ed] md:inline-flex"
                   asChild
                 >
                   <Link to="/sign-up">Sign Up</Link>
@@ -233,6 +216,110 @@ export function Header({
         </div>
       </nav>
     </motion.header>
+  );
+}
+
+type NavLink = (typeof baseNavLinks)[number] | {
+  label: string;
+  to: string;
+  key: HeaderProps["activeLink"];
+};
+
+function MobileNavMenu({
+  navLinks,
+  activeLink,
+  isHero,
+  scrollProgress,
+  user,
+  onSignOut,
+}: {
+  navLinks: NavLink[];
+  activeLink: HeaderProps["activeLink"];
+  isHero: boolean;
+  scrollProgress: ReturnType<typeof useTransform<number, number>>;
+  user: ReturnType<typeof useAuth>["user"];
+  onSignOut: () => Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+
+  async function handleSignOut() {
+    setOpen(false);
+    await onSignOut();
+  }
+
+  return (
+    <Drawer open={open} onOpenChange={setOpen} direction="right">
+      <DrawerTrigger asChild>
+        <button
+          type="button"
+          aria-label="Open menu"
+          className={cn(
+            "inline-flex size-8 items-center justify-center rounded-md transition-colors md:hidden",
+            !isHero && "text-[#1d1d1f]/80 hover:bg-black/5 hover:text-[#0066cc]",
+          )}
+        >
+          <HeroText isHero={isHero} scrollProgress={scrollProgress}>
+            <Menu className="size-5" />
+          </HeroText>
+        </button>
+      </DrawerTrigger>
+      <DrawerContent className="flex h-full max-h-svh min-h-0 w-[min(100vw-2rem,320px)] flex-col overflow-hidden bg-white p-0 data-[vaul-drawer-direction=right]:h-full">
+        <DrawerHeader className="shrink-0 border-b border-black/5 px-4 py-4 text-left">
+          <DrawerTitle className="text-[17px] font-semibold text-[#1d1d1f]">
+            Menu
+          </DrawerTitle>
+        </DrawerHeader>
+        <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2 py-2">
+          {navLinks.map((link) => (
+            <Link
+              key={link.key}
+              to={link.to}
+              onClick={() => setOpen(false)}
+              className={cn(
+                "block w-full rounded-lg px-3 py-3 text-left text-[15px] font-normal whitespace-nowrap transition-colors hover:bg-[#f5f5f7]",
+                activeLink === link.key
+                  ? "text-[#0066cc]"
+                  : "text-[#1d1d1f]",
+              )}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+        {user ? (
+          <DrawerFooter className="mt-0 shrink-0 border-t border-black/5 bg-white px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            {user.email ? (
+              <p className="truncate text-[13px] text-[#86868b]">{user.email}</p>
+            ) : null}
+            <Button
+              variant="ghost"
+              className="h-10 w-full rounded-full text-[14px] font-normal text-[#0066cc] hover:bg-[#0071e3]/5 hover:text-[#0077ed]"
+              onClick={handleSignOut}
+            >
+              Sign out
+            </Button>
+          </DrawerFooter>
+        ) : (
+          <DrawerFooter className="mt-0 shrink-0 border-t border-black/5 bg-white px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            <Button
+              className="h-10 w-full rounded-full bg-[#0071e3] text-[14px] font-normal text-white hover:bg-[#0077ed]"
+              asChild
+            >
+              <Link to="/sign-up" onClick={() => setOpen(false)}>
+                Sign Up
+              </Link>
+            </Button>
+            <Link
+              to="/sign-in"
+              onClick={() => setOpen(false)}
+              className="inline-flex h-10 w-full items-center justify-center rounded-full text-[14px] font-normal text-[#0066cc] transition-colors hover:bg-[#0071e3]/5"
+            >
+              Sign In
+            </Link>
+          </DrawerFooter>
+        )}
+      </DrawerContent>
+    </Drawer>
   );
 }
 
@@ -250,7 +337,7 @@ function HeroSignUpButton({
   return (
     <motion.div
       style={{ backgroundColor }}
-      className="inline-flex overflow-hidden rounded-full backdrop-blur-sm"
+      className="hidden overflow-hidden rounded-full backdrop-blur-sm md:inline-flex"
     >
       <Link
         to="/sign-up"

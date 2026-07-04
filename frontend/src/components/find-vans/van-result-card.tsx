@@ -8,7 +8,7 @@ export function VanResultCard({ result }: { result: VanResult }) {
   const isLowAvailability = result.seatsLeft <= 5
 
   return (
-    <article className="rounded-2xl bg-white p-6 ring-1 ring-black/5 transition-shadow hover:shadow-md">
+    <article className="rounded-2xl bg-white p-4 ring-1 ring-black/5 transition-shadow hover:shadow-md sm:p-6">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <ScheduleColumn result={result} />
         <DetailsColumn result={result} />

@@ -1,3 +1,4 @@
+import { locationMatchesPlace } from '@/lib/places'
 import type { ApiVan } from '@/lib/types/api'
 
 export const TRIP_TYPES = ['One Way Trip', 'Round Trip', 'Multi City'] as const
@@ -20,20 +21,6 @@ export const DEFAULT_TRIP_SEARCH: TripSearchParams = {
   passengers: 1,
   tripType: 'One Way Trip',
 }
-
-const MANILA_KEYWORDS = [
-  'manila',
-  'quezon',
-  'makati',
-  'pasay',
-  'taguig',
-  'pasig',
-  'cubao',
-  'bgc',
-  'naia',
-]
-
-const AURORA_KEYWORDS = ['aurora', 'casiguran']
 
 export function validateTripSearch(
   search: Record<string, unknown>,
@@ -81,30 +68,6 @@ export function resolveTripSearch(search: TripSearchInput): TripSearchParams {
   }
 }
 
-function locationMatches(location: string, query: string) {
-  const normalizedLocation = location.toLowerCase()
-  const normalizedQuery = query.trim().toLowerCase()
-  if (!normalizedQuery) return true
-  if (normalizedLocation.includes(normalizedQuery)) return true
-
-  if (
-    normalizedQuery.includes('metro manila') ||
-    normalizedQuery === 'manila'
-  ) {
-    return MANILA_KEYWORDS.some((keyword) =>
-      normalizedLocation.includes(keyword),
-    )
-  }
-
-  if (normalizedQuery.includes('aurora')) {
-    return AURORA_KEYWORDS.some((keyword) =>
-      normalizedLocation.includes(keyword),
-    )
-  }
-
-  return false
-}
-
 export function filterVansByTripSearch<T extends Pick<
   ApiVan,
   'departureLocation' | 'arrivalLocation' | 'departureDate' | 'seatsLeft'
@@ -117,8 +80,8 @@ export function filterVansByTripSearch<T extends Pick<
   }
 
   return vans.filter((van) => {
-    if (!locationMatches(van.departureLocation, search.from)) return false
-    if (!locationMatches(van.arrivalLocation, search.to)) return false
+    if (!locationMatchesPlace(van.departureLocation, search.from)) return false
+    if (!locationMatchesPlace(van.arrivalLocation, search.to)) return false
     if (search.departureDate && van.departureDate !== search.departureDate) {
       return false
     }

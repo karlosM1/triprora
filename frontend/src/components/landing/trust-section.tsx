@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { fadeInUp, staggerContainer, viewportOnce } from '@/lib/motion'
+import { cn } from '@/lib/utils'
 
 const partners = [
   { name: 'Cubao', abbr: 'CUB' },
@@ -37,22 +38,30 @@ export function TrustSection() {
 
         <motion.div
           variants={staggerContainer}
-          className="mt-14 flex flex-wrap items-center justify-center gap-x-12 gap-y-8"
+          className="mx-auto mt-14 grid max-w-md grid-cols-3 justify-items-center gap-x-4 gap-y-8 sm:max-w-none sm:grid-cols-4 sm:gap-x-6 lg:grid-cols-7"
         >
-          {partners.map((partner) => (
-            <motion.div
-              key={partner.name}
-              variants={fadeInUp}
-              className="flex flex-col items-center gap-2"
-            >
-              <span className="flex size-12 items-center justify-center rounded-full bg-white text-xs font-semibold text-[#1d1d1f] shadow-sm">
-                {partner.abbr}
-              </span>
-              <span className="text-xs font-medium tracking-wide text-[#86868b] uppercase">
-                {partner.name}
-              </span>
-            </motion.div>
-          ))}
+          {partners.map((partner, index) => {
+            const isMobileOrphan =
+              index === partners.length - 1 && partners.length % 3 !== 0
+
+            return (
+              <motion.div
+                key={partner.name}
+                variants={fadeInUp}
+                className={cn(
+                  'flex w-full flex-col items-center gap-2',
+                  isMobileOrphan && 'col-span-3 sm:col-span-1',
+                )}
+              >
+                <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-white text-xs font-semibold text-[#1d1d1f] shadow-sm">
+                  {partner.abbr}
+                </span>
+                <span className="max-w-[5.5rem] text-center text-[11px] leading-tight font-medium tracking-wide text-[#86868b] uppercase sm:text-xs">
+                  {partner.name}
+                </span>
+              </motion.div>
+            )
+          })}
         </motion.div>
       </motion.div>
     </section>

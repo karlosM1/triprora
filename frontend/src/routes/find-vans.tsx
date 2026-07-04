@@ -17,7 +17,7 @@ function FindVansPage() {
   return (
     <div className="app-page min-h-svh bg-[#f5f5f7]">
       <Header activeLink="find-vans" />
-      <main className="mx-auto max-w-[980px] px-6 py-10 lg:px-8 lg:py-14">
+      <main className="mx-auto max-w-[980px] px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-14">
         <div className="flex flex-col gap-10 lg:flex-row lg:gap-12">
           <aside className="w-full shrink-0 space-y-4 lg:w-64 xl:w-72">
             <SearchFilters />
