@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
-import heroLogo from "@/assets/triprora-logo.png";
+import heroLogo from "@/assets/crabi-logo.png";
 
 const baseNavLinks = [
   { label: "Home", to: "/" as const, key: "home" },
@@ -120,7 +120,7 @@ export function Header({
                 <img src={heroLogo} alt="" className="size-10 object-contain" />
               </span>
               <span className="text-[17px] font-semibold tracking-tight">
-                Triprora
+                Crabi
               </span>
             </HeroText>
           </Link>

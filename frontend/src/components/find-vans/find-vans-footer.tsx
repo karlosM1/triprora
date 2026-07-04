@@ -11,10 +11,10 @@ export function FindVansFooter() {
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
           <div className="sm:col-span-2 lg:col-span-2">
             <a href="/" className="text-xl font-bold tracking-tight text-foreground">
-              Triprora
+              Crabi
             </a>
             <p className="mt-3 max-w-sm text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} Triprora — Door-to-door van
+              &copy; {new Date().getFullYear()} Crabi — Door-to-door van
               service between Aurora and Metro Manila, both ways.
             </p>
           </div>

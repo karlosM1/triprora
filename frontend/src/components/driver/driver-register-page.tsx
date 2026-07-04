@@ -67,7 +67,7 @@ function DriverRegisterShell({ children, showBenefits = false }: DriverRegisterS
           {showBenefits && (
             <motion.div variants={fadeInUp} className="mt-10 space-y-4 lg:mt-0">
               <p className="text-[13px] font-medium tracking-wide text-[#86868b] uppercase">
-                Why drive with Triprora
+                Why drive with Crabi
               </p>
               {benefits.map(({ icon: Icon, title, description }) => (
                 <AppleCard key={title} className="p-5">
@@ -265,7 +265,7 @@ export function DriverRegisterFormPage({
   return (
     <DriverRegisterShell showBenefits>
       <PageHeader
-        eyebrow="Drive with Triprora"
+        eyebrow="Drive with Crabi"
         title="Become a driver"
         subtitle="Apply to join our verified driver network. An admin will review your application before you can publish trips."
       />

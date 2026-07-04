@@ -294,7 +294,7 @@ export const VanModel = {
     const config = categoryConfig[input.tripCategory]
     const arrivalTime = addHoursToTime(input.departureTime, config.durationHours)
     const duration = formatDuration(config.durationHours)
-    const operator = input.driverName?.trim() || 'Triprora Partner'
+    const operator = input.driverName?.trim() || 'Crabi Partner'
     const seatLabels = generateSeatLabels(input.totalSeats)
 
     const van = await prisma.van.create({

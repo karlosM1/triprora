@@ -7,7 +7,11 @@ COPY backend/package.json backend/package.json
 COPY frontend/package.json frontend/package.json
 
 RUN npm ci \
-  && npm install @rolldown/binding-linux-x64-gnu@1.0.3 --no-save
+  && npm install \
+    @rolldown/binding-linux-x64-gnu@1.0.3 \
+    lightningcss-linux-x64-gnu@1.32.0 \
+    @tailwindcss/oxide-linux-x64-gnu@4.3.0 \
+    --no-save
 
 COPY frontend frontend
 

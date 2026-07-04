@@ -114,7 +114,7 @@ function SignInPage() {
       subtitle={
         showForgotPassword
           ? 'Enter your email and we’ll send you a reset link.'
-          : 'Access your bookings and continue your journey with Triprora.'
+          : 'Access your bookings and continue your journey with Crabi.'
       }
       footer={
         <>
