@@ -4,9 +4,11 @@ import {
   submitDriverApplication,
 } from '../controllers/driver-applications.controller.js'
 import {
+  completeDriverTrip,
   createDriverTrip,
   getDriverTripById,
   getDriverTrips,
+  updateDriverTrip,
 } from '../controllers/driver-trips.controller.js'
 import { asyncHandler } from '../middleware/async-handler.middleware.js'
 import { authenticate, requireRole } from '../middleware/auth.middleware.js'
@@ -15,6 +17,7 @@ import { submitDriverApplicationSchema } from '../validators/driver-applications
 import {
   createDriverTripSchema,
   driverTripIdParamSchema,
+  updateDriverTripSchema,
 } from '../validators/driver-trips.validator.js'
 
 export const driverRouter = Router()
@@ -54,4 +57,23 @@ driverRouter.get(
   requireRole('driver'),
   validateRequest({ params: driverTripIdParamSchema }),
   asyncHandler(getDriverTripById),
+)
+
+driverRouter.patch(
+  '/trips/:tripId',
+  authenticate,
+  requireRole('driver'),
+  validateRequest({
+    params: driverTripIdParamSchema,
+    body: updateDriverTripSchema,
+  }),
+  asyncHandler(updateDriverTrip),
+)
+
+driverRouter.post(
+  '/trips/:tripId/complete',
+  authenticate,
+  requireRole('driver'),
+  validateRequest({ params: driverTripIdParamSchema }),
+  asyncHandler(completeDriverTrip),
 )

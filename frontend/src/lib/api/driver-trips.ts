@@ -17,7 +17,8 @@ export type DriverTrip = {
   departureDate: string
   tripCategory: string | null
   vehicleName: string | null
-  status: 'draft' | 'published' | 'cancelled'
+  plateNumber: string | null
+  status: 'draft' | 'published' | 'completed' | 'cancelled'
   driverId: string | null
   createdAt: string
 }
@@ -60,6 +61,8 @@ export type CreateDriverTripPayload = {
   status: 'draft' | 'published'
 }
 
+export type UpdateDriverTripPayload = CreateDriverTripPayload
+
 export async function fetchDriverTrips() {
   const { data } = await api.get<DriverTrip[]>('/driver/trips')
   return data
@@ -74,6 +77,24 @@ export async function fetchDriverTripDetails(tripId: string) {
 
 export async function createDriverTrip(payload: CreateDriverTripPayload) {
   const { data } = await api.post<DriverTrip>('/driver/trips', payload)
+  return data
+}
+
+export async function updateDriverTrip(
+  tripId: string,
+  payload: UpdateDriverTripPayload,
+) {
+  const { data } = await api.patch<DriverTrip>(
+    `/driver/trips/${encodeURIComponent(tripId)}`,
+    payload,
+  )
+  return data
+}
+
+export async function completeDriverTrip(tripId: string) {
+  const { data } = await api.post<DriverTrip>(
+    `/driver/trips/${encodeURIComponent(tripId)}/complete`,
+  )
   return data
 }
 

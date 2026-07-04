@@ -1,10 +1,12 @@
 import { Link } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Calendar,
   Car,
+  ChevronLeft,
+  ChevronRight,
   CirclePlus,
   Headphones,
   Lightbulb,
@@ -359,10 +361,14 @@ export function DriverDashboardPage() {
 
 type TripTab = 'upcoming' | 'completed' | 'cancelled'
 
+const TRIPS_PAGE_SIZE = 6
+
 export function DriverMyTripsPage() {
   const tripsQuery = useDriverTrips()
   const trips = tripsQuery.data ?? []
   const [activeTab, setActiveTab] = useState<TripTab>('upcoming')
+  const [page, setPage] = useState(1)
+  const tripsTopRef = useRef<HTMLDivElement>(null)
 
   const upcomingTrips = trips.filter((trip) => isUpcomingTrip(trip))
   const completedTrips = trips.filter((trip) => isPastTrip(trip))
@@ -375,6 +381,27 @@ export function DriverMyTripsPage() {
       : activeTab === 'completed'
         ? completedTrips
         : cancelledTrips
+
+  const totalPages = Math.max(1, Math.ceil(visibleTrips.length / TRIPS_PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+
+  const paginatedTrips = useMemo(() => {
+    const start = (currentPage - 1) * TRIPS_PAGE_SIZE
+    return visibleTrips.slice(start, start + TRIPS_PAGE_SIZE)
+  }, [currentPage, visibleTrips])
+
+  const tripRangeStart =
+    visibleTrips.length === 0 ? 0 : (currentPage - 1) * TRIPS_PAGE_SIZE + 1
+  const tripRangeEnd = Math.min(currentPage * TRIPS_PAGE_SIZE, visibleTrips.length)
+
+  useEffect(() => {
+    setPage(1)
+  }, [activeTab, visibleTrips.length])
+
+  function goToPage(nextPage: number) {
+    setPage(nextPage)
+    tripsTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   const earnings = sumPotentialEarnings(completedTrips)
 
@@ -404,7 +431,7 @@ export function DriverMyTripsPage() {
         />
       </div>
 
-      <div>
+      <div ref={tripsTopRef} className="scroll-mt-24">
         <div className="mb-6 flex flex-wrap gap-2">
           {(
             [
@@ -438,7 +465,7 @@ export function DriverMyTripsPage() {
           />
         ) : (
           <div className="space-y-4">
-            {visibleTrips.map((trip) => (
+            {paginatedTrips.map((trip) => (
               <AppleCard key={trip.id} className="p-5">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
@@ -448,9 +475,9 @@ export function DriverMyTripsPage() {
                         variant={
                           trip.status === 'draft'
                             ? 'draft'
-                            : isUpcomingTrip(trip)
-                              ? 'default'
-                              : 'success'
+                            : trip.status === 'completed'
+                              ? 'success'
+                              : 'default'
                         }
                       />
                       <span className="text-[13px] text-[#86868b]">{trip.id}</span>
@@ -477,14 +504,28 @@ export function DriverMyTripsPage() {
                       </span>{' '}
                       seats left
                     </p>
-                    <Button
-                      className="h-9 rounded-full bg-[#0071e3] px-5 text-[13px] font-normal hover:bg-[#0077ed]"
-                      asChild
-                    >
-                      <Link to="/driver/trips/$tripId" params={{ tripId: trip.id }}>
-                        View details
-                      </Link>
-                    </Button>
+                    {trip.status === 'draft' ? (
+                      <Button
+                        className="h-9 rounded-full bg-[#0071e3] px-5 text-[13px] font-normal hover:bg-[#0077ed]"
+                        asChild
+                      >
+                        <Link
+                          to="/driver/trips/$tripId/edit"
+                          params={{ tripId: trip.id }}
+                        >
+                          Continue draft
+                        </Link>
+                      </Button>
+                    ) : (
+                      <Button
+                        className="h-9 rounded-full bg-[#0071e3] px-5 text-[13px] font-normal hover:bg-[#0077ed]"
+                        asChild
+                      >
+                        <Link to="/driver/trips/$tripId" params={{ tripId: trip.id }}>
+                          View details
+                        </Link>
+                      </Button>
+                    )}
                     {trip.status === 'published' && (
                       <Link
                         to="/find-vans"
@@ -497,6 +538,47 @@ export function DriverMyTripsPage() {
                 </div>
               </AppleCard>
             ))}
+
+            {visibleTrips.length > TRIPS_PAGE_SIZE && (
+              <div className="flex flex-col items-center justify-between gap-4 rounded-2xl bg-white px-4 py-4 ring-1 ring-black/5 sm:flex-row sm:px-6">
+                <p className="text-[13px] text-[#86868b]">
+                  Showing{' '}
+                  <span className="font-medium text-[#1d1d1f]">
+                    {tripRangeStart}–{tripRangeEnd}
+                  </span>{' '}
+                  of{' '}
+                  <span className="font-medium text-[#1d1d1f]">
+                    {visibleTrips.length}
+                  </span>{' '}
+                  trips
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="h-9 rounded-full px-4 text-[13px] text-[#0066cc] hover:bg-[#0071e3]/5 disabled:opacity-40"
+                    disabled={currentPage <= 1}
+                    onClick={() => goToPage(currentPage - 1)}
+                  >
+                    <ChevronLeft className="size-4" />
+                    Previous
+                  </Button>
+                  <span className="min-w-24 text-center text-[13px] font-medium text-[#1d1d1f]">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="h-9 rounded-full px-4 text-[13px] text-[#0066cc] hover:bg-[#0071e3]/5 disabled:opacity-40"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => goToPage(currentPage + 1)}
+                  >
+                    Next
+                    <ChevronRight className="size-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

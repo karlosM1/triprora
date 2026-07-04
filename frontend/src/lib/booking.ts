@@ -18,7 +18,7 @@ export type TripAddresses = {
   dropoffAddress: string
 }
 
-export type PaymentMethod = 'card' | 'bank' | 'wallet'
+export type PaymentMethod = 'card' | 'wallet' | 'cash'
 
 export function formatPrice(amount: number): string {
   return `₱${amount.toLocaleString()}`

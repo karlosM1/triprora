@@ -28,9 +28,10 @@ import { Route as AdminBookingsRouteImport } from './routes/admin/bookings'
 import { Route as DriverTripsRouteRouteImport } from './routes/driver/trips/route'
 import { Route as DriverTripsIndexRouteImport } from './routes/driver/trips/index'
 import { Route as BookVanIdIndexRouteImport } from './routes/book/$vanId/index'
-import { Route as DriverTripsTripIdRouteImport } from './routes/driver/trips/$tripId'
 import { Route as BookVanIdConfirmationRouteImport } from './routes/book/$vanId/confirmation'
 import { Route as BookVanIdCheckoutRouteImport } from './routes/book/$vanId/checkout'
+import { Route as DriverTripsTripIdIndexRouteImport } from './routes/driver/trips/$tripId/index'
+import { Route as DriverTripsTripIdEditRouteImport } from './routes/driver/trips/$tripId/edit'
 
 const SignUpRoute = SignUpRouteImport.update({
   id: '/sign-up',
@@ -127,11 +128,6 @@ const BookVanIdIndexRoute = BookVanIdIndexRouteImport.update({
   path: '/book/$vanId/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DriverTripsTripIdRoute = DriverTripsTripIdRouteImport.update({
-  id: '/$tripId',
-  path: '/$tripId',
-  getParentRoute: () => DriverTripsRouteRoute,
-} as any)
 const BookVanIdConfirmationRoute = BookVanIdConfirmationRouteImport.update({
   id: '/book/$vanId/confirmation',
   path: '/book/$vanId/confirmation',
@@ -141,6 +137,16 @@ const BookVanIdCheckoutRoute = BookVanIdCheckoutRouteImport.update({
   id: '/book/$vanId/checkout',
   path: '/book/$vanId/checkout',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DriverTripsTripIdIndexRoute = DriverTripsTripIdIndexRouteImport.update({
+  id: '/$tripId/',
+  path: '/$tripId/',
+  getParentRoute: () => DriverTripsRouteRoute,
+} as any)
+const DriverTripsTripIdEditRoute = DriverTripsTripIdEditRouteImport.update({
+  id: '/$tripId/edit',
+  path: '/$tripId/edit',
+  getParentRoute: () => DriverTripsRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -163,9 +169,10 @@ export interface FileRoutesByFullPath {
   '/driver/': typeof DriverIndexRoute
   '/book/$vanId/checkout': typeof BookVanIdCheckoutRoute
   '/book/$vanId/confirmation': typeof BookVanIdConfirmationRoute
-  '/driver/trips/$tripId': typeof DriverTripsTripIdRoute
   '/book/$vanId/': typeof BookVanIdIndexRoute
   '/driver/trips/': typeof DriverTripsIndexRoute
+  '/driver/trips/$tripId/edit': typeof DriverTripsTripIdEditRoute
+  '/driver/trips/$tripId/': typeof DriverTripsTripIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -184,9 +191,10 @@ export interface FileRoutesByTo {
   '/driver': typeof DriverIndexRoute
   '/book/$vanId/checkout': typeof BookVanIdCheckoutRoute
   '/book/$vanId/confirmation': typeof BookVanIdConfirmationRoute
-  '/driver/trips/$tripId': typeof DriverTripsTripIdRoute
   '/book/$vanId': typeof BookVanIdIndexRoute
   '/driver/trips': typeof DriverTripsIndexRoute
+  '/driver/trips/$tripId/edit': typeof DriverTripsTripIdEditRoute
+  '/driver/trips/$tripId': typeof DriverTripsTripIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -209,9 +217,10 @@ export interface FileRoutesById {
   '/driver/': typeof DriverIndexRoute
   '/book/$vanId/checkout': typeof BookVanIdCheckoutRoute
   '/book/$vanId/confirmation': typeof BookVanIdConfirmationRoute
-  '/driver/trips/$tripId': typeof DriverTripsTripIdRoute
   '/book/$vanId/': typeof BookVanIdIndexRoute
   '/driver/trips/': typeof DriverTripsIndexRoute
+  '/driver/trips/$tripId/edit': typeof DriverTripsTripIdEditRoute
+  '/driver/trips/$tripId/': typeof DriverTripsTripIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -235,9 +244,10 @@ export interface FileRouteTypes {
     | '/driver/'
     | '/book/$vanId/checkout'
     | '/book/$vanId/confirmation'
-    | '/driver/trips/$tripId'
     | '/book/$vanId/'
     | '/driver/trips/'
+    | '/driver/trips/$tripId/edit'
+    | '/driver/trips/$tripId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -256,9 +266,10 @@ export interface FileRouteTypes {
     | '/driver'
     | '/book/$vanId/checkout'
     | '/book/$vanId/confirmation'
-    | '/driver/trips/$tripId'
     | '/book/$vanId'
     | '/driver/trips'
+    | '/driver/trips/$tripId/edit'
+    | '/driver/trips/$tripId'
   id:
     | '__root__'
     | '/'
@@ -280,9 +291,10 @@ export interface FileRouteTypes {
     | '/driver/'
     | '/book/$vanId/checkout'
     | '/book/$vanId/confirmation'
-    | '/driver/trips/$tripId'
     | '/book/$vanId/'
     | '/driver/trips/'
+    | '/driver/trips/$tripId/edit'
+    | '/driver/trips/$tripId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -434,13 +446,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BookVanIdIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/driver/trips/$tripId': {
-      id: '/driver/trips/$tripId'
-      path: '/$tripId'
-      fullPath: '/driver/trips/$tripId'
-      preLoaderRoute: typeof DriverTripsTripIdRouteImport
-      parentRoute: typeof DriverTripsRouteRoute
-    }
     '/book/$vanId/confirmation': {
       id: '/book/$vanId/confirmation'
       path: '/book/$vanId/confirmation'
@@ -454,6 +459,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/book/$vanId/checkout'
       preLoaderRoute: typeof BookVanIdCheckoutRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/driver/trips/$tripId/': {
+      id: '/driver/trips/$tripId/'
+      path: '/$tripId'
+      fullPath: '/driver/trips/$tripId/'
+      preLoaderRoute: typeof DriverTripsTripIdIndexRouteImport
+      parentRoute: typeof DriverTripsRouteRoute
+    }
+    '/driver/trips/$tripId/edit': {
+      id: '/driver/trips/$tripId/edit'
+      path: '/$tripId/edit'
+      fullPath: '/driver/trips/$tripId/edit'
+      preLoaderRoute: typeof DriverTripsTripIdEditRouteImport
+      parentRoute: typeof DriverTripsRouteRoute
     }
   }
 }
@@ -479,13 +498,15 @@ const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
 )
 
 interface DriverTripsRouteRouteChildren {
-  DriverTripsTripIdRoute: typeof DriverTripsTripIdRoute
   DriverTripsIndexRoute: typeof DriverTripsIndexRoute
+  DriverTripsTripIdEditRoute: typeof DriverTripsTripIdEditRoute
+  DriverTripsTripIdIndexRoute: typeof DriverTripsTripIdIndexRoute
 }
 
 const DriverTripsRouteRouteChildren: DriverTripsRouteRouteChildren = {
-  DriverTripsTripIdRoute: DriverTripsTripIdRoute,
   DriverTripsIndexRoute: DriverTripsIndexRoute,
+  DriverTripsTripIdEditRoute: DriverTripsTripIdEditRoute,
+  DriverTripsTripIdIndexRoute: DriverTripsTripIdIndexRoute,
 }
 
 const DriverTripsRouteRouteWithChildren =

@@ -14,8 +14,8 @@ export function PaymentForm({ readOnly = false }: PaymentFormProps) {
 
   const tabs: { id: PaymentMethod; label: string }[] = [
     { id: 'card', label: 'Card' },
-    { id: 'bank', label: 'Bank' },
     { id: 'wallet', label: 'Wallet' },
+    { id: 'cash', label: 'Cash' },
   ]
 
   return (
@@ -71,24 +71,27 @@ export function PaymentForm({ readOnly = false }: PaymentFormProps) {
         </div>
       )}
 
-      {method === 'bank' && (
-        <p className="mt-6 text-[15px] leading-relaxed text-[#86868b]">
-          Bank transfer details will be provided after you confirm your booking.
-        </p>
-      )}
-
       {method === 'wallet' && (
         <p className="mt-6 text-[15px] leading-relaxed text-[#86868b]">
           Pay securely with GCash, Maya, or Apple Pay.
         </p>
       )}
 
-      <div className="mt-6 flex items-center gap-2 rounded-xl bg-[#f5f5f7] px-4 py-3">
-        <Lock className="size-4 shrink-0 text-[#86868b]" strokeWidth={1.75} />
-        <p className="text-[12px] text-[#86868b]">
-          256-bit SSL encryption · Your payment info is never stored on our servers
+      {method === 'cash' && (
+        <p className="mt-6 text-[15px] leading-relaxed text-[#86868b]">
+          Pay your driver in cash on the day of travel. Please bring the exact
+          amount shown in your booking summary.
         </p>
-      </div>
+      )}
+
+      {method !== 'cash' && (
+        <div className="mt-6 flex items-center gap-2 rounded-xl bg-[#f5f5f7] px-4 py-3">
+          <Lock className="size-4 shrink-0 text-[#86868b]" strokeWidth={1.75} />
+          <p className="text-[12px] text-[#86868b]">
+            256-bit SSL encryption · Your payment info is never stored on our servers
+          </p>
+        </div>
+      )}
     </AppleCard>
   )
 }

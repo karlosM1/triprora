@@ -25,21 +25,28 @@ export function getTripRouteLabel(
   return `${trip.departureLocation} → ${trip.arrivalLocation}`
 }
 
-export function isUpcomingTrip(trip: DriverTrip, now = new Date()) {
-  const departure = new Date(`${trip.departureDate}T${trip.departureTime}`)
-  return trip.status === 'published' && departure >= now
+export function isUpcomingTrip(trip: DriverTrip) {
+  return trip.status === 'published'
 }
 
-export function isPastTrip(trip: DriverTrip, now = new Date()) {
-  const departure = new Date(`${trip.departureDate}T${trip.departureTime}`)
-  return trip.status === 'published' && departure < now
+export function isPastTrip(trip: DriverTrip) {
+  return trip.status === 'completed'
 }
 
-export function getTripStatusLabel(trip: DriverTrip, now = new Date()) {
+export function canCompleteTrip(trip: DriverTrip) {
+  return trip.status === 'published'
+}
+
+export function hasTripDeparted(trip: DriverTrip, now = new Date()) {
+  const departure = new Date(`${trip.departureDate}T${trip.departureTime}`)
+  return departure <= now
+}
+
+export function getTripStatusLabel(trip: DriverTrip) {
   if (trip.status === 'draft') return 'Draft'
   if (trip.status === 'cancelled') return 'Cancelled'
-  if (isUpcomingTrip(trip, now)) return 'Confirmed'
-  return 'Completed'
+  if (trip.status === 'completed') return 'Completed'
+  return 'Confirmed'
 }
 
 export function sumPotentialEarnings(trips: DriverTrip[]) {

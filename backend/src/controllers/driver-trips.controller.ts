@@ -40,3 +40,37 @@ export async function getDriverTripById(req: Request, res: Response) {
 
   res.json(details)
 }
+
+export async function updateDriverTrip(req: Request, res: Response) {
+  const trip = await VanModel.updateDriverTrip(req.params.tripId, req.profile!.id, {
+    departureLocation: req.body.departureLocation,
+    arrivalLocation: req.body.arrivalLocation,
+    departureDate: req.body.departureDate,
+    departureTime: req.body.departureTime,
+    tripCategory: req.body.tripCategory,
+    vehicleName: req.body.vehicleName,
+    plateNumber: req.body.plateNumber,
+    price: req.body.price,
+    totalSeats: req.body.totalSeats,
+    status: req.body.status,
+  })
+
+  if (!trip) {
+    throw new AppError('Draft trip not found', 404)
+  }
+
+  res.json(trip)
+}
+
+export async function completeDriverTrip(req: Request, res: Response) {
+  const trip = await VanModel.completeDriverTrip(
+    req.params.tripId,
+    req.profile!.id,
+  )
+
+  if (!trip) {
+    throw new AppError('Published trip not found', 404)
+  }
+
+  res.json(trip)
+}

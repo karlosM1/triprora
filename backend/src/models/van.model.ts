@@ -84,7 +84,8 @@ export type DriverTrip = {
   departureDate: string
   tripCategory: string | null
   vehicleName: string | null
-  status: 'draft' | 'published' | 'cancelled'
+  plateNumber: string | null
+  status: 'draft' | 'published' | 'completed' | 'cancelled'
   driverId: string | null
   createdAt: Date
 }
@@ -128,6 +129,8 @@ type CreateDriverTripInput = {
   totalSeats: number
   status: 'draft' | 'published'
 }
+
+type UpdateDriverTripInput = Omit<CreateDriverTripInput, 'driverId' | 'driverName'>
 
 const categoryConfig = {
   express: {
@@ -326,6 +329,86 @@ export const VanModel = {
         },
       },
       select: vanSelect,
+    })
+
+    return van as DriverTrip
+  },
+
+  async updateDriverTrip(
+    tripId: string,
+    driverId: string,
+    input: UpdateDriverTripInput,
+  ): Promise<DriverTrip | null> {
+    const existing = await prisma.van.findFirst({
+      where: { id: tripId, driverId, status: 'draft' },
+      select: { id: true },
+    })
+
+    if (!existing) return null
+
+    const config = categoryConfig[input.tripCategory]
+    const arrivalTime = addHoursToTime(input.departureTime, config.durationHours)
+    const duration = formatDuration(config.durationHours)
+    const seatLabels = generateSeatLabels(input.totalSeats)
+
+    const van = await prisma.$transaction(async (tx) => {
+      await tx.seat.deleteMany({ where: { vanId: tripId } })
+
+      return tx.van.update({
+        where: { id: tripId },
+        data: {
+          classType: config.classType,
+          classVariant: config.classVariant,
+          departureTime: input.departureTime,
+          departureLocation: input.departureLocation,
+          arrivalTime,
+          arrivalLocation: input.arrivalLocation,
+          duration,
+          amenityKeys: config.amenityKeys,
+          price: input.price,
+          seatsLeft: input.totalSeats,
+          totalSeats: input.totalSeats,
+          departureDate: input.departureDate,
+          tripCategory: input.tripCategory,
+          vehicleName: input.vehicleName,
+          plateNumber: input.plateNumber?.trim() || null,
+          status: input.status,
+          seats: {
+            create: seatLabels.map((label) => ({
+              label,
+              premium: false,
+            })),
+          },
+        },
+        select: vanSelect,
+      })
+    })
+
+    return van as DriverTrip
+  },
+
+  async completeDriverTrip(
+    tripId: string,
+    driverId: string,
+  ): Promise<DriverTrip | null> {
+    const existing = await prisma.van.findFirst({
+      where: { id: tripId, driverId, status: 'published' },
+      select: { id: true },
+    })
+
+    if (!existing) return null
+
+    const van = await prisma.$transaction(async (tx) => {
+      await tx.booking.updateMany({
+        where: { vanId: tripId, status: 'confirmed' },
+        data: { status: 'completed' },
+      })
+
+      return tx.van.update({
+        where: { id: tripId },
+        data: { status: 'completed' },
+        select: vanSelect,
+      })
     })
 
     return van as DriverTrip

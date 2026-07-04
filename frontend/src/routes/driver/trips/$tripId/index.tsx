@@ -1,21 +1,37 @@
 import { isAxiosError } from 'axios'
-import { useQuery } from '@tanstack/react-query'
-import { Link, createFileRoute, notFound } from '@tanstack/react-router'
-import { ArrowLeft, Calendar, Car, Users } from 'lucide-react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link, createFileRoute, notFound, useNavigate } from '@tanstack/react-router'
+import { useState } from 'react'
+import { ArrowLeft, Calendar, Car, CheckCircle2, Users } from 'lucide-react'
 import { AppleCard, PageHeader } from '@/components/layout/page-header'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import {
+  completeDriverTrip,
+  driverTripDetailsQueryKey,
   driverTripDetailsQueryOptions,
+  driverTripsQueryKey,
 } from '@/lib/api/driver-trips'
 import { queryClient } from '@/lib/query-client'
 import {
+  canCompleteTrip,
   formatTripDateTime,
   getTripRouteLabel,
   getTripStatusLabel,
+  hasTripDeparted,
 } from '@/lib/driver-trips'
 import { cn } from '@/lib/utils'
 
-export const Route = createFileRoute('/driver/trips/$tripId')({
+export const Route = createFileRoute('/driver/trips/$tripId/')({
   loader: async ({ params }) => {
     try {
       return await queryClient.ensureQueryData(
@@ -103,13 +119,20 @@ function groupSeatsByRow(seats: { label: string; status: string; premium: boolea
     }))
 }
 
-function StatusPill({ label, tone }: { label: string; tone: 'draft' | 'cancelled' | 'active' }) {
+function StatusPill({
+  label,
+  tone,
+}: {
+  label: string
+  tone: 'draft' | 'cancelled' | 'active' | 'completed'
+}) {
   return (
     <span
       className={cn(
         'inline-flex rounded-full px-3 py-1 text-[12px] font-medium uppercase',
         tone === 'draft' && 'bg-[#fff8eb] text-[#bf4800]',
         tone === 'cancelled' && 'bg-[#fff2f2] text-[#bf4800]',
+        tone === 'completed' && 'bg-[#f0fdf4] text-[#248a3d]',
         tone === 'active' && 'bg-[#f0fdf4] text-[#248a3d]',
       )}
     >
@@ -120,7 +143,20 @@ function StatusPill({ label, tone }: { label: string; tone: 'draft' | 'cancelled
 
 function DriverTripDetailsPage() {
   const { tripId } = Route.useParams()
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const [completeDialogOpen, setCompleteDialogOpen] = useState(false)
   const detailsQuery = useQuery(driverTripDetailsQueryOptions(tripId))
+
+  const completeMutation = useMutation({
+    mutationFn: () => completeDriverTrip(tripId),
+    onSuccess: async () => {
+      setCompleteDialogOpen(false)
+      await queryClient.invalidateQueries({ queryKey: driverTripsQueryKey })
+      await queryClient.invalidateQueries({ queryKey: driverTripDetailsQueryKey(tripId) })
+      await navigate({ to: '/driver/trips' })
+    },
+  })
 
   const details = detailsQuery.data
 
@@ -144,7 +180,11 @@ function DriverTripDetailsPage() {
       ? 'draft'
       : trip.status === 'cancelled'
         ? 'cancelled'
-        : 'active'
+        : trip.status === 'completed'
+          ? 'completed'
+          : 'active'
+  const showCompleteButton = canCompleteTrip(trip)
+  const tripHasDeparted = hasTripDeparted(trip)
 
   return (
     <div className="space-y-10">
@@ -163,8 +203,74 @@ function DriverTripDetailsPage() {
             subtitle={getTripRouteLabel(trip)}
           />
         </div>
-        <StatusPill label={getTripStatusLabel(trip)} tone={statusTone} />
+        <div className="flex flex-col items-start gap-3 sm:items-end">
+          <StatusPill label={getTripStatusLabel(trip)} tone={statusTone} />
+          {trip.status === 'draft' && (
+            <Button
+              className="h-9 rounded-full bg-[#0071e3] px-5 text-[13px] font-normal hover:bg-[#0077ed]"
+              asChild
+            >
+              <Link
+                to="/driver/trips/$tripId/edit"
+                params={{ tripId: trip.id }}
+              >
+                Continue draft
+              </Link>
+            </Button>
+          )}
+          {showCompleteButton && (
+            <Button
+              className="h-9 rounded-full bg-[#248a3d] px-5 text-[13px] font-normal hover:bg-[#1f7a35]"
+              disabled={completeMutation.isPending}
+              onClick={() => setCompleteDialogOpen(true)}
+            >
+              <CheckCircle2 className="size-4" />
+              Complete trip
+            </Button>
+          )}
+          {completeMutation.isError && (
+            <p className="max-w-56 text-right text-[13px] text-[#bf4800]">
+              Failed to complete trip. Try again.
+            </p>
+          )}
+        </div>
       </div>
+
+      <AlertDialog open={completeDialogOpen} onOpenChange={setCompleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {tripHasDeparted ? 'Complete this trip?' : 'Complete trip early?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {tripHasDeparted ? (
+                <>
+                  This will mark the trip as finished and move it to your completed
+                  list. Passenger bookings will be finalized.
+                </>
+              ) : (
+                <>
+                  This trip has not departed yet (
+                  {formatTripDateTime(trip)}). Are you sure you want to mark it as
+                  complete even though it is not done yet? This cannot be undone.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={completeMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-[#248a3d] hover:bg-[#1f7a35]"
+              disabled={completeMutation.isPending}
+              onClick={() => completeMutation.mutate()}
+            >
+              {completeMutation.isPending ? 'Completing…' : 'Yes, complete trip'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AppleCard className="p-6">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">

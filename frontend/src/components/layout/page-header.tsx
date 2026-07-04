@@ -38,7 +38,7 @@ export function PageHeader({
           </p>
         )}
       </div>
-      {action}
+      {action && <div className="shrink-0">{action}</div>}
     </div>
   )
 }

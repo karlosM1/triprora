@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const createDriverTripSchema = z.object({
+const driverTripBodySchema = z.object({
   departureLocation: z.string().trim().min(2).max(200),
   arrivalLocation: z.string().trim().min(2).max(200),
   departureDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -12,6 +12,10 @@ export const createDriverTripSchema = z.object({
   totalSeats: z.number().int().min(1).max(18),
   status: z.enum(['draft', 'published']).default('published'),
 })
+
+export const createDriverTripSchema = driverTripBodySchema
+
+export const updateDriverTripSchema = driverTripBodySchema
 
 export const driverTripIdParamSchema = z.object({
   tripId: z.string().trim().min(1),

@@ -1,11 +1,13 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
-import { Briefcase, Calendar, Car, Clock, Info, MapPin, Users, Zap } from 'lucide-react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
+import { ArrowLeft, Calendar, Car, Clock, Info, MapPin } from 'lucide-react'
 import { AppleCard, PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { TimePicker } from '@/components/ui/time-picker'
 import {
   Select,
   SelectContent,
@@ -16,18 +18,16 @@ import {
 import { Slider } from '@/components/ui/slider'
 import {
   createDriverTrip,
+  driverTripDetailsQueryKey,
+  driverTripDetailsQueryOptions,
   driverTripsQueryKey,
+  updateDriverTrip,
   type CreateDriverTripPayload,
 } from '@/lib/api/driver-trips'
 import { vansQueryKey } from '@/lib/api/vans'
 import { useAuth } from '@/lib/auth-context'
+import { todayDateInputValue } from '@/lib/trip-search'
 import { cn } from '@/lib/utils'
-
-const tripCategories = [
-  { id: 'express', label: 'Express', icon: Zap },
-  { id: 'business', label: 'Business', icon: Briefcase },
-  { id: 'standard', label: 'Standard', icon: Users },
-] as const
 
 const pickupAreas = [
   'Casiguran, Aurora (Door-to-Door)',
@@ -52,7 +52,6 @@ type FormState = {
   arrivalLocation: string
   departureDate: string
   departureTime: string
-  tripCategory: CreateDriverTripPayload['tripCategory']
   vehicleName: string
   plateNumber: string
   price: string
@@ -63,7 +62,6 @@ const initialForm: FormState = {
   arrivalLocation: '',
   departureDate: '',
   departureTime: '',
-  tripCategory: 'standard',
   vehicleName: '',
   plateNumber: '',
   price: '',
@@ -72,43 +70,98 @@ const initialForm: FormState = {
 const appleInputClass =
   'h-11 rounded-xl border-[#d2d2d7] bg-white text-[15px] focus-visible:ring-[#0071e3]/40'
 
-export function DriverCreateTripPage() {
+type DriverCreateTripPageProps = {
+  draftTripId?: string
+}
+
+function formStateFromTrip(trip: {
+  departureLocation: string
+  arrivalLocation: string
+  departureDate: string
+  departureTime: string
+  vehicleName: string | null
+  plateNumber?: string | null
+  price: number
+}): FormState {
+  return {
+    departureLocation: trip.departureLocation,
+    arrivalLocation: trip.arrivalLocation,
+    departureDate: trip.departureDate,
+    departureTime: trip.departureTime,
+    vehicleName: trip.vehicleName ?? '',
+    plateNumber: trip.plateNumber ?? '',
+    price: String(trip.price),
+  }
+}
+
+export function DriverCreateTripPage({ draftTripId }: DriverCreateTripPageProps = {}) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { profile } = useAuth()
+  const isEditing = Boolean(draftTripId)
+  const draftQuery = useQuery({
+    ...driverTripDetailsQueryOptions(draftTripId!),
+    enabled: isEditing,
+  })
   const [form, setForm] = useState<FormState>(initialForm)
   const [seats, setSeats] = useState([12])
   const [error, setError] = useState<string | null>(null)
+  const [initialized, setInitialized] = useState(false)
+
+  useEffect(() => {
+    if (!isEditing || !draftQuery.data || initialized) return
+
+    const { trip } = draftQuery.data
+    if (trip.status !== 'draft') {
+      void navigate({ to: '/driver/trips/$tripId', params: { tripId: trip.id } })
+      return
+    }
+
+    setForm(formStateFromTrip(trip))
+    setSeats([trip.totalSeats ?? 12])
+    setInitialized(true)
+  }, [draftQuery.data, initialized, isEditing, navigate])
 
   const baseFare = Number.parseFloat(form.price) || 0
   const estimatedRevenue = baseFare * seats[0]!
   const systemFee = estimatedRevenue * 0.08
   const expectedNet = estimatedRevenue - systemFee
 
-  const createMutation = useMutation({
+  const saveMutation = useMutation({
     mutationFn: (status: 'draft' | 'published') => {
       const payload: CreateDriverTripPayload = {
         departureLocation: form.departureLocation,
         arrivalLocation: form.arrivalLocation,
         departureDate: form.departureDate,
         departureTime: form.departureTime,
-        tripCategory: form.tripCategory,
+        tripCategory: 'standard',
         vehicleName: form.vehicleName,
         plateNumber: form.plateNumber.trim() || undefined,
         price: Math.round(baseFare),
         totalSeats: seats[0]!,
         status,
       }
-      return createDriverTrip(payload)
+      return isEditing
+        ? updateDriverTrip(draftTripId!, payload)
+        : createDriverTrip(payload)
     },
     onSuccess: async (_trip, status) => {
       setError(null)
       await queryClient.invalidateQueries({ queryKey: driverTripsQueryKey })
+      if (draftTripId) {
+        await queryClient.invalidateQueries({
+          queryKey: driverTripDetailsQueryKey(draftTripId),
+        })
+      }
       await queryClient.invalidateQueries({ queryKey: vansQueryKey })
       await navigate({ to: status === 'draft' ? '/driver/trips' : '/driver' })
     },
     onError: () => {
-      setError('Failed to save trip. Check all fields and try again.')
+      setError(
+        isEditing
+          ? 'Failed to update trip. Check all fields and try again.'
+          : 'Failed to save trip. Check all fields and try again.',
+      )
     },
   })
 
@@ -133,29 +186,74 @@ export function DriverCreateTripPage() {
       setError(validationError)
       return
     }
-    createMutation.mutate(status)
+    saveMutation.mutate(status)
+  }
+
+  if (isEditing && draftQuery.isLoading) {
+    return (
+      <div className="space-y-4">
+        <Link
+          to="/driver/trips"
+          className="inline-flex items-center gap-2 text-[14px] text-[#0066cc] hover:underline"
+        >
+          <ArrowLeft className="size-4" />
+          Back to My Trips
+        </Link>
+        <p className="text-[15px] text-[#86868b]">Loading draft...</p>
+      </div>
+    )
+  }
+
+  if (isEditing && draftQuery.isError) {
+    return (
+      <div className="space-y-4">
+        <Link
+          to="/driver/trips"
+          className="inline-flex items-center gap-2 text-[14px] text-[#0066cc] hover:underline"
+        >
+          <ArrowLeft className="size-4" />
+          Back to My Trips
+        </Link>
+        <p className="rounded-xl bg-[#fff2f2] px-4 py-3 text-[14px] text-[#bf4800] ring-1 ring-[#bf4800]/15">
+          Unable to load this draft. It may have been removed or already published.
+        </p>
+      </div>
+    )
   }
 
   return (
     <div className="space-y-10">
+      {isEditing && (
+        <Link
+          to="/driver/trips"
+          className="inline-flex items-center gap-2 text-[14px] text-[#0066cc] hover:underline"
+        >
+          <ArrowLeft className="size-4" />
+          Back to My Trips
+        </Link>
+      )}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <PageHeader
           eyebrow="Driver portal"
-          title="Create a trip."
-          subtitle="Publish a door-to-door trip between Aurora and Metro Manila."
+          title={isEditing ? 'Continue your trip.' : 'Create a trip.'}
+          subtitle={
+            isEditing
+              ? 'Finish setting up your draft and publish when you are ready.'
+              : 'Publish a door-to-door trip between Aurora and Metro Manila.'
+          }
         />
         <div className="flex shrink-0 gap-2 pt-2">
           <Button
             variant="ghost"
             className="h-10 rounded-full px-5 text-[14px] text-[#0066cc] hover:bg-[#0071e3]/5"
-            disabled={createMutation.isPending}
+            disabled={saveMutation.isPending}
             onClick={() => handleSubmit('draft')}
           >
             Save draft
           </Button>
           <Button
             className="h-10 rounded-full bg-[#0071e3] px-5 text-[14px] font-normal hover:bg-[#0077ed]"
-            disabled={createMutation.isPending}
+            disabled={saveMutation.isPending}
             onClick={() => handleSubmit('published')}
           >
             Publish trip
@@ -221,28 +319,6 @@ export function DriverCreateTripPage() {
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="space-y-3">
-                <Label className="text-[13px] text-[#1d1d1f]">Trip category</Label>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  {tripCategories.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => updateField('tripCategory', item.id)}
-                      className={cn(
-                        'flex flex-col items-center gap-2 rounded-xl px-4 py-4 text-[14px] font-medium transition-all',
-                        form.tripCategory === item.id
-                          ? 'bg-[#1d1d1f] text-white ring-1 ring-[#1d1d1f]'
-                          : 'bg-[#f5f5f7] text-[#86868b] ring-1 ring-[#d2d2d7] hover:text-[#1d1d1f]',
-                      )}
-                    >
-                      <item.icon className="size-5" />
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
           </AppleCard>
 
@@ -256,24 +332,25 @@ export function DriverCreateTripPage() {
                 <Label htmlFor="departure-date" className="text-[13px] text-[#1d1d1f]">
                   Departure date
                 </Label>
-                <Input
-                  id="departure-date"
-                  type="date"
-                  className={appleInputClass}
+                <DatePicker
                   value={form.departureDate}
-                  onChange={(event) => updateField('departureDate', event.target.value)}
+                  onChange={(value) => updateField('departureDate', value)}
+                  min={todayDateInputValue()}
+                  placeholder="Select date"
+                  className={cn(
+                    appleInputClass,
+                    'border px-3 hover:bg-[#fafafa]',
+                  )}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="departure-time" className="text-[13px] text-[#1d1d1f]">
                   Departure time
                 </Label>
-                <Input
-                  id="departure-time"
-                  type="time"
-                  className={appleInputClass}
+                <TimePicker
                   value={form.departureTime}
-                  onChange={(event) => updateField('departureTime', event.target.value)}
+                  onChange={(value) => updateField('departureTime', value)}
+                  placeholder="Select time"
                 />
               </div>
             </div>
