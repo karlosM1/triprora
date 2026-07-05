@@ -1,16 +1,53 @@
-export type Role = 'passenger' | 'driver' | 'admin'
-
-export type DriverApplicationStatus = 'pending' | 'approved' | 'rejected'
-
 export type DriverApplication = {
   id: string
-  licenseNo: string
-  vehicleInfo: string | null
   status: DriverApplicationStatus
   adminNotes: string | null
   createdAt: string
   reviewedAt: string | null
+  firstName: string
+  middleName: string | null
+  lastName: string
+  suffix: string | null
+  dateOfBirth: string
+  gender: string
+  nationality: string
+  profilePhotoUrl: string | null
+  houseStreet: string
+  barangay: string
+  city: string
+  province: string
+  zipCode: string
+  licenseNo: string
+  licenseType: string
+  licenseExpiration: string
+  licenseFrontUrl: string
+  licenseBackUrl: string
+  vehiclePlateNumber: string
+  vehicleMake: string
+  vehicleModel: string
+  vehicleYear: number
+  vehicleColor: string
+  vehicleCapacity: number
+  vehiclePhotoUrl: string | null
+  crDocumentUrl: string
+  orDocumentUrl: string
+  insuranceDocumentUrl: string
+  inspectionDocumentUrl: string | null
+  emergencyContactName: string
+  emergencyContactRelationship: string
+  emergencyContactPhone: string
+  gcashNumber: string | null
+  bankAccountName: string | null
+  bankName: string | null
+  bankAccountNumber: string | null
+  certifyInfo: boolean
+  agreeTerms: boolean
+  agreePrivacy: boolean
 }
+
+export type Role = 'passenger' | 'driver' | 'admin'
+
+export type DriverApplicationStatus = 'pending' | 'approved' | 'rejected'
 
 export type Profile = {
   id: string
@@ -21,12 +58,7 @@ export type Profile = {
   driverApplication: DriverApplication | null
 }
 
-export type PendingDriverApplication = {
-  id: string
-  status: DriverApplicationStatus
-  licenseNo: string
-  vehicleInfo: string | null
-  createdAt: string
+export type PendingDriverApplication = DriverApplication & {
   applicant: {
     id: string
     email: string

@@ -12,15 +12,7 @@ export async function getMe(req: Request, res: Response) {
     phone: profile.phone,
     role: profile.role,
     driverApplication: driverApplication
-      ? {
-          id: driverApplication.id,
-          licenseNo: driverApplication.licenseNo,
-          vehicleInfo: driverApplication.vehicleInfo,
-          status: driverApplication.status,
-          adminNotes: driverApplication.adminNotes,
-          createdAt: driverApplication.createdAt,
-          reviewedAt: driverApplication.reviewedAt,
-        }
+      ? DriverApplicationModel.serialize(driverApplication)
       : null,
   })
 }

@@ -21,18 +21,14 @@ export async function submitDriverApplication(req: Request, res: Response) {
     if (existing.status === 'approved') {
       throw new AppError('Your driver application has already been approved', 400)
     }
-    throw new AppError(
-      'Your previous application was rejected. Contact support to reapply.',
-      400,
-    )
+    if (existing.status === 'rejected') {
+      await DriverApplicationModel.deleteRejectedByProfileId(profile.id)
+    }
   }
 
   const application = await DriverApplicationModel.create({
     profileId: profile.id,
-    fullName: req.body.fullName,
-    phone: req.body.phone,
-    licenseNo: req.body.licenseNo,
-    vehicleInfo: req.body.vehicleInfo,
+    ...req.body,
   })
 
   res.status(201).json({
@@ -50,13 +46,5 @@ export async function getMyDriverApplication(req: Request, res: Response) {
     return
   }
 
-  res.json({
-    id: application.id,
-    licenseNo: application.licenseNo,
-    vehicleInfo: application.vehicleInfo,
-    status: application.status,
-    adminNotes: application.adminNotes,
-    createdAt: application.createdAt,
-    reviewedAt: application.reviewedAt,
-  })
+  res.json(DriverApplicationModel.serialize(application))
 }

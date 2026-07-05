@@ -26,6 +26,7 @@ import {
 } from '@/lib/api/driver-trips'
 import { vansQueryKey } from '@/lib/api/vans'
 import { useAuth } from '@/lib/auth-context'
+import type { DriverApplication } from '@/lib/types/profile'
 import { todayDateInputValue } from '@/lib/trip-search'
 import { cn } from '@/lib/utils'
 
@@ -94,6 +95,14 @@ function formStateFromTrip(trip: {
   }
 }
 
+function vehicleDefaultsFromApplication(application: DriverApplication) {
+  return {
+    vehicleName: `${application.vehicleMake} ${application.vehicleModel} ${application.vehicleYear}`.trim(),
+    plateNumber: application.vehiclePlateNumber,
+    totalSeats: application.vehicleCapacity,
+  }
+}
+
 export function DriverCreateTripPage({ draftTripId }: DriverCreateTripPageProps = {}) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -107,6 +116,23 @@ export function DriverCreateTripPage({ draftTripId }: DriverCreateTripPageProps 
   const [seats, setSeats] = useState([12])
   const [error, setError] = useState<string | null>(null)
   const [initialized, setInitialized] = useState(false)
+  const [vehiclePrefilled, setVehiclePrefilled] = useState(false)
+
+  useEffect(() => {
+    if (isEditing || vehiclePrefilled) return
+
+    const application = profile?.driverApplication
+    if (!application || application.status !== 'approved') return
+
+    const defaults = vehicleDefaultsFromApplication(application)
+    setForm((current) => ({
+      ...current,
+      vehicleName: defaults.vehicleName,
+      plateNumber: defaults.plateNumber,
+    }))
+    setSeats([defaults.totalSeats])
+    setVehiclePrefilled(true)
+  }, [isEditing, profile?.driverApplication, vehiclePrefilled])
 
   useEffect(() => {
     if (!isEditing || !draftQuery.data || initialized) return
@@ -386,11 +412,13 @@ export function DriverCreateTripPage({ draftTripId }: DriverCreateTripPageProps 
                   onChange={(event) => updateField('plateNumber', event.target.value)}
                 />
               </div>
-              {profile?.driverApplication?.vehicleInfo && (
+              {profile?.driverApplication?.status === 'approved' && (
                 <p className="text-[13px] text-[#86868b]">
-                  Registered: {profile.driverApplication.vehicleInfo}
-                  {profile.driverApplication.licenseNo &&
-                    ` · License ${profile.driverApplication.licenseNo}`}
+                  Filled from your registered vehicle
+                  {profile.driverApplication.licenseNo
+                    ? ` · License ${profile.driverApplication.licenseNo}`
+                    : ''}
+                  .
                 </p>
               )}
             </div>

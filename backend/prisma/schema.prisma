@@ -59,7 +59,7 @@ model Van {
   plateNumber       String?
   status            VanStatus @default(published)
   driverId          String?   @db.Uuid
-  driver            Profile?  @relation(fields: [driverId], references: [id], onDelete: SetNull)
+  driver            Profile?  @relation(fields: [driverId], references: [id], onDelete: Cascade)
   seats             Seat[]
   bookings          Booking[]
   createdAt         DateTime  @default(now())
@@ -97,8 +97,62 @@ model DriverApplication {
   id          String                  @id @default(cuid())
   profileId   String                  @unique @db.Uuid
   profile     Profile                 @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  licenseNo   String
-  vehicleInfo String?
+
+  // Personal information
+  firstName       String
+  middleName      String?
+  lastName        String
+  suffix          String?
+  dateOfBirth     String
+  gender          String
+  nationality     String
+  profilePhotoUrl String?
+
+  // Contact address
+  houseStreet String
+  barangay    String
+  city        String
+  province    String
+  zipCode     String
+
+  // Driver's license
+  licenseNo         String
+  licenseType       String
+  licenseExpiration String
+  licenseFrontUrl   String
+  licenseBackUrl    String
+
+  // Vehicle information
+  vehiclePlateNumber String
+  vehicleMake        String
+  vehicleModel       String
+  vehicleYear        Int
+  vehicleColor       String
+  vehicleCapacity    Int
+  vehiclePhotoUrl    String?
+
+  // Vehicle documents
+  crDocumentUrl          String
+  orDocumentUrl          String
+  insuranceDocumentUrl   String
+  inspectionDocumentUrl  String?
+
+  // Emergency contact
+  emergencyContactName         String
+  emergencyContactRelationship String
+  emergencyContactPhone        String
+
+  // Banking / payment (optional)
+  gcashNumber        String?
+  bankAccountName    String?
+  bankName           String?
+  bankAccountNumber  String?
+
+  // Verification & consent
+  certifyInfo  Boolean @default(false)
+  agreeTerms   Boolean @default(false)
+  agreePrivacy Boolean @default(false)
+
   status      DriverApplicationStatus @default(pending)
   reviewedBy  String?                 @db.Uuid
   reviewedAt  DateTime?

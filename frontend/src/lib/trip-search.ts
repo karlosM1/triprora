@@ -77,6 +77,56 @@ export function filterVansByTripSearch<T extends Pick<
   })
 }
 
+export type DepartureTimeFilter = 'morning' | 'afternoon' | 'evening'
+
+export type VanSidebarFilters = {
+  departureTimes: DepartureTimeFilter[]
+  priceMax: number
+}
+
+export const VAN_PRICE_FILTER_MIN = 500
+export const VAN_PRICE_FILTER_MAX = 2500
+
+export const DEFAULT_VAN_SIDEBAR_FILTERS: VanSidebarFilters = {
+  departureTimes: [],
+  priceMax: VAN_PRICE_FILTER_MAX,
+}
+
+function parseDepartureHour(time: string) {
+  const match = time.match(/^(\d{1,2}):(\d{2})/)
+  if (!match) return null
+  return Number(match[1])
+}
+
+function matchesDepartureTimeSlot(time: string, slot: DepartureTimeFilter) {
+  const hour = parseDepartureHour(time)
+  if (hour === null) return true
+
+  switch (slot) {
+    case 'morning':
+      return hour >= 6 && hour < 12
+    case 'afternoon':
+      return hour >= 12 && hour < 18
+    case 'evening':
+      return hour >= 18 && hour < 24
+    default:
+      return true
+  }
+}
+
+export function filterVansBySidebarFilters<T extends Pick<ApiVan, 'departureTime' | 'price'>>(
+  vans: T[],
+  filters: VanSidebarFilters,
+): T[] {
+  return vans.filter((van) => {
+    if (van.price > filters.priceMax) return false
+    if (filters.departureTimes.length === 0) return true
+    return filters.departureTimes.some((slot) =>
+      matchesDepartureTimeSlot(van.departureTime, slot),
+    )
+  })
+}
+
 export function formatTripSearchDate(date?: string) {
   if (!date) return null
   return new Date(`${date}T00:00:00`).toLocaleDateString(undefined, {

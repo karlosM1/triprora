@@ -13,8 +13,15 @@ import {
   profileQueryKey,
   submitDriverApplication,
 } from '@/lib/api/profile'
-import { requireAuth } from '@/lib/route-guards'
 import { useAuth } from '@/lib/auth-context'
+import {
+  createEmptyDriverRegistrationForm,
+  driverRegistrationFormToPayload,
+  validateDriverRegistrationStep,
+  type DriverRegistrationFormData,
+  type DriverRegistrationStep,
+} from '@/lib/types/driver-registration'
+import { requireAuth } from '@/lib/route-guards'
 
 export const Route = createFileRoute('/driver/register')({
   beforeLoad: async () => {
@@ -23,16 +30,33 @@ export const Route = createFileRoute('/driver/register')({
   component: DriverRegisterRoute,
 })
 
+function splitFullName(fullName: string | null | undefined) {
+  if (!fullName?.trim()) {
+    return { firstName: '', lastName: '' }
+  }
+
+  const parts = fullName.trim().split(/\s+/)
+  if (parts.length === 1) {
+    return { firstName: parts[0], lastName: '' }
+  }
+
+  return {
+    firstName: parts[0],
+    lastName: parts.slice(1).join(' '),
+  }
+}
+
 function DriverRegisterRoute() {
   const queryClient = useQueryClient()
   const { user, profile, profileLoading } = useAuth()
 
-  const [fullName, setFullName] = useState('')
-  const [phone, setPhone] = useState('')
-  const [licenseNo, setLicenseNo] = useState('')
-  const [vehicleInfo, setVehicleInfo] = useState('')
+  const [currentStep, setCurrentStep] = useState<DriverRegistrationStep>(1)
+  const [form, setForm] = useState<DriverRegistrationFormData>(() =>
+    createEmptyDriverRegistrationForm(),
+  )
   const [error, setError] = useState<string | null>(null)
   const [prefilled, setPrefilled] = useState(false)
+  const [reapplying, setReapplying] = useState(false)
 
   const mutation = useMutation({
     mutationFn: submitDriverApplication,
@@ -47,23 +71,66 @@ function DriverRegisterRoute() {
 
   useEffect(() => {
     if (profile && !prefilled) {
-      setFullName(profile.fullName ?? '')
-      setPhone(profile.phone ?? '')
+      const { firstName, lastName } = splitFullName(profile.fullName)
+      setForm((current) => ({
+        ...current,
+        email: profile.email,
+        phone: profile.phone ?? '',
+        firstName,
+        lastName,
+      }))
       setPrefilled(true)
     }
   }, [profile, prefilled])
 
-  async function handleSubmit(event: React.FormEvent) {
-    event.preventDefault()
+  function updateForm<K extends keyof DriverRegistrationFormData>(
+    key: K,
+    value: DriverRegistrationFormData[K],
+  ) {
+    setForm((current) => ({ ...current, [key]: value }))
+  }
+
+  function handleBack() {
     setError(null)
+    setCurrentStep((step) => Math.max(1, step - 1) as DriverRegistrationStep)
+  }
+
+  function handleNext() {
+    setError(null)
+    const validationError = validateDriverRegistrationStep(currentStep, form)
+    if (validationError) {
+      setError(validationError)
+      return
+    }
+    setCurrentStep((step) => Math.min(8, step + 1) as DriverRegistrationStep)
+  }
+
+  function handleStartNewRegistration() {
+    if (!profile) return
+
+    const { firstName, lastName } = splitFullName(profile.fullName)
+    setForm({
+      ...createEmptyDriverRegistrationForm(profile.email),
+      phone: profile.phone ?? '',
+      firstName,
+      lastName,
+    })
+    setCurrentStep(1)
+    setError(null)
+    setReapplying(true)
+  }
+
+  async function handleSubmit() {
+    setError(null)
+    const validationError = validateDriverRegistrationStep(8, form)
+    if (validationError) {
+      setError(validationError)
+      return
+    }
 
     try {
-      await mutation.mutateAsync({
-        fullName,
-        phone,
-        licenseNo,
-        vehicleInfo: vehicleInfo || undefined,
-      })
+      await mutation.mutateAsync(driverRegistrationFormToPayload(form))
+      setReapplying(false)
     } catch (err) {
       const message =
         err && typeof err === 'object' && 'response' in err
@@ -74,7 +141,7 @@ function DriverRegisterRoute() {
     }
   }
 
-  if (profileLoading) {
+  if (profileLoading || !user?.id) {
     return <DriverRegisterLoadingPage />
   }
 
@@ -90,23 +157,25 @@ function DriverRegisterRoute() {
     return <DriverRegisterPendingPage application={application} />
   }
 
-  if (application?.status === 'rejected') {
-    return <DriverRegisterRejectedPage application={application} />
+  if (application?.status === 'rejected' && !reapplying) {
+    return (
+      <DriverRegisterRejectedPage
+        application={application}
+        onStartNewRegistration={handleStartNewRegistration}
+      />
+    )
   }
 
   return (
     <DriverRegisterFormPage
-      fullName={fullName}
-      phone={phone}
-      licenseNo={licenseNo}
-      vehicleInfo={vehicleInfo}
+      currentStep={currentStep}
+      form={form}
+      userId={user.id}
       error={error}
       submitting={mutation.isPending}
-      profileEmail={profile?.email}
-      onFullNameChange={setFullName}
-      onPhoneChange={setPhone}
-      onLicenseNoChange={setLicenseNo}
-      onVehicleInfoChange={setVehicleInfo}
+      onChange={updateForm}
+      onBack={handleBack}
+      onNext={handleNext}
       onSubmit={handleSubmit}
     />
   )

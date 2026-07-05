@@ -9,6 +9,7 @@ import {
   Users,
 } from 'lucide-react'
 import { useState } from 'react'
+import { DocumentLink } from '@/components/driver/document-link'
 import { AppleCard, PageHeader, SectionTitle } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import {
@@ -114,6 +115,40 @@ function formatDateTime(iso: string) {
     dateStyle: 'medium',
     timeStyle: 'short',
   })
+}
+
+function ApplicationSection({
+  title,
+  children,
+}: {
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <div>
+      <p className="text-[12px] font-semibold tracking-wide text-[#86868b] uppercase">
+        {title}
+      </p>
+      <dl className="mt-2 space-y-2">{children}</dl>
+    </div>
+  )
+}
+
+function ApplicationRow({
+  label,
+  value,
+}: {
+  label: string
+  value: React.ReactNode
+}) {
+  if (!value) return null
+
+  return (
+    <div className="flex justify-between gap-4 text-[13px]">
+      <dt className="text-[#86868b]">{label}</dt>
+      <dd className="text-right font-medium text-[#1d1d1f]">{value}</dd>
+    </div>
+  )
 }
 
 export function AdminDashboardPage() {
@@ -328,12 +363,20 @@ export function AdminDriversPage() {
             description="New driver registrations will appear here for your review."
           />
         ) : (
-          applications.map((application) => (
+          applications.map((application) => {
+            const applicantName =
+              [application.firstName, application.middleName, application.lastName, application.suffix]
+                .filter(Boolean)
+                .join(' ') ||
+              application.applicant.fullName ||
+              application.applicant.email
+
+            return (
             <AppleCard key={application.id} className="p-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="text-[17px] font-semibold text-[#1d1d1f]">
-                    {application.applicant.fullName ?? application.applicant.email}
+                    {applicantName}
                   </p>
                   <p className="mt-1 text-[14px] text-[#86868b]">
                     {application.applicant.email}
@@ -342,14 +385,106 @@ export function AdminDriversPage() {
                       : ''}
                   </p>
                 </div>
-                <StatusPill label="Pending" variant="warning" />
+                <StatusPill label="Pending verification" variant="warning" />
               </div>
 
-              <div className="mt-4 space-y-1 text-[14px] text-[#86868b]">
-                <p>License: {application.licenseNo}</p>
-                {application.vehicleInfo && <p>Vehicle: {application.vehicleInfo}</p>}
-                <p>Applied: {formatDateTime(application.createdAt)}</p>
+              <div className="mt-5 grid gap-6 lg:grid-cols-2">
+                <ApplicationSection title="Personal">
+                  <ApplicationRow label="Date of birth" value={application.dateOfBirth} />
+                  <ApplicationRow label="Gender" value={application.gender} />
+                  <ApplicationRow label="Nationality" value={application.nationality} />
+                  {application.profilePhotoUrl && (
+                    <ApplicationRow
+                      label="Profile photo"
+                      value={<DocumentLink href={application.profilePhotoUrl} label="View photo" />}
+                    />
+                  )}
+                </ApplicationSection>
+
+                <ApplicationSection title="Address">
+                  <ApplicationRow
+                    label="Home address"
+                    value={`${application.houseStreet}, ${application.barangay}, ${application.city}, ${application.province} ${application.zipCode}`}
+                  />
+                </ApplicationSection>
+
+                <ApplicationSection title="License">
+                  <ApplicationRow label="License number" value={application.licenseNo} />
+                  <ApplicationRow label="Type / restriction" value={application.licenseType} />
+                  <ApplicationRow label="Expiration" value={application.licenseExpiration} />
+                  <ApplicationRow
+                    label="Documents"
+                    value={
+                      <span className="flex flex-wrap justify-end gap-3">
+                        <DocumentLink href={application.licenseFrontUrl} label="Front" />
+                        <DocumentLink href={application.licenseBackUrl} label="Back" />
+                      </span>
+                    }
+                  />
+                </ApplicationSection>
+
+                <ApplicationSection title="Vehicle">
+                  <ApplicationRow
+                    label="Vehicle"
+                    value={`${application.vehicleMake} ${application.vehicleModel} (${application.vehicleYear})`}
+                  />
+                  <ApplicationRow label="Plate" value={application.vehiclePlateNumber} />
+                  <ApplicationRow label="Color" value={application.vehicleColor} />
+                  <ApplicationRow label="Capacity" value={`${application.vehicleCapacity} passengers`} />
+                  {application.vehiclePhotoUrl && (
+                    <ApplicationRow
+                      label="Vehicle photo"
+                      value={<DocumentLink href={application.vehiclePhotoUrl} label="View photo" />}
+                    />
+                  )}
+                </ApplicationSection>
+
+                <ApplicationSection title="Vehicle documents">
+                  <ApplicationRow
+                    label="Documents"
+                    value={
+                      <span className="flex flex-wrap justify-end gap-3">
+                        <DocumentLink href={application.crDocumentUrl} label="CR" />
+                        <DocumentLink href={application.orDocumentUrl} label="OR" />
+                        <DocumentLink href={application.insuranceDocumentUrl} label="Insurance" />
+                        {application.inspectionDocumentUrl && (
+                          <DocumentLink href={application.inspectionDocumentUrl} label="Inspection" />
+                        )}
+                      </span>
+                    }
+                  />
+                </ApplicationSection>
+
+                <ApplicationSection title="Emergency contact">
+                  <ApplicationRow label="Name" value={application.emergencyContactName} />
+                  <ApplicationRow label="Relationship" value={application.emergencyContactRelationship} />
+                  <ApplicationRow label="Phone" value={application.emergencyContactPhone} />
+                </ApplicationSection>
+
+                {(application.gcashNumber ||
+                  application.bankAccountName ||
+                  application.bankName ||
+                  application.bankAccountNumber) && (
+                  <ApplicationSection title="Banking">
+                    {application.gcashNumber && (
+                      <ApplicationRow label="GCash" value={application.gcashNumber} />
+                    )}
+                    {application.bankAccountName && (
+                      <ApplicationRow label="Account name" value={application.bankAccountName} />
+                    )}
+                    {application.bankName && (
+                      <ApplicationRow label="Bank" value={application.bankName} />
+                    )}
+                    {application.bankAccountNumber && (
+                      <ApplicationRow label="Account number" value={application.bankAccountNumber} />
+                    )}
+                  </ApplicationSection>
+                )}
               </div>
+
+              <p className="mt-4 text-[13px] text-[#86868b]">
+                Applied: {formatDateTime(application.createdAt)}
+              </p>
 
               <label className="mt-4 block">
                 <span className="text-[12px] font-medium text-[#86868b]">
@@ -399,7 +534,8 @@ export function AdminDriversPage() {
                 </Button>
               </div>
             </AppleCard>
-          ))
+            )
+          })
         )}
       </motion.div>
     </motion.div>

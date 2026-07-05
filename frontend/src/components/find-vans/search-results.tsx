@@ -7,9 +7,11 @@ import { PageHeader } from '@/components/layout/page-header'
 import { vansQueryOptions } from '@/lib/api/vans'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
 import {
+  filterVansBySidebarFilters,
   filterVansByTripSearch,
   formatTripSearchDate,
   resolveTripSearch,
+  type VanSidebarFilters,
 } from '@/lib/trip-search'
 import { mapApiVans } from '@/lib/vans'
 import { cn } from '@/lib/utils'
@@ -53,7 +55,7 @@ function formatDisplayDate(departureDate?: string) {
   })
 }
 
-export function SearchResults() {
+export function SearchResults({ sidebarFilters }: { sidebarFilters: VanSidebarFilters }) {
   const search = resolveTripSearch(useSearch({ from: '/find-vans' }))
   const [sortBy, setSortBy] = useState<SortOption>('price')
   const [page, setPage] = useState(1)
@@ -63,10 +65,10 @@ export function SearchResults() {
     select: mapApiVans,
   })
 
-  const filteredResults = useMemo(
-    () => filterVansByTripSearch(vans, search),
-    [search, vans],
-  )
+  const filteredResults = useMemo(() => {
+    const searchMatches = filterVansByTripSearch(vans, search)
+    return filterVansBySidebarFilters(searchMatches, sidebarFilters)
+  }, [search, sidebarFilters, vans])
 
   const sortedResults = useMemo(
     () =>
@@ -98,6 +100,8 @@ export function SearchResults() {
     search.to,
     search.departureDate,
     search.passengers,
+    sidebarFilters.departureTimes.join(','),
+    sidebarFilters.priceMax,
     sortBy,
     sortedResults.length,
   ])

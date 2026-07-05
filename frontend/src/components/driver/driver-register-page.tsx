@@ -9,12 +9,24 @@ import {
   Wallet,
   XCircle,
 } from 'lucide-react'
-import { AuthField } from '@/components/auth/auth-field'
 import { AuthAlert } from '@/components/auth/auth-layout'
+import { DriverRegistrationStepper } from '@/components/driver/driver-registration-stepper'
+import {
+  AccountInfoStep,
+  ContactInfoStep,
+  EmergencyContactStep,
+  LicenseInfoStep,
+  PersonalInfoStep,
+  ReviewConsentStep,
+  STEP_TITLES,
+  VehicleDocumentsStep,
+  VehicleInfoStep,
+} from '@/components/driver/driver-register-steps'
 import { Footer } from '@/components/landing/footer'
 import { Header } from '@/components/landing/header'
 import { AppleCard, PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
+import type { DriverRegistrationFormData, DriverRegistrationStep } from '@/lib/types/driver-registration'
 import type { DriverApplication } from '@/lib/types/profile'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
 import { cn } from '@/lib/utils'
@@ -184,6 +196,12 @@ export function DriverRegisterAdminPage() {
   )
 }
 
+function formatApplicantName(application: DriverApplication) {
+  return [application.firstName, application.middleName, application.lastName, application.suffix]
+    .filter(Boolean)
+    .join(' ')
+}
+
 export function DriverRegisterPendingPage({
   application,
 }: {
@@ -193,14 +211,16 @@ export function DriverRegisterPendingPage({
     <StatusCard
       icon={<Clock className="size-8 text-[#bf4800]" strokeWidth={1.75} />}
       iconClassName="bg-[#fff8eb]"
-      title="Application under review"
-      subtitle="Your driver registration is awaiting admin approval. You'll get access once our team reviews your details."
+      title="Pending verification"
+      subtitle="Your driver registration is awaiting admin approval. You'll get access once our team reviews your documents."
     >
       <dl className="space-y-3">
-        <DetailRow label="License" value={application.licenseNo} />
-        {application.vehicleInfo && (
-          <DetailRow label="Vehicle" value={application.vehicleInfo} />
-        )}
+        <DetailRow label="Name" value={formatApplicantName(application)} />
+        <DetailRow label="License" value={`${application.licenseNo} (${application.licenseType})`} />
+        <DetailRow
+          label="Vehicle"
+          value={`${application.vehicleMake} ${application.vehicleModel} · ${application.vehiclePlateNumber}`}
+        />
         <DetailRow
           label="Submitted"
           value={new Date(application.createdAt).toLocaleDateString(undefined, {
@@ -216,8 +236,10 @@ export function DriverRegisterPendingPage({
 
 export function DriverRegisterRejectedPage({
   application,
+  onStartNewRegistration,
 }: {
   application: DriverApplication
+  onStartNewRegistration: () => void
 }) {
   return (
     <StatusCard
@@ -227,104 +249,131 @@ export function DriverRegisterRejectedPage({
       subtitle={
         application.adminNotes
           ? application.adminNotes
-          : 'Your driver application was not approved. Contact support if you have questions.'
+          : 'Your driver application was not approved. You can submit a new registration with updated information.'
+      }
+      action={
+        <Button
+          className="h-11 rounded-full bg-[#0071e3] px-6 text-[15px] hover:bg-[#0077ed]"
+          onClick={onStartNewRegistration}
+        >
+          Start new registration
+        </Button>
       }
     />
   )
 }
 
 type DriverRegisterFormPageProps = {
-  fullName: string
-  phone: string
-  licenseNo: string
-  vehicleInfo: string
+  currentStep: DriverRegistrationStep
+  form: DriverRegistrationFormData
+  userId: string
   error: string | null
   submitting: boolean
-  profileEmail?: string | null
-  onFullNameChange: (value: string) => void
-  onPhoneChange: (value: string) => void
-  onLicenseNoChange: (value: string) => void
-  onVehicleInfoChange: (value: string) => void
-  onSubmit: (event: React.FormEvent) => void
+  onChange: <K extends keyof DriverRegistrationFormData>(
+    key: K,
+    value: DriverRegistrationFormData[K],
+  ) => void
+  onBack: () => void
+  onNext: () => void
+  onSubmit: () => void
 }
 
 export function DriverRegisterFormPage({
-  fullName,
-  phone,
-  licenseNo,
-  vehicleInfo,
+  currentStep,
+  form,
+  userId,
   error,
   submitting,
-  profileEmail,
-  onFullNameChange,
-  onPhoneChange,
-  onLicenseNoChange,
-  onVehicleInfoChange,
+  onChange,
+  onBack,
+  onNext,
   onSubmit,
 }: DriverRegisterFormPageProps) {
+  const stepMeta = STEP_TITLES[currentStep]
+  const isFirstStep = currentStep === 1
+  const isLastStep = currentStep === 8
+
+  function renderStep() {
+    switch (currentStep) {
+      case 1:
+        return <PersonalInfoStep form={form} userId={userId} onChange={onChange} />
+      case 2:
+        return <ContactInfoStep form={form} onChange={onChange} />
+      case 3:
+        return <LicenseInfoStep form={form} userId={userId} onChange={onChange} />
+      case 4:
+        return <VehicleInfoStep form={form} userId={userId} onChange={onChange} />
+      case 5:
+        return <VehicleDocumentsStep form={form} userId={userId} onChange={onChange} />
+      case 6:
+        return <EmergencyContactStep form={form} onChange={onChange} />
+      case 7:
+        return <AccountInfoStep form={form} />
+      case 8:
+        return <ReviewConsentStep form={form} onChange={onChange} />
+      default:
+        return null
+    }
+  }
+
   return (
     <DriverRegisterShell showBenefits>
       <PageHeader
         eyebrow="Drive with Crabi"
         title="Become a driver"
-        subtitle="Apply to join our verified driver network. An admin will review your application before you can publish trips."
+        subtitle="Complete each step to submit your application. An admin will review your documents before you can accept bookings."
       />
 
-      {profileEmail && (
-        <p className="mt-4 text-[14px] text-[#86868b]">
-          Applying as{' '}
-          <span className="font-medium text-[#1d1d1f]">{profileEmail}</span>
-        </p>
-      )}
-
       <AppleCard className="mt-8 p-6 sm:p-8">
-        <h2 className="text-[17px] font-semibold text-[#1d1d1f]">Your details</h2>
-        <p className="mt-1 text-[14px] text-[#86868b]">
-          Provide accurate information so we can verify your application quickly.
-        </p>
+        <DriverRegistrationStepper currentStep={currentStep} />
 
-        <form onSubmit={onSubmit} className="mt-6 space-y-5">
-          {error && <AuthAlert variant="error">{error}</AuthAlert>}
+        <div className="mt-8">
+          <h2 className="text-[17px] font-semibold text-[#1d1d1f]">{stepMeta.title}</h2>
+          <p className="mt-1 text-[14px] text-[#86868b]">{stepMeta.subtitle}</p>
+        </div>
 
-          <AuthField
-            label="Full name"
-            placeholder="Juan Dela Cruz"
-            value={fullName}
-            onChange={onFullNameChange}
-            autoComplete="name"
-            required
-          />
-          <AuthField
-            label="Phone"
-            type="tel"
-            placeholder="+63 912 345 6789"
-            value={phone}
-            onChange={onPhoneChange}
-            autoComplete="tel"
-            required
-          />
-          <AuthField
-            label="Driver's license number"
-            placeholder="N01-12-345678"
-            value={licenseNo}
-            onChange={onLicenseNoChange}
-            required
-          />
-          <AuthField
-            label="Vehicle info (optional)"
-            placeholder="Toyota Hiace 2020, plate ABC 1234"
-            value={vehicleInfo}
-            onChange={onVehicleInfoChange}
-          />
+        <div className="mt-6">
+          {error && (
+            <div className="mb-5">
+              <AuthAlert variant="error">{error}</AuthAlert>
+            </div>
+          )}
+          {renderStep()}
+        </div>
 
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
           <Button
-            type="submit"
-            disabled={submitting}
-            className="h-11 w-full rounded-full bg-[#0071e3] text-[15px] font-normal hover:bg-[#0077ed]"
+            type="button"
+            variant="outline"
+            disabled={isFirstStep || submitting}
+            className="rounded-full border-[#d2d2d7]"
+            onClick={onBack}
           >
-            {submitting ? 'Submitting…' : 'Submit application'}
+            Back
           </Button>
-        </form>
+
+          <div className="flex flex-wrap gap-3">
+            {isLastStep ? (
+              <Button
+                type="button"
+                disabled={submitting}
+                className="rounded-full bg-[#0071e3] px-6 hover:bg-[#0077ed]"
+                onClick={onSubmit}
+              >
+                {submitting ? 'Submitting…' : 'Submit application'}
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                disabled={submitting}
+                className="rounded-full bg-[#0071e3] px-6 hover:bg-[#0077ed]"
+                onClick={onNext}
+              >
+                Continue
+              </Button>
+            )}
+          </div>
+        </div>
       </AppleCard>
 
       <p className="mt-6 text-center text-[13px] text-[#86868b]">

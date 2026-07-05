@@ -26,21 +26,7 @@ export async function listAdminUsers(_req: Request, res: Response) {
 export async function listPendingDriverApplications(_req: Request, res: Response) {
   const applications = await DriverApplicationModel.listPending()
 
-  res.json(
-    applications.map((application) => ({
-      id: application.id,
-      status: application.status,
-      licenseNo: application.licenseNo,
-      vehicleInfo: application.vehicleInfo,
-      createdAt: application.createdAt,
-      applicant: {
-        id: application.profile.id,
-        email: application.profile.email,
-        fullName: application.profile.fullName,
-        phone: application.profile.phone,
-      },
-    })),
-  )
+  res.json(applications.map((application) => DriverApplicationModel.serialize(application)))
 }
 
 export async function reviewDriverApplication(req: Request, res: Response) {

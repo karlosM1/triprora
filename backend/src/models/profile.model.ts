@@ -15,6 +15,20 @@ export const ProfileModel = {
     return prisma.profile.findUnique({ where: { id } })
   },
 
+  async deleteById(id: string) {
+    return prisma.$transaction(async (tx) => {
+      await tx.booking.updateMany({
+        where: {
+          van: { driverId: id },
+          status: 'confirmed',
+        },
+        data: { status: 'cancelled' },
+      })
+
+      await tx.profile.delete({ where: { id } })
+    })
+  },
+
   async ensureProfile(id: string, email: string) {
     const existingById = await prisma.profile.findUnique({ where: { id } })
     if (existingById) {
@@ -23,11 +37,11 @@ export const ProfileModel = {
 
     // A profile with this email but a different id means the previous auth user
     // was deleted and re-created (same email, new UUID). Treat it as a brand-new
-    // account: drop the stale profile (its driver application cascades away) so
-    // the recreated user does not inherit the old role.
+    // account: drop the stale profile (driver application and trips cascade away)
+    // so the recreated user does not inherit the old role or published trips.
     const existingByEmail = await prisma.profile.findUnique({ where: { email } })
     if (existingByEmail) {
-      await prisma.profile.delete({ where: { id: existingByEmail.id } })
+      await ProfileModel.deleteById(existingByEmail.id)
     }
 
     try {
@@ -45,7 +59,7 @@ export const ProfileModel = {
       ) {
         const conflicting = await prisma.profile.findUnique({ where: { email } })
         if (conflicting && conflicting.id !== id) {
-          await prisma.profile.delete({ where: { id: conflicting.id } })
+          await ProfileModel.deleteById(conflicting.id)
           return await prisma.profile.create({
             data: {
               id,

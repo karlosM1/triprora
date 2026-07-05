@@ -18,23 +18,40 @@ type DatePickerProps = {
   value?: string
   onChange: (value: string) => void
   min?: string
+  max?: string
   placeholder?: string
   className?: string
   icon?: ReactNode
+  captionLayout?: 'label' | 'dropdown'
 }
 
 export function DatePicker({
   value,
   onChange,
   min,
+  max,
   placeholder = 'Select date',
   className,
   icon,
+  captionLayout = 'label',
 }: DatePickerProps) {
   const [open, setOpen] = useState(false)
   const selected = parseTripSearchDate(value)
-  const minDate = parseTripSearchDate(min) ?? new Date()
-  minDate.setHours(0, 0, 0, 0)
+  const minDate = parseTripSearchDate(min)
+  const maxDate = parseTripSearchDate(max)
+
+  const disabled = [
+    ...(minDate ? [{ before: minDate }] : []),
+    ...(maxDate ? [{ after: maxDate }] : []),
+  ]
+
+  const defaultMonth = selected ?? maxDate ?? minDate ?? new Date()
+  const startMonth =
+    minDate ??
+    new Date(defaultMonth.getFullYear() - (captionLayout === 'dropdown' ? 100 : 20), 0)
+  const endMonth =
+    maxDate ??
+    new Date(defaultMonth.getFullYear() + (captionLayout === 'dropdown' ? 20 : 5), 11)
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -63,8 +80,11 @@ export function DatePicker({
         <Calendar
           mode="single"
           selected={selected}
-          defaultMonth={selected ?? minDate}
-          disabled={{ before: minDate }}
+          defaultMonth={defaultMonth}
+          startMonth={captionLayout === 'dropdown' ? startMonth : undefined}
+          endMonth={captionLayout === 'dropdown' ? endMonth : undefined}
+          captionLayout={captionLayout}
+          disabled={disabled.length > 0 ? disabled : undefined}
           onSelect={(date) => {
             if (!date) return
             onChange(toDateInputValue(date))

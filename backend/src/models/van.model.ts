@@ -31,18 +31,36 @@ const vanSelect = {
       driverApplication: {
         select: {
           licenseNo: true,
-          vehicleInfo: true,
+          vehicleMake: true,
+          vehicleModel: true,
+          vehiclePlateNumber: true,
         },
       },
     },
   },
 } as const
 
+function formatRegisteredVehicle(
+  application: {
+    vehicleMake: string
+    vehicleModel: string
+    vehiclePlateNumber: string
+  } | null,
+) {
+  if (!application) return null
+  return `${application.vehicleMake} ${application.vehicleModel} · ${application.vehiclePlateNumber}`
+}
+
 function mapDriverInfo(
   driver: {
     fullName: string | null
     phone: string | null
-    driverApplication: { licenseNo: string; vehicleInfo: string | null } | null
+    driverApplication: {
+      licenseNo: string
+      vehicleMake: string
+      vehicleModel: string
+      vehiclePlateNumber: string
+    } | null
   } | null,
 ): VanDriver | null {
   if (!driver) return null
@@ -50,7 +68,7 @@ function mapDriverInfo(
     name: driver.fullName?.trim() || 'Driver',
     phone: driver.phone,
     licenseNo: driver.driverApplication?.licenseNo ?? null,
-    vehicleInfo: driver.driverApplication?.vehicleInfo ?? null,
+    vehicleInfo: formatRegisteredVehicle(driver.driverApplication),
   }
 }
 

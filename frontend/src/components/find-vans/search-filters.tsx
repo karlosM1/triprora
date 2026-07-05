@@ -1,26 +1,36 @@
-import { useState } from 'react'
+import {
+  DEFAULT_VAN_SIDEBAR_FILTERS,
+  VAN_PRICE_FILTER_MAX,
+  VAN_PRICE_FILTER_MIN,
+  type DepartureTimeFilter,
+  type VanSidebarFilters,
+} from '@/lib/trip-search'
 import { AppleCard } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 
-const departureTimes = [
+const departureTimes: { id: DepartureTimeFilter; label: string }[] = [
   { id: 'morning', label: 'Morning (06:00 – 12:00)' },
   { id: 'afternoon', label: 'Afternoon (12:00 – 18:00)' },
   { id: 'evening', label: 'Evening (18:00 – 00:00)' },
 ]
 
-export function SearchFilters() {
-  const [selectedTimes, setSelectedTimes] = useState<string[]>([])
-  const [priceMax, setPriceMax] = useState(2500)
+type SearchFiltersProps = {
+  filters: VanSidebarFilters
+  onChange: (filters: VanSidebarFilters) => void
+}
 
-  function toggleTime(id: string) {
-    setSelectedTimes((prev) =>
-      prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id],
-    )
+export function SearchFilters({ filters, onChange }: SearchFiltersProps) {
+  function toggleTime(id: DepartureTimeFilter) {
+    onChange({
+      ...filters,
+      departureTimes: filters.departureTimes.includes(id)
+        ? filters.departureTimes.filter((time) => time !== id)
+        : [...filters.departureTimes, id],
+    })
   }
 
   function resetFilters() {
-    setSelectedTimes([])
-    setPriceMax(2500)
+    onChange(DEFAULT_VAN_SIDEBAR_FILTERS)
   }
 
   return (
@@ -40,7 +50,7 @@ export function SearchFilters() {
               >
                 <input
                   type="checkbox"
-                  checked={selectedTimes.includes(time.id)}
+                  checked={filters.departureTimes.includes(time.id)}
                   onChange={() => toggleTime(time.id)}
                   className="size-4 rounded border-[#d2d2d7] text-[#0071e3] accent-[#0071e3]"
                 />
@@ -57,19 +67,24 @@ export function SearchFilters() {
           <div className="mt-3">
             <input
               type="range"
-              min={500}
-              max={2500}
+              min={VAN_PRICE_FILTER_MIN}
+              max={VAN_PRICE_FILTER_MAX}
               step={50}
-              value={priceMax}
-              onChange={(e) => setPriceMax(Number(e.target.value))}
+              value={filters.priceMax}
+              onChange={(event) =>
+                onChange({
+                  ...filters,
+                  priceMax: Number(event.target.value),
+                })
+              }
               className="h-1 w-full cursor-pointer appearance-none rounded-full bg-[#d2d2d7] accent-[#0071e3] [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#0071e3]"
             />
             <div className="mt-2 flex justify-between text-[12px] text-[#86868b]">
-              <span>₱500</span>
+              <span>₱{VAN_PRICE_FILTER_MIN.toLocaleString()}</span>
               <span className="font-medium text-[#1d1d1f]">
-                up to ₱{priceMax.toLocaleString()}
+                up to ₱{filters.priceMax.toLocaleString()}
               </span>
-              <span>₱2,500</span>
+              <span>₱{VAN_PRICE_FILTER_MAX.toLocaleString()}</span>
             </div>
           </div>
         </fieldset>

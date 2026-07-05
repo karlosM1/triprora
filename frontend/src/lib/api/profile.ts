@@ -1,4 +1,5 @@
 import { api } from '@/lib/axios'
+import type { driverRegistrationFormToPayload } from '@/lib/types/driver-registration'
 import type { PendingDriverApplication, Profile } from '@/lib/types/profile'
 
 export async function fetchProfile() {
@@ -6,12 +7,9 @@ export async function fetchProfile() {
   return data
 }
 
-export async function submitDriverApplication(payload: {
-  fullName: string
-  phone: string
-  licenseNo: string
-  vehicleInfo?: string
-}) {
+export async function submitDriverApplication(
+  payload: ReturnType<typeof driverRegistrationFormToPayload>,
+) {
   const { data } = await api.post<{ id: string; status: string; createdAt: string }>(
     '/driver/applications',
     payload,
