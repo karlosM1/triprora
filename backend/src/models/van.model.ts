@@ -289,7 +289,7 @@ export const VanModel = {
     const config = categoryConfig[input.tripCategory]
     const arrivalTime = addHoursToTime(input.departureTime, config.durationHours)
     const duration = formatDuration(config.durationHours)
-    const operatorName = input.driverName?.trim() || 'Crabi Partner'
+    const operatorName = input.driverName?.trim() || 'Crabr Partner'
     const seatLabels = generateSeatLabels(input.totalSeats)
     const tripId = createTripId()
 

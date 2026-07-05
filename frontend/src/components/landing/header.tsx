@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/drawer";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
-import heroLogo from "@/assets/crabi-logo.png";
+import heroLogo from "@/assets/crabr.png";
 
 const baseNavLinks = [
   { label: "Home", to: "/" as const, key: "home" },
@@ -126,11 +126,11 @@ export function Header({
             )}
           >
             <HeroText isHero={isHero} scrollProgress={textDark}>
-              <span className="inline-flex size-7 shrink-0 items-center justify-center overflow-hidden">
-                <img src={heroLogo} alt="" className="size-10 object-contain" />
+              <span className="inline-flex size-11 shrink-0 items-center justify-center">
+                <img src={heroLogo} alt="" className="size-11 object-contain" />
               </span>
               <span className="text-[17px] font-semibold tracking-tight">
-                Crabi
+                Crabr
               </span>
             </HeroText>
           </Link>

@@ -1,4 +1,4 @@
-# Crabi
+# Crabr
 
 Door-to-door van booking platform for travel between Aurora Province and Metro Manila, Philippines. Passengers search routes, pick seats, and manage bookings; drivers register, publish trips, and complete rides; admins review driver applications and oversee operations.
 
@@ -21,7 +21,7 @@ Door-to-door van booking platform for travel between Aurora Province and Metro M
 ## Project structure
 
 ```
-crabi/
+crabr/
 ├── frontend/          # React SPA (Vite)
 ├── backend/           # Express API + Prisma schema
 ├── docker-compose.yml # Postgres + optional full stack

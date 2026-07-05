@@ -47,7 +47,7 @@ export function Footer() {
               to="/"
               className="text-[17px] font-semibold tracking-tight text-[#1d1d1f]"
             >
-              Crabi
+              Crabr
             </Link>
             <p className="mt-3 max-w-xs text-[12px] leading-relaxed text-[#86868b]">
               Door-to-door van service between Aurora and Metro Manila, both
@@ -82,7 +82,7 @@ export function Footer() {
           className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-black/5 pt-6 sm:flex-row"
         >
           <p className="text-[12px] text-[#86868b]">
-            Copyright &copy; {new Date().getFullYear()} Crabi Inc. All rights
+            Copyright &copy; {new Date().getFullYear()} Crabr Inc. All rights
             reserved.
           </p>
           <div className="flex items-center gap-4">

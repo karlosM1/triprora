@@ -50,7 +50,7 @@ export function FeaturesSection() {
           variants={fadeInUp}
           className="text-sm font-medium tracking-wide text-[#bf4800] uppercase"
         >
-          Why Crabi
+          Why Crabr
         </motion.p>
         <motion.h2
           variants={fadeInUp}

@@ -35,7 +35,7 @@ function ArticlesPage() {
           className="mt-12 text-center text-[15px] text-[#86868b]"
         >
           More stories coming soon. Have a tip to share?{' '}
-          <a href="mailto:hello@crabi.ph" className="text-[#0066cc] hover:underline">
+          <a href="mailto:hello@crabr.ph" className="text-[#0066cc] hover:underline">
             Get in touch
           </a>
           .

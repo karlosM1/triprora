@@ -6,7 +6,7 @@ export function CheckoutHeader() {
     <header className="border-b border-border/60 bg-white">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 lg:px-8">
         <Link to="/" className="text-xl font-bold tracking-tight text-foreground">
-          Crabi
+          Crabr
         </Link>
         <p className="text-xs font-semibold tracking-[0.15em] text-muted-foreground uppercase">
           Secure Checkout

@@ -12,10 +12,10 @@ export function SchedulesFooter() {
       <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-4 px-6 py-8 sm:flex-row sm:items-center lg:px-8">
         <div>
           <a href="/" className="text-lg font-bold tracking-tight text-foreground">
-            Crabi
+            Crabr
           </a>
           <p className="mt-1 text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} Crabi — Aurora ↔ Metro Manila
+            &copy; {new Date().getFullYear()} Crabr — Aurora ↔ Metro Manila
             van service.
           </p>
         </div>
