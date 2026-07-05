@@ -10,7 +10,6 @@ export type DriverTrip = {
   arrivalLocation: string
   duration: string
   operator: string
-  amenityKeys: string[]
   price: number
   seatsLeft: number
   totalSeats: number | null

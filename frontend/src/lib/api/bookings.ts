@@ -39,5 +39,12 @@ export async function updateBooking(
   return data
 }
 
+export async function cancelBooking(bookingId: string) {
+  const { data } = await api.post<HistoryBooking>(
+    `/bookings/${encodeURIComponent(bookingId)}/cancel`,
+  )
+  return data
+}
+
 export const upcomingBookingQueryKey = ['bookings', 'upcoming'] as const
 export const bookingHistoryQueryKey = ['bookings', 'history'] as const

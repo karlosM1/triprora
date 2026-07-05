@@ -15,12 +15,15 @@ import { Route as SchedulesRouteImport } from './routes/schedules'
 import { Route as MyBookingsRouteImport } from './routes/my-bookings'
 import { Route as FindVansRouteImport } from './routes/find-vans'
 import { Route as DriverRouteRouteImport } from './routes/driver/route'
+import { Route as ArticlesRouteRouteImport } from './routes/articles/route'
 import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DriverIndexRouteImport } from './routes/driver/index'
+import { Route as ArticlesIndexRouteImport } from './routes/articles/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as DriverRegisterRouteImport } from './routes/driver/register'
 import { Route as DriverCreateRouteImport } from './routes/driver/create'
+import { Route as ArticlesSlugRouteImport } from './routes/articles/$slug'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminTripsRouteImport } from './routes/admin/trips'
 import { Route as AdminDriversRouteImport } from './routes/admin/drivers'
@@ -63,6 +66,11 @@ const DriverRouteRoute = DriverRouteRouteImport.update({
   path: '/driver',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ArticlesRouteRoute = ArticlesRouteRouteImport.update({
+  id: '/articles',
+  path: '/articles',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRouteRoute = AdminRouteRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -78,6 +86,11 @@ const DriverIndexRoute = DriverIndexRouteImport.update({
   path: '/',
   getParentRoute: () => DriverRouteRoute,
 } as any)
+const ArticlesIndexRoute = ArticlesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ArticlesRouteRoute,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -92,6 +105,11 @@ const DriverCreateRoute = DriverCreateRouteImport.update({
   id: '/create',
   path: '/create',
   getParentRoute: () => DriverRouteRoute,
+} as any)
+const ArticlesSlugRoute = ArticlesSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => ArticlesRouteRoute,
 } as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
@@ -152,6 +170,7 @@ const DriverTripsTripIdEditRoute = DriverTripsTripIdEditRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
+  '/articles': typeof ArticlesRouteRouteWithChildren
   '/driver': typeof DriverRouteRouteWithChildren
   '/find-vans': typeof FindVansRoute
   '/my-bookings': typeof MyBookingsRoute
@@ -163,9 +182,11 @@ export interface FileRoutesByFullPath {
   '/admin/drivers': typeof AdminDriversRoute
   '/admin/trips': typeof AdminTripsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/articles/$slug': typeof ArticlesSlugRoute
   '/driver/create': typeof DriverCreateRoute
   '/driver/register': typeof DriverRegisterRoute
   '/admin/': typeof AdminIndexRoute
+  '/articles/': typeof ArticlesIndexRoute
   '/driver/': typeof DriverIndexRoute
   '/book/$vanId/checkout': typeof BookVanIdCheckoutRoute
   '/book/$vanId/confirmation': typeof BookVanIdConfirmationRoute
@@ -185,9 +206,11 @@ export interface FileRoutesByTo {
   '/admin/drivers': typeof AdminDriversRoute
   '/admin/trips': typeof AdminTripsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/articles/$slug': typeof ArticlesSlugRoute
   '/driver/create': typeof DriverCreateRoute
   '/driver/register': typeof DriverRegisterRoute
   '/admin': typeof AdminIndexRoute
+  '/articles': typeof ArticlesIndexRoute
   '/driver': typeof DriverIndexRoute
   '/book/$vanId/checkout': typeof BookVanIdCheckoutRoute
   '/book/$vanId/confirmation': typeof BookVanIdConfirmationRoute
@@ -200,6 +223,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
+  '/articles': typeof ArticlesRouteRouteWithChildren
   '/driver': typeof DriverRouteRouteWithChildren
   '/find-vans': typeof FindVansRoute
   '/my-bookings': typeof MyBookingsRoute
@@ -211,9 +235,11 @@ export interface FileRoutesById {
   '/admin/drivers': typeof AdminDriversRoute
   '/admin/trips': typeof AdminTripsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/articles/$slug': typeof ArticlesSlugRoute
   '/driver/create': typeof DriverCreateRoute
   '/driver/register': typeof DriverRegisterRoute
   '/admin/': typeof AdminIndexRoute
+  '/articles/': typeof ArticlesIndexRoute
   '/driver/': typeof DriverIndexRoute
   '/book/$vanId/checkout': typeof BookVanIdCheckoutRoute
   '/book/$vanId/confirmation': typeof BookVanIdConfirmationRoute
@@ -227,6 +253,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/articles'
     | '/driver'
     | '/find-vans'
     | '/my-bookings'
@@ -238,9 +265,11 @@ export interface FileRouteTypes {
     | '/admin/drivers'
     | '/admin/trips'
     | '/admin/users'
+    | '/articles/$slug'
     | '/driver/create'
     | '/driver/register'
     | '/admin/'
+    | '/articles/'
     | '/driver/'
     | '/book/$vanId/checkout'
     | '/book/$vanId/confirmation'
@@ -260,9 +289,11 @@ export interface FileRouteTypes {
     | '/admin/drivers'
     | '/admin/trips'
     | '/admin/users'
+    | '/articles/$slug'
     | '/driver/create'
     | '/driver/register'
     | '/admin'
+    | '/articles'
     | '/driver'
     | '/book/$vanId/checkout'
     | '/book/$vanId/confirmation'
@@ -274,6 +305,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/articles'
     | '/driver'
     | '/find-vans'
     | '/my-bookings'
@@ -285,9 +317,11 @@ export interface FileRouteTypes {
     | '/admin/drivers'
     | '/admin/trips'
     | '/admin/users'
+    | '/articles/$slug'
     | '/driver/create'
     | '/driver/register'
     | '/admin/'
+    | '/articles/'
     | '/driver/'
     | '/book/$vanId/checkout'
     | '/book/$vanId/confirmation'
@@ -300,6 +334,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
+  ArticlesRouteRoute: typeof ArticlesRouteRouteWithChildren
   DriverRouteRoute: typeof DriverRouteRouteWithChildren
   FindVansRoute: typeof FindVansRoute
   MyBookingsRoute: typeof MyBookingsRoute
@@ -355,6 +390,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DriverRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/articles': {
+      id: '/articles'
+      path: '/articles'
+      fullPath: '/articles'
+      preLoaderRoute: typeof ArticlesRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -376,6 +418,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DriverIndexRouteImport
       parentRoute: typeof DriverRouteRoute
     }
+    '/articles/': {
+      id: '/articles/'
+      path: '/'
+      fullPath: '/articles/'
+      preLoaderRoute: typeof ArticlesIndexRouteImport
+      parentRoute: typeof ArticlesRouteRoute
+    }
     '/admin/': {
       id: '/admin/'
       path: '/'
@@ -396,6 +445,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/driver/create'
       preLoaderRoute: typeof DriverCreateRouteImport
       parentRoute: typeof DriverRouteRoute
+    }
+    '/articles/$slug': {
+      id: '/articles/$slug'
+      path: '/$slug'
+      fullPath: '/articles/$slug'
+      preLoaderRoute: typeof ArticlesSlugRouteImport
+      parentRoute: typeof ArticlesRouteRoute
     }
     '/admin/users': {
       id: '/admin/users'
@@ -497,6 +553,20 @@ const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
   AdminRouteRouteChildren,
 )
 
+interface ArticlesRouteRouteChildren {
+  ArticlesSlugRoute: typeof ArticlesSlugRoute
+  ArticlesIndexRoute: typeof ArticlesIndexRoute
+}
+
+const ArticlesRouteRouteChildren: ArticlesRouteRouteChildren = {
+  ArticlesSlugRoute: ArticlesSlugRoute,
+  ArticlesIndexRoute: ArticlesIndexRoute,
+}
+
+const ArticlesRouteRouteWithChildren = ArticlesRouteRoute._addFileChildren(
+  ArticlesRouteRouteChildren,
+)
+
 interface DriverTripsRouteRouteChildren {
   DriverTripsIndexRoute: typeof DriverTripsIndexRoute
   DriverTripsTripIdEditRoute: typeof DriverTripsTripIdEditRoute
@@ -533,6 +603,7 @@ const DriverRouteRouteWithChildren = DriverRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRouteRoute: AdminRouteRouteWithChildren,
+  ArticlesRouteRoute: ArticlesRouteRouteWithChildren,
   DriverRouteRoute: DriverRouteRouteWithChildren,
   FindVansRoute: FindVansRoute,
   MyBookingsRoute: MyBookingsRoute,

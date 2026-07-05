@@ -60,7 +60,7 @@ export function PlaceInput({
   const [activeIndex, setActiveIndex] = useState(-1)
   const [rect, setRect] = useState<DropdownRect | null>(null)
 
-  const suggestions = open ? searchPlaces(value, { region, limit: 6 }) : []
+  const suggestions = open ? searchPlaces(value, { region, limit: 20 }) : []
   const showDropdown = open && suggestions.length > 0
 
   const updateRect = useCallback(() => {

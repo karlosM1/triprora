@@ -94,17 +94,6 @@ function DetailsColumn({ result }: { result: VanResult }) {
         </p>
       )}
 
-      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
-        {result.amenities.map((amenity) => (
-          <span
-            key={amenity.label}
-            className="flex items-center gap-1 text-[12px] text-[#86868b]"
-          >
-            <amenity.icon className="size-3 shrink-0" />
-            {amenity.label}
-          </span>
-        ))}
-      </div>
     </div>
   )
 }
@@ -142,7 +131,11 @@ function PricingColumn({
         className="h-10 rounded-full bg-[#0071e3] px-6 text-[14px] font-normal hover:bg-[#0077ed]"
         asChild
       >
-        <Link to="/book/$vanId" params={{ vanId }} search={{ seat: '1A' }}>
+        <Link
+          to="/book/$vanId"
+          params={{ vanId }}
+          search={{ seat: '1A', pickupAddress: '', dropoffAddress: '' }}
+        >
           Select seat
         </Link>
       </Button>

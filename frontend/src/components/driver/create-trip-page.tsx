@@ -113,7 +113,7 @@ export function DriverCreateTripPage({ draftTripId }: DriverCreateTripPageProps 
     enabled: isEditing,
   })
   const [form, setForm] = useState<FormState>(initialForm)
-  const [seats, setSeats] = useState([12])
+  const [seats, setSeats] = useState([13])
   const [error, setError] = useState<string | null>(null)
   const [initialized, setInitialized] = useState(false)
   const [vehiclePrefilled, setVehiclePrefilled] = useState(false)
@@ -144,7 +144,7 @@ export function DriverCreateTripPage({ draftTripId }: DriverCreateTripPageProps 
     }
 
     setForm(formStateFromTrip(trip))
-    setSeats([trip.totalSeats ?? 12])
+    setSeats([trip.totalSeats ?? 13])
     setInitialized(true)
   }, [draftQuery.data, initialized, isEditing, navigate])
 

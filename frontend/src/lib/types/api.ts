@@ -14,6 +14,7 @@ export type UpcomingBooking = {
   vehicle: string
   price: string
   status: 'confirmed'
+  canCancel: boolean
 }
 
 export type UpdateBookingInput = {
@@ -82,17 +83,6 @@ export type SchedulesResponse = {
   }
 }
 
-export type AmenityKey =
-  | 'wifi'
-  | 'usb'
-  | 'reclining'
-  | 'ac'
-  | 'luggage'
-  | 'legroom'
-  | 'entertainment'
-  | 'snacks'
-  | 'monitor'
-
 export type VanDriver = {
   name: string
   phone: string | null
@@ -110,7 +100,6 @@ export type ApiVan = {
   arrivalLocation: string
   duration: string
   operator: string
-  amenityKeys: AmenityKey[]
   price: number
   seatsLeft: number
   totalSeats?: number

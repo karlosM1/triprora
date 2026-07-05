@@ -18,7 +18,7 @@ function readStoredSession(): Session | null {
       if ('access_token' in parsed && parsed.access_token) {
         return parsed as Session
       }
-      if (parsed.currentSession?.access_token) {
+      if ('currentSession' in parsed && parsed.currentSession?.access_token) {
         return parsed.currentSession
       }
     } catch {

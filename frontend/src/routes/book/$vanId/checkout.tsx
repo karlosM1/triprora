@@ -119,7 +119,11 @@ function CheckoutPage() {
             className="mt-6 rounded-full bg-[#0071e3] px-6 hover:bg-[#0077ed]"
             asChild
           >
-            <Link to="/book/$vanId" params={{ vanId }} search={{ seat }}>
+            <Link
+              to="/book/$vanId"
+              params={{ vanId }}
+              search={{ seat, pickupAddress, dropoffAddress }}
+            >
               Back to booking
             </Link>
           </Button>

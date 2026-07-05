@@ -1,4 +1,4 @@
-import type { AmenityKey, Van, VanDriver } from '../models/van.types.js'
+import type { Van, VanDriver } from '../models/van.types.js'
 
 export type VanWithRelations = {
   id: string
@@ -29,7 +29,6 @@ export type VanWithRelations = {
     make: string
     model: string
   } | null
-  amenities: Array<{ amenity: { key: string } }>
   driver?: {
     fullName: string | null
     phone: string | null
@@ -70,9 +69,6 @@ export function mapDriverInfo(
 }
 
 export function presentVan(van: VanWithRelations): Van {
-  const amenityKeys = van.amenities.map(
-    (entry) => entry.amenity.key as AmenityKey,
-  )
   const vehicleName = van.vehicle
     ? `${van.vehicle.make} ${van.vehicle.model}`.trim()
     : null
@@ -87,7 +83,6 @@ export function presentVan(van: VanWithRelations): Van {
     arrivalLocation: van.route.arrivalLocation,
     duration: van.duration,
     operator: van.operator.name,
-    amenityKeys,
     price: van.price,
     seatsLeft: van.seatsLeft,
     totalSeats: van.totalSeats ?? undefined,
@@ -104,11 +99,6 @@ export const vanInclude = {
   operator: true,
   vanClass: true,
   vehicle: true,
-  amenities: {
-    include: {
-      amenity: true,
-    },
-  },
   driver: {
     select: {
       fullName: true,

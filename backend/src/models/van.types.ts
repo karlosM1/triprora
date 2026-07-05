@@ -1,15 +1,5 @@
 export type VanClassType = 'EXECUTIVE CLASS' | 'STANDARD CLASS'
 export type VanClassVariant = 'executive' | 'standard'
-export type AmenityKey =
-  | 'wifi'
-  | 'usb'
-  | 'reclining'
-  | 'ac'
-  | 'luggage'
-  | 'legroom'
-  | 'entertainment'
-  | 'snacks'
-  | 'monitor'
 
 export type VanDriver = {
   name: string
@@ -28,7 +18,6 @@ export type Van = {
   arrivalLocation: string
   duration: string
   operator: string
-  amenityKeys: AmenityKey[]
   price: number
   seatsLeft: number
   totalSeats?: number

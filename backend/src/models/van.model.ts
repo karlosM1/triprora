@@ -1,16 +1,20 @@
-import type { AmenityKey, Van, VanClassType, VanClassVariant } from './van.types.js'
+import type { Van, VanClassType, VanClassVariant } from './van.types.js'
 import type { Prisma } from '@prisma/client'
 import { prisma } from '../lib/prisma.js'
 import {
   ensureOperator,
   ensureRoute,
   ensureVanClass,
-  syncVanAmenities,
 } from '../lib/reference-data.js'
 import { presentVan, vanInclude, type VanWithRelations } from '../lib/van-presenter.js'
 import { AppError } from '../utils/app-error.js'
+import {
+  generateSeatLabels,
+  resolveTargetSeatCount,
+  syncVanSeatLayout,
+} from '../lib/seat-layout.js'
 
-export type { AmenityKey, Van, VanClassType, VanClassVariant }
+export type { Van, VanClassType, VanClassVariant }
 
 export type DriverTrip = {
   id: string
@@ -22,7 +26,6 @@ export type DriverTrip = {
   arrivalLocation: string
   duration: string
   operator: string
-  amenityKeys: AmenityKey[]
   price: number
   seatsLeft: number
   totalSeats: number | null
@@ -81,19 +84,16 @@ const categoryConfig = {
   express: {
     classType: 'EXECUTIVE CLASS' as const,
     classVariant: 'executive' as const,
-    amenityKeys: ['wifi', 'ac'] as AmenityKey[],
     durationHours: 6,
   },
   business: {
     classType: 'EXECUTIVE CLASS' as const,
     classVariant: 'executive' as const,
-    amenityKeys: ['wifi', 'ac', 'reclining'] as AmenityKey[],
     durationHours: 7,
   },
   standard: {
     classType: 'STANDARD CLASS' as const,
     classVariant: 'standard' as const,
-    amenityKeys: ['ac', 'legroom'] as AmenityKey[],
     durationHours: 8,
   },
 }
@@ -113,21 +113,6 @@ function formatDuration(hours: number) {
   return `${wholeHours}h ${minutes}m`
 }
 
-function generateSeatLabels(totalSeats: number) {
-  const labels: string[] = []
-  let row = 1
-
-  while (labels.length < totalSeats) {
-    for (const column of ['A', 'B', 'C']) {
-      if (labels.length >= totalSeats) break
-      labels.push(`${row}${column}`)
-    }
-    row += 1
-  }
-
-  return labels
-}
-
 function createTripId() {
   return `TRP-${Date.now().toString(36).toUpperCase()}`
 }
@@ -144,7 +129,6 @@ function toDriverTrip(van: VanWithRelations): DriverTrip {
     arrivalLocation: presented.arrivalLocation,
     duration: presented.duration,
     operator: presented.operator,
-    amenityKeys: presented.amenityKeys,
     price: presented.price,
     seatsLeft: presented.seatsLeft,
     totalSeats: presented.totalSeats ?? null,
@@ -194,6 +178,20 @@ export const VanModel = {
     tripId: string,
     driverId: string,
   ): Promise<DriverTripDetails | null> {
+    const existingVan = await prisma.van.findFirst({
+      where: { id: tripId, driverId },
+      include: { seats: { orderBy: { label: 'asc' } } },
+    })
+
+    if (!existingVan) return null
+
+    const targetSeatCount = resolveTargetSeatCount(
+      existingVan.totalSeats,
+      existingVan.seats.map((seat) => seat.label),
+    )
+
+    await prisma.$transaction((tx) => syncVanSeatLayout(tx, tripId, targetSeatCount))
+
     const van = await prisma.van.findFirst({
       where: { id: tripId, driverId },
       include: {
@@ -267,7 +265,19 @@ export const VanModel = {
 
     if (!van || van.status !== 'published') return null
 
-    return van.seats.map((seat) => ({
+    const existingLabels = van.seats.map((seat) => seat.label)
+    const targetSeatCount = resolveTargetSeatCount(van.totalSeats, existingLabels)
+    const expectedLabels = await prisma.$transaction((tx) =>
+      syncVanSeatLayout(tx, vanId, targetSeatCount),
+    )
+
+    const expectedSet = new Set(expectedLabels)
+    const seats = await prisma.seat.findMany({
+      where: { vanId, label: { in: [...expectedSet] } },
+      orderBy: { label: 'asc' },
+    })
+
+    return seats.map((seat) => ({
       id: seat.label,
       label: seat.label,
       status: seat.status,
@@ -317,8 +327,6 @@ export const VanModel = {
         },
         include: vanInclude,
       })
-
-      await syncVanAmenities(tx, tripId, config.amenityKeys)
 
       return tx.van.findUniqueOrThrow({
         where: { id: tripId },
@@ -378,8 +386,6 @@ export const VanModel = {
           },
         },
       })
-
-      await syncVanAmenities(tx, tripId, config.amenityKeys)
 
       return tx.van.findUniqueOrThrow({
         where: { id: tripId },

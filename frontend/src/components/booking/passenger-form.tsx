@@ -1,4 +1,3 @@
-import { User } from 'lucide-react'
 import { AppleCard, SectionTitle } from '@/components/layout/page-header'
 import type { PassengerDetails } from '@/lib/booking'
 import { cn } from '@/lib/utils'

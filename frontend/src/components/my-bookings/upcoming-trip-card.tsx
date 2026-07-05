@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { AppleCard, SectionTitle } from '@/components/layout/page-header'
 import { BookingTicketSheet } from '@/components/my-bookings/booking-ticket-sheet'
+import { CancelBookingDialog } from '@/components/my-bookings/cancel-booking-dialog'
 import { ModifyBookingSheet } from '@/components/my-bookings/modify-booking-sheet'
 import type { UpcomingBooking } from '@/lib/types/api'
 
@@ -12,6 +13,7 @@ type UpcomingTripCardProps = {
 export function UpcomingTripCard({ booking }: UpcomingTripCardProps) {
   const [ticketOpen, setTicketOpen] = useState(false)
   const [modifyOpen, setModifyOpen] = useState(false)
+  const [cancelOpen, setCancelOpen] = useState(false)
 
   return (
     <section>
@@ -57,7 +59,15 @@ export function UpcomingTripCard({ booking }: UpcomingTripCardProps) {
                   Drop-off: {booking.dropoffAddress}
                 </p>
               </div>
-              <div className="flex shrink-0 gap-3">
+              <div className="flex shrink-0 flex-wrap gap-3">
+                <Button
+                  variant="ghost"
+                  className="h-10 rounded-full px-5 text-[14px] text-[#bf4800] hover:bg-[#bf4800]/5 disabled:text-[#86868b] disabled:hover:bg-transparent"
+                  onClick={() => setCancelOpen(true)}
+                  disabled={!booking.canCancel}
+                >
+                  Cancel
+                </Button>
                 <Button
                   variant="ghost"
                   className="h-10 rounded-full px-5 text-[14px] text-[#0066cc] hover:bg-[#0071e3]/5"
@@ -72,6 +82,11 @@ export function UpcomingTripCard({ booking }: UpcomingTripCardProps) {
                   View ticket
                 </Button>
               </div>
+              {!booking.canCancel && (
+                <p className="mt-3 text-[13px] text-[#86868b]">
+                  Cancellations must be made at least 24 hours before pickup.
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -86,6 +101,11 @@ export function UpcomingTripCard({ booking }: UpcomingTripCardProps) {
         booking={booking}
         open={modifyOpen}
         onOpenChange={setModifyOpen}
+      />
+      <CancelBookingDialog
+        booking={booking}
+        open={cancelOpen}
+        onOpenChange={setCancelOpen}
       />
     </section>
   )

@@ -28,6 +28,7 @@ type HeaderProps = {
     | "find-vans"
     | "my-bookings"
     | "schedules"
+    | "articles"
     | "home"
     | "driver-register"
     | "driver-portal"

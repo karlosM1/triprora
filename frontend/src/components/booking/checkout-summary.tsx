@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Car, CreditCard, MapPin, Navigation, Phone, Shield, Snowflake, User, Wifi } from 'lucide-react'
+import { Car, CreditCard, MapPin, Navigation, Phone, Shield, User } from 'lucide-react'
 import { AppleCard } from '@/components/layout/page-header'
 import { calculateTotals, formatPrice } from '@/lib/booking'
 import type { TripAddresses } from '@/lib/booking'
@@ -46,17 +46,7 @@ export function CheckoutSummary({ van, addresses }: CheckoutSummaryProps) {
             {van.vehicleName ?? 'Van'}
           </h3>
           <div className="mt-1.5 flex flex-wrap items-center gap-3 text-[12px] text-[#86868b]">
-            <span>{van.totalSeats ?? 12} seats</span>
-            {van.amenities.some((a) => a.label.includes('WiFi')) && (
-              <span className="flex items-center gap-1">
-                <Wifi className="size-3" strokeWidth={1.75} /> Wi‑Fi
-              </span>
-            )}
-            {van.amenities.some((a) => a.label.includes('AC')) && (
-              <span className="flex items-center gap-1">
-                <Snowflake className="size-3" strokeWidth={1.75} /> AC
-              </span>
-            )}
+            <span>{van.totalSeats ?? 13} seats</span>
           </div>
 
           <div className="mt-5 space-y-3 rounded-xl bg-[#f5f5f7] p-4">

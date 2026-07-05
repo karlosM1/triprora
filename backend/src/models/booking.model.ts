@@ -5,6 +5,10 @@ import type {
   UpcomingBooking,
   UpdateBookingInput,
 } from './booking.types.js'
+import {
+  canCancelBeforePickup,
+  CANCELLATION_TOO_LATE_MESSAGE,
+} from '../lib/booking-cancellation.js'
 import { prisma } from '../lib/prisma.js'
 import { presentVan, vanInclude } from '../lib/van-presenter.js'
 import { AppError } from '../utils/app-error.js'
@@ -71,6 +75,7 @@ function toUpcomingBooking(
   pickupAddress: string | null,
   dropoffAddress: string | null,
   snapshot: BookingSnapshotView | null,
+  canCancel: boolean,
 ): UpcomingBooking | null {
   if (
     !reference ||
@@ -101,6 +106,7 @@ function toUpcomingBooking(
     vehicle: snapshot.vehicleLabel,
     price: snapshot.priceDisplay,
     status: 'confirmed',
+    canCancel,
   }
 }
 
@@ -200,17 +206,27 @@ export const BookingModel = {
   async getUpcoming(userId: string): Promise<UpcomingBooking | null> {
     const booking = await prisma.booking.findFirst({
       where: { userId, status: 'confirmed' },
-      include: { snapshot: true },
+      include: { snapshot: true, van: true },
       orderBy: { createdAt: 'desc' },
     })
 
     if (!booking) return null
+
+    const canCancel =
+      booking.van != null
+        ? canCancelBeforePickup(
+            booking.van.departureDate,
+            booking.van.departureTime,
+          )
+        : false
+
     return toUpcomingBooking(
       booking.id,
       booking.reference,
       booking.pickupAddress,
       booking.dropoffAddress,
       booking.snapshot,
+      canCancel,
     )
   },
 
@@ -309,18 +325,81 @@ export const BookingModel = {
         include: { snapshot: true },
       })
 
+      const canCancel = canCancelBeforePickup(
+        booking.van.departureDate,
+        booking.van.departureTime,
+      )
+
       const upcoming = toUpcomingBooking(
         updated.id,
         updated.reference,
         updated.pickupAddress,
         updated.dropoffAddress,
         updated.snapshot,
+        canCancel,
       )
       if (!upcoming) {
         throw new AppError('Unable to load updated booking', 500)
       }
 
       return upcoming
+    })
+  },
+
+  async cancel(userId: string, bookingId: string): Promise<HistoryBooking> {
+    return prisma.$transaction(async (tx) => {
+      const booking = await tx.booking.findFirst({
+        where: { id: bookingId, userId, status: 'confirmed' },
+        include: {
+          snapshot: true,
+          van: true,
+        },
+      })
+
+      if (!booking || !booking.snapshot) {
+        throw new AppError('Booking not found', 404)
+      }
+
+      if (!booking.van) {
+        throw new AppError('Unable to cancel this booking', 400)
+      }
+
+      if (
+        !canCancelBeforePickup(
+          booking.van.departureDate,
+          booking.van.departureTime,
+        )
+      ) {
+        throw new AppError(CANCELLATION_TOO_LATE_MESSAGE, 400)
+      }
+
+      if (booking.seatId) {
+        await tx.seat.update({
+          where: { id: booking.seatId },
+          data: { status: 'available' },
+        })
+      }
+
+      await tx.van.update({
+        where: { id: booking.van.id },
+        data: { seatsLeft: { increment: 1 } },
+      })
+
+      const updated = await tx.booking.update({
+        where: { id: bookingId },
+        data: { status: 'cancelled' },
+        include: { snapshot: true },
+      })
+
+      return {
+        id: updated.id,
+        reference: updated.reference ?? '',
+        date: updated.snapshot?.departureDate ?? '',
+        route: updated.snapshot?.routeLabel ?? '',
+        tripType: updated.snapshot?.tripType ?? '',
+        status: 'cancelled',
+        price: updated.snapshot?.priceDisplay ?? '',
+      }
     })
   },
 }

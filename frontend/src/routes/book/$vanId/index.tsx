@@ -73,11 +73,6 @@ function TripErrorLayout({
   )
 }
 
-const emptyAddresses: TripAddresses = {
-  pickupAddress: '',
-  dropoffAddress: '',
-}
-
 function SeatSelectionPage() {
   const { vanId } = Route.useParams()
   const search = Route.useSearch()

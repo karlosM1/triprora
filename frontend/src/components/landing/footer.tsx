@@ -19,6 +19,7 @@ export function Footer() {
   const { user, profileReady, isDriver } = useAuth()
 
   const resourceLinks = [
+    { label: 'Articles', to: '/articles' as const },
     { label: 'Support', to: '/' as const },
     ...(profileReady && isDriver
       ? [{ label: 'Driver Portal', to: '/driver' as const }]

@@ -82,24 +82,6 @@ model VanClass {
   @@map("van_classes")
 }
 
-model Amenity {
-  id           String       @id @default(cuid())
-  key          String       @unique
-  vanAmenities VanAmenity[]
-
-  @@map("amenities")
-}
-
-model VanAmenity {
-  vanId     String
-  amenityId String
-  van       Van     @relation(fields: [vanId], references: [id], onDelete: Cascade)
-  amenity   Amenity @relation(fields: [amenityId], references: [id], onDelete: Cascade)
-
-  @@id([vanId, amenityId])
-  @@map("van_amenities")
-}
-
 model Vehicle {
   id             String            @id @default(cuid())
   ownerProfileId String            @db.Uuid
@@ -151,7 +133,6 @@ model Van {
   status        VanStatus    @default(published)
   driverId      String?      @db.Uuid
   driver        Profile?     @relation(fields: [driverId], references: [id], onDelete: Cascade)
-  amenities     VanAmenity[]
   seats         Seat[]
   bookings      Booking[]
   createdAt     DateTime     @default(now())

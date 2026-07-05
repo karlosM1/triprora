@@ -14,6 +14,7 @@ export type UpcomingBooking = {
   vehicle: string
   price: string
   status: 'confirmed'
+  canCancel: boolean
 }
 
 export type UpdateBookingInput = {

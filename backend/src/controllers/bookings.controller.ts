@@ -34,3 +34,12 @@ export async function updateBooking(req: Request, res: Response) {
 
   res.json(booking)
 }
+
+export async function cancelBooking(req: Request, res: Response) {
+  const booking = await BookingModel.cancel(
+    req.profile!.id,
+    req.params.bookingId,
+  )
+
+  res.json(booking)
+}

@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import {
+  cancelBooking,
   createBooking,
   getBookingHistory,
   getUpcomingBooking,
@@ -29,3 +30,4 @@ bookingsRouter.patch(
   validateRequest({ body: updateBookingSchema }),
   asyncHandler(updateBooking),
 )
+bookingsRouter.post('/:bookingId/cancel', asyncHandler(cancelBooking))

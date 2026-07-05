@@ -1,55 +1,15 @@
 import { Link } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
+import { ArticlesGrid } from '@/components/articles/articles-grid'
+import { getFeaturedArticles } from '@/lib/articles'
 import {
   fadeInUp,
-  scaleIn,
   staggerContainer,
   viewportOnce,
 } from '@/lib/motion'
-import beachView from '@/assets/beach-view.jpg'
-import ditumaboFalls from '@/assets/ditumabo-falls.jpg'
-import hillBeachView from '@/assets/hill-beach-view.jpg'
-import surfingSabang from '@/assets/surfing-sabang.jfif'
 
-const articles = [
-  {
-    tag: 'Hidden Gems',
-    date: '12 June 2024',
-    title: 'Top 10 Must-Visit Hidden Gems in Aurora Province',
-    description:
-      'From the misty trails of Ditumabo Falls to the secluded coves of Baler, discover Aurora\'s best-kept secrets away from the crowds.',
-    author: 'Maria Santos',
-    image: ditumaboFalls,
-  },
-  {
-    tag: 'Surf Guide',
-    date: '28 May 2024',
-    title: 'Surfing in Baler: The Ultimate Beginner\'s Guide',
-    description:
-      'Sabang Beach is the birthplace of Philippine surfing. Learn when to visit, where to rent boards, and how to catch your first wave.',
-    author: 'Juan Dela Cruz',
-    image: surfingSabang,
-  },
-  {
-    tag: 'Nature',
-    date: '15 May 2024',
-    title: 'A Nature Lover\'s Guide to Aurora\'s Lush Mountains',
-    description:
-      'Trek through the Sierra Madre range, visit the Millennium Tree in Maria Aurora, and explore the province\'s rich biodiversity.',
-    author: 'Ana Reyes',
-    image: hillBeachView,
-  },
-  {
-    tag: 'Budget Tips',
-    date: '3 May 2024',
-    title: 'Budget-Friendly Travel Tips for Your Aurora Adventure',
-    description:
-      'Stretch your peso with local homestays, carinderia eats, and off-season travel hacks for an affordable Aurora getaway.',
-    author: 'Carlo Mendoza',
-    image: beachView,
-  },
-]
+const featuredArticles = getFeaturedArticles()
 
 export function TravelTipsSection() {
   return (
@@ -88,65 +48,17 @@ export function TravelTipsSection() {
               size="lg"
               asChild
             >
-              <Link to="/find-vans">Read all articles ›</Link>
+              <Link to="/articles">Read all articles ›</Link>
             </Button>
           </motion.div>
         </motion.div>
 
-        <motion.div
-          className="mt-14 grid gap-5 lg:grid-cols-2"
-          initial="hidden"
+        <ArticlesGrid
+          articles={featuredArticles}
+          className="mt-14"
           whileInView="visible"
           viewport={viewportOnce}
-          variants={staggerContainer}
-        >
-          {articles.map((article) => (
-            <motion.article
-              key={article.title}
-              variants={scaleIn}
-              whileHover={{ y: -4 }}
-              transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-              className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5 sm:flex-row"
-            >
-              <div className="aspect-4/3 shrink-0 sm:aspect-auto sm:w-[42%]">
-                <img
-                  src={article.image}
-                  alt={article.title}
-                  className="size-full object-cover"
-                />
-              </div>
-
-              <div className="flex flex-1 flex-col p-6">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-medium text-[#0066cc]">
-                    {article.tag}
-                  </span>
-                  <time className="text-xs text-[#86868b]">{article.date}</time>
-                </div>
-
-                <h3 className="mt-3 text-[19px] leading-snug font-semibold tracking-[-0.01em] text-[#1d1d1f]">
-                  {article.title}
-                </h3>
-
-                <p className="mt-2 flex-1 text-[15px] leading-relaxed text-[#86868b]">
-                  {article.description}
-                </p>
-
-                <div className="mt-5 border-t border-black/5 pt-4">
-                  <p className="text-xs text-[#86868b]">
-                    {article.author}
-                  </p>
-                  <Link
-                    to="/find-vans"
-                    className="mt-2 inline-block text-[15px] text-[#0066cc] hover:underline"
-                  >
-                    Learn more ›
-                  </Link>
-                </div>
-              </div>
-            </motion.article>
-          ))}
-        </motion.div>
+        />
       </div>
     </section>
   )
