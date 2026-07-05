@@ -54,8 +54,36 @@ export type Profile = {
   email: string
   fullName: string | null
   phone: string | null
+  dateOfBirth: string | null
+  gender: string | null
+  nationality: string | null
+  houseStreet: string | null
+  barangay: string | null
+  city: string | null
+  province: string | null
+  zipCode: string | null
+  emergencyContactName: string | null
+  emergencyContactRelationship: string | null
+  emergencyContactPhone: string | null
   role: Role
+  createdAt: string
   driverApplication: DriverApplication | null
+}
+
+export type UpdateProfilePayload = {
+  fullName: string
+  phone: string
+  dateOfBirth: string
+  gender: string
+  nationality: string
+  houseStreet: string
+  barangay: string
+  city: string
+  province: string
+  zipCode: string
+  emergencyContactName: string
+  emergencyContactRelationship: string
+  emergencyContactPhone: string
 }
 
 export type PendingDriverApplication = DriverApplication & {

@@ -1,9 +1,18 @@
 import { api } from '@/lib/axios'
 import type { driverRegistrationFormToPayload } from '@/lib/types/driver-registration'
-import type { PendingDriverApplication, Profile } from '@/lib/types/profile'
+import type {
+  PendingDriverApplication,
+  Profile,
+  UpdateProfilePayload,
+} from '@/lib/types/profile'
 
 export async function fetchProfile() {
   const { data } = await api.get<Profile>('/me')
+  return data
+}
+
+export async function updateProfile(payload: UpdateProfilePayload) {
+  const { data } = await api.patch<Profile>('/me', payload)
   return data
 }
 

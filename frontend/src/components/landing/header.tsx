@@ -30,6 +30,7 @@ type HeaderProps = {
     | "schedules"
     | "articles"
     | "home"
+    | "profile"
     | "driver-register"
     | "driver-portal"
     | "admin"
@@ -173,12 +174,13 @@ export function Header({
             </HeroMuted>
           ) : user ? (
             <>
-              <div
-                className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-[#0071e3] text-[10px] leading-none font-semibold text-white ring-1 ring-black/5"
-                title={user.email ?? "Account"}
+              <Link
+                to="/profile"
+                className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-[#0071e3] text-[10px] leading-none font-semibold text-white ring-1 ring-black/5 transition-opacity hover:opacity-90"
+                title={user.email ?? "Profile"}
               >
                 {getInitials(user.email ?? "user")}
-              </div>
+              </Link>
               <Button
                 variant="ghost"
                 size="sm"
@@ -292,6 +294,15 @@ function MobileNavMenu({
             {user.email ? (
               <p className="truncate text-[13px] text-[#86868b]">{user.email}</p>
             ) : null}
+            <Button
+              variant="ghost"
+              className="h-10 w-full rounded-full text-[14px] font-normal text-[#0066cc] hover:bg-[#0071e3]/5 hover:text-[#0077ed]"
+              asChild
+            >
+              <Link to="/profile" onClick={() => setOpen(false)}>
+                Profile
+              </Link>
+            </Button>
             <Button
               variant="ghost"
               className="h-10 w-full rounded-full text-[14px] font-normal text-[#0066cc] hover:bg-[#0071e3]/5 hover:text-[#0077ed]"

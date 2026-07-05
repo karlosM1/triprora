@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SchedulesRouteImport } from './routes/schedules'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as MyBookingsRouteImport } from './routes/my-bookings'
 import { Route as FindVansRouteImport } from './routes/find-vans'
 import { Route as DriverRouteRouteImport } from './routes/driver/route'
@@ -49,6 +50,11 @@ const SignInRoute = SignInRouteImport.update({
 const SchedulesRoute = SchedulesRouteImport.update({
   id: '/schedules',
   path: '/schedules',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MyBookingsRoute = MyBookingsRouteImport.update({
@@ -174,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/driver': typeof DriverRouteRouteWithChildren
   '/find-vans': typeof FindVansRoute
   '/my-bookings': typeof MyBookingsRoute
+  '/profile': typeof ProfileRoute
   '/schedules': typeof SchedulesRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
@@ -199,6 +206,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/find-vans': typeof FindVansRoute
   '/my-bookings': typeof MyBookingsRoute
+  '/profile': typeof ProfileRoute
   '/schedules': typeof SchedulesRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
@@ -227,6 +235,7 @@ export interface FileRoutesById {
   '/driver': typeof DriverRouteRouteWithChildren
   '/find-vans': typeof FindVansRoute
   '/my-bookings': typeof MyBookingsRoute
+  '/profile': typeof ProfileRoute
   '/schedules': typeof SchedulesRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
@@ -257,6 +266,7 @@ export interface FileRouteTypes {
     | '/driver'
     | '/find-vans'
     | '/my-bookings'
+    | '/profile'
     | '/schedules'
     | '/sign-in'
     | '/sign-up'
@@ -282,6 +292,7 @@ export interface FileRouteTypes {
     | '/'
     | '/find-vans'
     | '/my-bookings'
+    | '/profile'
     | '/schedules'
     | '/sign-in'
     | '/sign-up'
@@ -309,6 +320,7 @@ export interface FileRouteTypes {
     | '/driver'
     | '/find-vans'
     | '/my-bookings'
+    | '/profile'
     | '/schedules'
     | '/sign-in'
     | '/sign-up'
@@ -338,6 +350,7 @@ export interface RootRouteChildren {
   DriverRouteRoute: typeof DriverRouteRouteWithChildren
   FindVansRoute: typeof FindVansRoute
   MyBookingsRoute: typeof MyBookingsRoute
+  ProfileRoute: typeof ProfileRoute
   SchedulesRoute: typeof SchedulesRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
@@ -367,6 +380,13 @@ declare module '@tanstack/react-router' {
       path: '/schedules'
       fullPath: '/schedules'
       preLoaderRoute: typeof SchedulesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/my-bookings': {
@@ -607,6 +627,7 @@ const rootRouteChildren: RootRouteChildren = {
   DriverRouteRoute: DriverRouteRouteWithChildren,
   FindVansRoute: FindVansRoute,
   MyBookingsRoute: MyBookingsRoute,
+  ProfileRoute: ProfileRoute,
   SchedulesRoute: SchedulesRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,

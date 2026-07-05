@@ -1,6 +1,9 @@
 import type { Role } from '@prisma/client'
 import { Prisma } from '@prisma/client'
 import { prisma } from '../lib/prisma.js'
+import type { UpdateProfileBody } from '../validators/me.validator.js'
+
+type UpdateProfileData = UpdateProfileBody
 
 function resolveInitialRole(email: string): Role {
   const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase()
@@ -81,6 +84,13 @@ export const ProfileModel = {
     return prisma.profile.update({
       where: { id },
       data: { role },
+    })
+  },
+
+  async update(id: string, data: UpdateProfileData) {
+    return prisma.profile.update({
+      where: { id },
+      data,
     })
   },
 }
