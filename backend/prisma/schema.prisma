@@ -39,40 +39,133 @@ enum VanStatus {
   cancelled
 }
 
-model Van {
-  id                String    @id
-  classType         String
-  classVariant      String
-  departureTime     String
+enum DriverDocumentType {
+  profile_photo
+  license_front
+  license_back
+}
+
+enum VehicleDocumentType {
+  cr
+  or
+  insurance
+  inspection
+}
+
+model Operator {
+  id   String @id @default(cuid())
+  name String @unique
+  vans Van[]
+
+  @@map("operators")
+}
+
+model Route {
+  id                String  @id @default(cuid())
   departureLocation String
-  arrivalTime       String
   arrivalLocation   String
-  duration          String
-  operator          String
-  amenityKeys       String[]
-  price             Int
-  seatsLeft         Int
-  totalSeats        Int?
-  departureDate     String    @default("")
-  tripCategory      String?
-  vehicleName       String?
-  plateNumber       String?
-  status            VanStatus @default(published)
-  driverId          String?   @db.Uuid
-  driver            Profile?  @relation(fields: [driverId], references: [id], onDelete: Cascade)
-  seats             Seat[]
-  bookings          Booking[]
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  typicalDuration   String?
+  vans              Van[]
+
+  @@unique([departureLocation, arrivalLocation])
+  @@map("routes")
+}
+
+model VanClass {
+  id           String @id @default(cuid())
+  classType    String
+  classVariant String
+  baseCapacity Int?
+  vans         Van[]
+
+  @@unique([classType, classVariant])
+  @@map("van_classes")
+}
+
+model Amenity {
+  id           String       @id @default(cuid())
+  key          String       @unique
+  vanAmenities VanAmenity[]
+
+  @@map("amenities")
+}
+
+model VanAmenity {
+  vanId     String
+  amenityId String
+  van       Van     @relation(fields: [vanId], references: [id], onDelete: Cascade)
+  amenity   Amenity @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@id([vanId, amenityId])
+  @@map("van_amenities")
+}
+
+model Vehicle {
+  id             String            @id @default(cuid())
+  ownerProfileId String            @db.Uuid
+  owner          Profile           @relation(fields: [ownerProfileId], references: [id], onDelete: Cascade)
+  plateNumber    String
+  make           String
+  model          String
+  year           Int
+  color          String
+  capacity       Int
+  photoUrl       String?
+  documents      VehicleDocument[]
+  vans           Van[]
+  application    DriverApplication?
+
+  @@map("vehicles")
+}
+
+model VehicleDocument {
+  id        String              @id @default(cuid())
+  vehicleId String
+  vehicle   Vehicle             @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  type      VehicleDocumentType
+  url       String
+  expiresAt DateTime?
+
+  @@unique([vehicleId, type])
+  @@map("vehicle_documents")
+}
+
+model Van {
+  id            String       @id
+  routeId       String
+  route         Route        @relation(fields: [routeId], references: [id])
+  operatorId    String
+  operator      Operator     @relation(fields: [operatorId], references: [id])
+  vanClassId    String
+  vanClass      VanClass     @relation(fields: [vanClassId], references: [id])
+  vehicleId     String?
+  vehicle       Vehicle?     @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  departureTime String
+  arrivalTime   String
+  duration      String
+  price         Int
+  seatsLeft     Int
+  totalSeats    Int?
+  departureDate String       @default("")
+  tripCategory  String?
+  status        VanStatus    @default(published)
+  driverId      String?      @db.Uuid
+  driver        Profile?     @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  amenities     VanAmenity[]
+  seats         Seat[]
+  bookings      Booking[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 }
 
 model Seat {
-  id      String     @id @default(cuid())
-  vanId   String
-  van     Van        @relation(fields: [vanId], references: [id], onDelete: Cascade)
-  label   String
-  status  SeatStatus @default(available)
-  premium Boolean    @default(false)
+  id       String     @id @default(cuid())
+  vanId    String
+  van      Van        @relation(fields: [vanId], references: [id], onDelete: Cascade)
+  label    String
+  status   SeatStatus @default(available)
+  premium  Boolean    @default(false)
+  bookings Booking[]
 
   @@unique([vanId, label])
 }
@@ -89,99 +182,134 @@ model Profile {
   driverApplication DriverApplication?
   bookings          Booking[]
   vans              Van[]
+  vehicles          Vehicle[]
 
   @@map("profiles")
 }
 
-model DriverApplication {
-  id          String                  @id @default(cuid())
-  profileId   String                  @unique @db.Uuid
-  profile     Profile                 @relation(fields: [profileId], references: [id], onDelete: Cascade)
-
-  // Personal information
-  firstName       String
-  middleName      String?
-  lastName        String
-  suffix          String?
-  dateOfBirth     String
-  gender          String
-  nationality     String
-  profilePhotoUrl String?
-
-  // Contact address
+model Address {
+  id          String              @id @default(cuid())
   houseStreet String
   barangay    String
   city        String
   province    String
   zipCode     String
+  application DriverApplication?
 
-  // Driver's license
+  @@map("addresses")
+}
+
+model EmergencyContact {
+  id           String              @id @default(cuid())
+  name         String
+  relationship String
+  phone        String
+  application  DriverApplication?
+
+  @@map("emergency_contacts")
+}
+
+model DriverBankAccount {
+  id            String              @id @default(cuid())
+  gcashNumber   String?
+  accountName   String?
+  bankName      String?
+  accountNumber String?
+  application   DriverApplication?
+
+  @@map("driver_bank_accounts")
+}
+
+model DriverDocument {
+  id            String             @id @default(cuid())
+  applicationId String
+  application   DriverApplication  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  type          DriverDocumentType
+  url           String
+
+  @@unique([applicationId, type])
+  @@map("driver_documents")
+}
+
+model DriverApplication {
+  id        String @id @default(cuid())
+  profileId String @unique @db.Uuid
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  firstName   String
+  middleName  String?
+  lastName    String
+  suffix      String?
+  dateOfBirth String
+  gender      String
+  nationality String
+
   licenseNo         String
   licenseType       String
   licenseExpiration String
-  licenseFrontUrl   String
-  licenseBackUrl    String
 
-  // Vehicle information
-  vehiclePlateNumber String
-  vehicleMake        String
-  vehicleModel       String
-  vehicleYear        Int
-  vehicleColor       String
-  vehicleCapacity    Int
-  vehiclePhotoUrl    String?
+  addressId String  @unique
+  address   Address @relation(fields: [addressId], references: [id], onDelete: Cascade)
 
-  // Vehicle documents
-  crDocumentUrl          String
-  orDocumentUrl          String
-  insuranceDocumentUrl   String
-  inspectionDocumentUrl  String?
+  emergencyContactId String           @unique
+  emergencyContact   EmergencyContact @relation(fields: [emergencyContactId], references: [id], onDelete: Cascade)
 
-  // Emergency contact
-  emergencyContactName         String
-  emergencyContactRelationship String
-  emergencyContactPhone        String
+  bankAccountId String?            @unique
+  bankAccount   DriverBankAccount? @relation(fields: [bankAccountId], references: [id], onDelete: SetNull)
 
-  // Banking / payment (optional)
-  gcashNumber        String?
-  bankAccountName    String?
-  bankName           String?
-  bankAccountNumber  String?
+  vehicleId String?  @unique
+  vehicle   Vehicle? @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
 
-  // Verification & consent
+  documents DriverDocument[]
+
   certifyInfo  Boolean @default(false)
   agreeTerms   Boolean @default(false)
   agreePrivacy Boolean @default(false)
 
-  status      DriverApplicationStatus @default(pending)
-  reviewedBy  String?                 @db.Uuid
-  reviewedAt  DateTime?
-  adminNotes  String?
-  createdAt   DateTime                @default(now())
-  updatedAt   DateTime                @updatedAt
+  status     DriverApplicationStatus @default(pending)
+  reviewedBy String?                 @db.Uuid
+  reviewedAt DateTime?
+  adminNotes String?
+  createdAt  DateTime                @default(now())
+  updatedAt  DateTime                @updatedAt
 
   @@map("driver_applications")
 }
 
 model Booking {
-  id        String        @id
-  userId    String?       @db.Uuid
-  user      Profile?      @relation(fields: [userId], references: [id], onDelete: SetNull)
-  vanId     String?
-  van       Van?          @relation(fields: [vanId], references: [id], onDelete: SetNull)
-  reference String?       @unique
-  routeCode String?
-  image     String?
-  date      String
-  time      String?
-  seat           String?
+  id             String        @id
+  userId         String?       @db.Uuid
+  user           Profile?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  vanId          String?
+  van            Van?          @relation(fields: [vanId], references: [id], onDelete: SetNull)
+  seatId         String?
+  seat           Seat?         @relation(fields: [seatId], references: [id], onDelete: SetNull)
+  reference      String?       @unique
   pickupAddress  String?
   dropoffAddress String?
-  route          String
-  vehicle   String?
-  tripType  String?
-  status    BookingStatus
-  price     String?
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  status         BookingStatus
+  snapshot       BookingSnapshot?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model BookingSnapshot {
+  bookingId       String  @id
+  booking         Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  routeCode       String?
+  routeLabel      String
+  imageUrl        String?
+  departureDate   String
+  departureTime   String?
+  seatLabel       String
+  vehicleLabel    String?
+  tripType        String?
+  baseFareCents   Int
+  serviceFeeCents Int
+  taxCents        Int
+  totalCents      Int
+  currency        String  @default("PHP")
+  priceDisplay    String
+
+  @@map("booking_snapshots")
 }

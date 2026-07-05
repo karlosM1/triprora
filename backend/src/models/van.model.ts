@@ -1,89 +1,16 @@
-import type { AmenityKey, Van, VanClassType, VanClassVariant, VanDriver } from './van.types.js'
+import type { AmenityKey, Van, VanClassType, VanClassVariant } from './van.types.js'
+import type { Prisma } from '@prisma/client'
 import { prisma } from '../lib/prisma.js'
+import {
+  ensureOperator,
+  ensureRoute,
+  ensureVanClass,
+  syncVanAmenities,
+} from '../lib/reference-data.js'
+import { presentVan, vanInclude, type VanWithRelations } from '../lib/van-presenter.js'
+import { AppError } from '../utils/app-error.js'
 
 export type { AmenityKey, Van, VanClassType, VanClassVariant }
-
-const vanSelect = {
-  id: true,
-  classType: true,
-  classVariant: true,
-  departureTime: true,
-  departureLocation: true,
-  arrivalTime: true,
-  arrivalLocation: true,
-  duration: true,
-  operator: true,
-  amenityKeys: true,
-  price: true,
-  seatsLeft: true,
-  totalSeats: true,
-  departureDate: true,
-  tripCategory: true,
-  vehicleName: true,
-  plateNumber: true,
-  status: true,
-  driverId: true,
-  createdAt: true,
-  driver: {
-    select: {
-      fullName: true,
-      phone: true,
-      driverApplication: {
-        select: {
-          licenseNo: true,
-          vehicleMake: true,
-          vehicleModel: true,
-          vehiclePlateNumber: true,
-        },
-      },
-    },
-  },
-} as const
-
-function formatRegisteredVehicle(
-  application: {
-    vehicleMake: string
-    vehicleModel: string
-    vehiclePlateNumber: string
-  } | null,
-) {
-  if (!application) return null
-  return `${application.vehicleMake} ${application.vehicleModel} · ${application.vehiclePlateNumber}`
-}
-
-function mapDriverInfo(
-  driver: {
-    fullName: string | null
-    phone: string | null
-    driverApplication: {
-      licenseNo: string
-      vehicleMake: string
-      vehicleModel: string
-      vehiclePlateNumber: string
-    } | null
-  } | null,
-): VanDriver | null {
-  if (!driver) return null
-  return {
-    name: driver.fullName?.trim() || 'Driver',
-    phone: driver.phone,
-    licenseNo: driver.driverApplication?.licenseNo ?? null,
-    vehicleInfo: formatRegisteredVehicle(driver.driverApplication),
-  }
-}
-
-function mapVanRecord(
-  van: {
-    driver?: Parameters<typeof mapDriverInfo>[0]
-    [key: string]: unknown
-  },
-): Van {
-  const { driver, ...fields } = van
-  return {
-    ...(fields as Omit<Van, 'driver'>),
-    driver: mapDriverInfo(driver ?? null),
-  }
-}
 
 export type DriverTrip = {
   id: string
@@ -205,27 +132,62 @@ function createTripId() {
   return `TRP-${Date.now().toString(36).toUpperCase()}`
 }
 
+function toDriverTrip(van: VanWithRelations): DriverTrip {
+  const presented = presentVan(van)
+  return {
+    id: presented.id,
+    classType: presented.classType,
+    classVariant: presented.classVariant,
+    departureTime: presented.departureTime,
+    departureLocation: presented.departureLocation,
+    arrivalTime: presented.arrivalTime,
+    arrivalLocation: presented.arrivalLocation,
+    duration: presented.duration,
+    operator: presented.operator,
+    amenityKeys: presented.amenityKeys,
+    price: presented.price,
+    seatsLeft: presented.seatsLeft,
+    totalSeats: presented.totalSeats ?? null,
+    departureDate: presented.departureDate ?? '',
+    tripCategory: presented.tripCategory ?? null,
+    vehicleName: presented.vehicleName ?? null,
+    plateNumber: presented.plateNumber ?? null,
+    status: van.status as DriverTrip['status'],
+    driverId: van.driverId,
+    createdAt: van.createdAt,
+  }
+}
+
+async function resolveDriverVehicleId(tx: Prisma.TransactionClient, driverId: string) {
+  const vehicle = await tx.vehicle.findFirst({
+    where: { ownerProfileId: driverId },
+    orderBy: { id: 'asc' },
+  })
+
+  if (!vehicle) {
+    throw new AppError('No registered vehicle found for this driver', 400)
+  }
+
+  return vehicle.id
+}
+
 export const VanModel = {
   async findAll(): Promise<Van[]> {
     const vans = await prisma.van.findMany({
       where: { status: 'published' },
-      select: vanSelect,
+      include: vanInclude,
       orderBy: [{ departureDate: 'asc' }, { departureTime: 'asc' }],
     })
-    return vans.map(mapVanRecord)
+    return vans.map((van) => presentVan(van))
   },
 
   async findByDriverId(driverId: string): Promise<DriverTrip[]> {
     const vans = await prisma.van.findMany({
       where: { driverId },
-      select: vanSelect,
+      include: vanInclude,
       orderBy: [{ departureDate: 'desc' }, { departureTime: 'desc' }],
     })
-    return vans.map((van) => {
-      const mapped = mapVanRecord(van)
-      const { driver: _driver, ...trip } = mapped
-      return trip as DriverTrip
-    })
+    return vans.map(toDriverTrip)
   },
 
   async findDriverTripDetails(
@@ -235,11 +197,13 @@ export const VanModel = {
     const van = await prisma.van.findFirst({
       where: { id: tripId, driverId },
       include: {
+        ...vanInclude,
         seats: { orderBy: { label: 'asc' } },
         bookings: {
           where: { status: 'confirmed' },
           orderBy: { createdAt: 'asc' },
           include: {
+            snapshot: true,
             user: {
               select: {
                 id: true,
@@ -256,7 +220,7 @@ export const VanModel = {
     if (!van) return null
 
     const { seats, bookings, ...tripFields } = van
-    const trip = tripFields as DriverTrip
+    const trip = toDriverTrip(tripFields as VanWithRelations)
 
     const mappedSeats: DriverTripSeat[] = seats.map((seat) => ({
       label: seat.label,
@@ -267,11 +231,11 @@ export const VanModel = {
     const passengers: DriverTripPassenger[] = bookings.map((booking) => ({
       id: booking.id,
       reference: booking.reference,
-      seat: booking.seat,
+      seat: booking.snapshot?.seatLabel ?? null,
       name: booking.user?.fullName?.trim() || booking.user?.email || 'Guest',
       email: booking.user?.email ?? null,
       phone: booking.user?.phone ?? null,
-      price: booking.price,
+      price: booking.snapshot?.priceDisplay ?? null,
       bookedAt: booking.createdAt,
     }))
 
@@ -290,9 +254,9 @@ export const VanModel = {
         id: vanId,
         status: 'published',
       },
-      select: vanSelect,
+      include: vanInclude,
     })
-    return van ? mapVanRecord(van) : null
+    return van ? presentVan(van) : null
   },
 
   async findSeatsByVanId(vanId: string) {
@@ -315,41 +279,54 @@ export const VanModel = {
     const config = categoryConfig[input.tripCategory]
     const arrivalTime = addHoursToTime(input.departureTime, config.durationHours)
     const duration = formatDuration(config.durationHours)
-    const operator = input.driverName?.trim() || 'Crabi Partner'
+    const operatorName = input.driverName?.trim() || 'Crabi Partner'
     const seatLabels = generateSeatLabels(input.totalSeats)
+    const tripId = createTripId()
 
-    const van = await prisma.van.create({
-      data: {
-        id: createTripId(),
-        classType: config.classType,
-        classVariant: config.classVariant,
-        departureTime: input.departureTime,
-        departureLocation: input.departureLocation,
-        arrivalTime,
-        arrivalLocation: input.arrivalLocation,
-        duration,
-        operator,
-        amenityKeys: config.amenityKeys,
-        price: input.price,
-        seatsLeft: input.totalSeats,
-        totalSeats: input.totalSeats,
-        departureDate: input.departureDate,
-        tripCategory: input.tripCategory,
-        vehicleName: input.vehicleName,
-        plateNumber: input.plateNumber?.trim() || null,
-        status: input.status,
-        driverId: input.driverId,
-        seats: {
-          create: seatLabels.map((label) => ({
-            label,
-            premium: false,
-          })),
+    const van = await prisma.$transaction(async (tx) => {
+      const [operator, route, vanClass, vehicleId] = await Promise.all([
+        ensureOperator(tx, operatorName),
+        ensureRoute(tx, input.departureLocation, input.arrivalLocation, duration),
+        ensureVanClass(tx, config.classType, config.classVariant, input.totalSeats),
+        resolveDriverVehicleId(tx, input.driverId),
+      ])
+
+      const created = await tx.van.create({
+        data: {
+          id: tripId,
+          routeId: route.id,
+          operatorId: operator.id,
+          vanClassId: vanClass.id,
+          vehicleId,
+          departureTime: input.departureTime,
+          arrivalTime,
+          duration,
+          price: input.price,
+          seatsLeft: input.totalSeats,
+          totalSeats: input.totalSeats,
+          departureDate: input.departureDate,
+          tripCategory: input.tripCategory,
+          status: input.status,
+          driverId: input.driverId,
+          seats: {
+            create: seatLabels.map((label) => ({
+              label,
+              premium: false,
+            })),
+          },
         },
-      },
-      select: vanSelect,
+        include: vanInclude,
+      })
+
+      await syncVanAmenities(tx, tripId, config.amenityKeys)
+
+      return tx.van.findUniqueOrThrow({
+        where: { id: tripId },
+        include: vanInclude,
+      })
     })
 
-    return van as DriverTrip
+    return toDriverTrip(van)
   },
 
   async updateDriverTrip(
@@ -370,26 +347,28 @@ export const VanModel = {
     const seatLabels = generateSeatLabels(input.totalSeats)
 
     const van = await prisma.$transaction(async (tx) => {
+      const [route, vanClass, vehicleId] = await Promise.all([
+        ensureRoute(tx, input.departureLocation, input.arrivalLocation, duration),
+        ensureVanClass(tx, config.classType, config.classVariant, input.totalSeats),
+        resolveDriverVehicleId(tx, driverId),
+      ])
+
       await tx.seat.deleteMany({ where: { vanId: tripId } })
 
-      return tx.van.update({
+      await tx.van.update({
         where: { id: tripId },
         data: {
-          classType: config.classType,
-          classVariant: config.classVariant,
+          routeId: route.id,
+          vanClassId: vanClass.id,
+          vehicleId,
           departureTime: input.departureTime,
-          departureLocation: input.departureLocation,
           arrivalTime,
-          arrivalLocation: input.arrivalLocation,
           duration,
-          amenityKeys: config.amenityKeys,
           price: input.price,
           seatsLeft: input.totalSeats,
           totalSeats: input.totalSeats,
           departureDate: input.departureDate,
           tripCategory: input.tripCategory,
-          vehicleName: input.vehicleName,
-          plateNumber: input.plateNumber?.trim() || null,
           status: input.status,
           seats: {
             create: seatLabels.map((label) => ({
@@ -398,11 +377,17 @@ export const VanModel = {
             })),
           },
         },
-        select: vanSelect,
+      })
+
+      await syncVanAmenities(tx, tripId, config.amenityKeys)
+
+      return tx.van.findUniqueOrThrow({
+        where: { id: tripId },
+        include: vanInclude,
       })
     })
 
-    return van as DriverTrip
+    return toDriverTrip(van)
   },
 
   async completeDriverTrip(
@@ -422,13 +407,17 @@ export const VanModel = {
         data: { status: 'completed' },
       })
 
-      return tx.van.update({
+      await tx.van.update({
         where: { id: tripId },
         data: { status: 'completed' },
-        select: vanSelect,
+      })
+
+      return tx.van.findUniqueOrThrow({
+        where: { id: tripId },
+        include: vanInclude,
       })
     })
 
-    return van as DriverTrip
+    return toDriverTrip(van)
   },
 }

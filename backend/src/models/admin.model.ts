@@ -37,12 +37,15 @@ export const AdminModel = {
   async listTrips() {
     const trips = await prisma.van.findMany({
       include: {
+        route: true,
+        vehicle: true,
         driver: {
           select: {
             fullName: true,
             email: true,
           },
         },
+        operator: true,
         _count: {
           select: { bookings: true },
         },
@@ -52,15 +55,17 @@ export const AdminModel = {
 
     return trips.map((trip) => ({
       id: trip.id,
-      route: `${trip.departureLocation} → ${trip.arrivalLocation}`,
+      route: `${trip.route.departureLocation} → ${trip.route.arrivalLocation}`,
       departureDate: trip.departureDate,
       departureTime: trip.departureTime,
       status: trip.status,
       price: trip.price,
       seatsLeft: trip.seatsLeft,
       totalSeats: trip.totalSeats,
-      vehicleName: trip.vehicleName,
-      driverName: trip.driver?.fullName ?? trip.operator,
+      vehicleName: trip.vehicle
+        ? `${trip.vehicle.make} ${trip.vehicle.model}`.trim()
+        : null,
+      driverName: trip.driver?.fullName ?? trip.operator.name,
       driverEmail: trip.driver?.email ?? null,
       bookingCount: trip._count.bookings,
       createdAt: trip.createdAt,
@@ -70,6 +75,7 @@ export const AdminModel = {
   async listBookings() {
     const bookings = await prisma.booking.findMany({
       include: {
+        snapshot: true,
         user: {
           select: {
             fullName: true,
@@ -84,12 +90,12 @@ export const AdminModel = {
     return bookings.map((booking) => ({
       id: booking.id,
       reference: booking.reference,
-      route: booking.route,
-      date: booking.date,
-      time: booking.time,
-      seat: booking.seat,
+      route: booking.snapshot?.routeLabel ?? '',
+      date: booking.snapshot?.departureDate ?? '',
+      time: booking.snapshot?.departureTime ?? null,
+      seat: booking.snapshot?.seatLabel ?? null,
       status: booking.status,
-      price: booking.price,
+      price: booking.snapshot?.priceDisplay ?? null,
       passengerName: booking.user?.fullName ?? 'Guest',
       passengerEmail: booking.user?.email ?? null,
       createdAt: booking.createdAt,

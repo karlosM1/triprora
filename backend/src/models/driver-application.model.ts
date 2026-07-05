@@ -45,7 +45,38 @@ export type CreateDriverApplicationData = {
   agreePrivacy: boolean
 }
 
-function serializeApplication(application: Prisma.DriverApplicationGetPayload<{ include: { profile: true } }>) {
+const applicationInclude = {
+  profile: true,
+  address: true,
+  emergencyContact: true,
+  bankAccount: true,
+  vehicle: {
+    include: {
+      documents: true,
+    },
+  },
+  documents: true,
+} as const
+
+type SerializedApplication = ReturnType<typeof serializeApplication>
+
+function getVehicleDocumentUrl(
+  vehicle: Prisma.VehicleGetPayload<{ include: { documents: true } }> | null,
+  type: 'cr' | 'or' | 'insurance' | 'inspection',
+) {
+  return vehicle?.documents.find((document) => document.type === type)?.url ?? null
+}
+
+function getDriverDocumentUrl(
+  documents: Array<{ type: string; url: string }>,
+  type: 'profile_photo' | 'license_front' | 'license_back',
+) {
+  return documents.find((document) => document.type === type)?.url ?? null
+}
+
+function serializeApplication(
+  application: Prisma.DriverApplicationGetPayload<{ include: typeof applicationInclude }>,
+) {
   return {
     id: application.id,
     status: application.status,
@@ -59,35 +90,35 @@ function serializeApplication(application: Prisma.DriverApplicationGetPayload<{ 
     dateOfBirth: application.dateOfBirth,
     gender: application.gender,
     nationality: application.nationality,
-    profilePhotoUrl: application.profilePhotoUrl,
-    houseStreet: application.houseStreet,
-    barangay: application.barangay,
-    city: application.city,
-    province: application.province,
-    zipCode: application.zipCode,
+    profilePhotoUrl: getDriverDocumentUrl(application.documents, 'profile_photo'),
+    houseStreet: application.address.houseStreet,
+    barangay: application.address.barangay,
+    city: application.address.city,
+    province: application.address.province,
+    zipCode: application.address.zipCode,
     licenseNo: application.licenseNo,
     licenseType: application.licenseType,
     licenseExpiration: application.licenseExpiration,
-    licenseFrontUrl: application.licenseFrontUrl,
-    licenseBackUrl: application.licenseBackUrl,
-    vehiclePlateNumber: application.vehiclePlateNumber,
-    vehicleMake: application.vehicleMake,
-    vehicleModel: application.vehicleModel,
-    vehicleYear: application.vehicleYear,
-    vehicleColor: application.vehicleColor,
-    vehicleCapacity: application.vehicleCapacity,
-    vehiclePhotoUrl: application.vehiclePhotoUrl,
-    crDocumentUrl: application.crDocumentUrl,
-    orDocumentUrl: application.orDocumentUrl,
-    insuranceDocumentUrl: application.insuranceDocumentUrl,
-    inspectionDocumentUrl: application.inspectionDocumentUrl,
-    emergencyContactName: application.emergencyContactName,
-    emergencyContactRelationship: application.emergencyContactRelationship,
-    emergencyContactPhone: application.emergencyContactPhone,
-    gcashNumber: application.gcashNumber,
-    bankAccountName: application.bankAccountName,
-    bankName: application.bankName,
-    bankAccountNumber: application.bankAccountNumber,
+    licenseFrontUrl: getDriverDocumentUrl(application.documents, 'license_front') ?? '',
+    licenseBackUrl: getDriverDocumentUrl(application.documents, 'license_back') ?? '',
+    vehiclePlateNumber: application.vehicle?.plateNumber ?? '',
+    vehicleMake: application.vehicle?.make ?? '',
+    vehicleModel: application.vehicle?.model ?? '',
+    vehicleYear: application.vehicle?.year ?? 0,
+    vehicleColor: application.vehicle?.color ?? '',
+    vehicleCapacity: application.vehicle?.capacity ?? 0,
+    vehiclePhotoUrl: application.vehicle?.photoUrl,
+    crDocumentUrl: getVehicleDocumentUrl(application.vehicle, 'cr') ?? '',
+    orDocumentUrl: getVehicleDocumentUrl(application.vehicle, 'or') ?? '',
+    insuranceDocumentUrl: getVehicleDocumentUrl(application.vehicle, 'insurance') ?? '',
+    inspectionDocumentUrl: getVehicleDocumentUrl(application.vehicle, 'inspection'),
+    emergencyContactName: application.emergencyContact.name,
+    emergencyContactRelationship: application.emergencyContact.relationship,
+    emergencyContactPhone: application.emergencyContact.phone,
+    gcashNumber: application.bankAccount?.gcashNumber,
+    bankAccountName: application.bankAccount?.accountName,
+    bankName: application.bankAccount?.bankName,
+    bankAccountNumber: application.bankAccount?.accountNumber,
     certifyInfo: application.certifyInfo,
     agreeTerms: application.agreeTerms,
     agreePrivacy: application.agreePrivacy,
@@ -106,20 +137,49 @@ export const DriverApplicationModel = {
   async findById(id: string) {
     return prisma.driverApplication.findUnique({
       where: { id },
-      include: { profile: true },
+      include: applicationInclude,
     })
   },
 
   async findByProfileId(profileId: string) {
     return prisma.driverApplication.findUnique({
       where: { profileId },
-      include: { profile: true },
+      include: applicationInclude,
     })
   },
 
   async deleteRejectedByProfileId(profileId: string) {
-    return prisma.driverApplication.deleteMany({
+    const application = await prisma.driverApplication.findUnique({
       where: { profileId, status: 'rejected' },
+      select: {
+        id: true,
+        addressId: true,
+        emergencyContactId: true,
+        bankAccountId: true,
+        vehicleId: true,
+      },
+    })
+
+    if (!application) {
+      return { count: 0 }
+    }
+
+    return prisma.$transaction(async (tx) => {
+      await tx.driverApplication.delete({ where: { id: application.id } })
+
+      await tx.address.delete({ where: { id: application.addressId } })
+      await tx.emergencyContact.delete({ where: { id: application.emergencyContactId } })
+
+      if (application.bankAccountId) {
+        await tx.driverBankAccount.delete({ where: { id: application.bankAccountId } })
+      }
+
+      if (application.vehicleId) {
+        await tx.vehicleDocument.deleteMany({ where: { vehicleId: application.vehicleId } })
+        await tx.vehicle.delete({ where: { id: application.vehicleId } })
+      }
+
+      return { count: 1 }
     })
   },
 
@@ -131,14 +191,95 @@ export const DriverApplicationModel = {
       middleName,
       lastName,
       suffix,
+      profilePhotoUrl,
+      houseStreet,
+      barangay,
+      city,
+      province,
+      zipCode,
+      licenseFrontUrl,
+      licenseBackUrl,
+      vehiclePlateNumber,
+      vehicleMake,
+      vehicleModel,
+      vehicleYear,
+      vehicleColor,
+      vehicleCapacity,
+      vehiclePhotoUrl,
+      crDocumentUrl,
+      orDocumentUrl,
+      insuranceDocumentUrl,
+      inspectionDocumentUrl,
+      emergencyContactName,
+      emergencyContactRelationship,
+      emergencyContactPhone,
+      gcashNumber,
+      bankAccountName,
+      bankName,
+      bankAccountNumber,
       ...rest
     } = data
     const fullName = [firstName, middleName, lastName, suffix].filter(Boolean).join(' ')
+    const hasBankDetails = Boolean(
+      gcashNumber || bankAccountName || bankName || bankAccountNumber,
+    )
 
     return prisma.$transaction(async (tx) => {
       await tx.profile.update({
         where: { id: profileId },
         data: { fullName, phone },
+      })
+
+      const address = await tx.address.create({
+        data: {
+          houseStreet,
+          barangay,
+          city,
+          province,
+          zipCode,
+        },
+      })
+
+      const emergencyContact = await tx.emergencyContact.create({
+        data: {
+          name: emergencyContactName,
+          relationship: emergencyContactRelationship,
+          phone: emergencyContactPhone,
+        },
+      })
+
+      const bankAccount = hasBankDetails
+        ? await tx.driverBankAccount.create({
+            data: {
+              gcashNumber: gcashNumber || null,
+              accountName: bankAccountName || null,
+              bankName: bankName || null,
+              accountNumber: bankAccountNumber || null,
+            },
+          })
+        : null
+
+      const vehicle = await tx.vehicle.create({
+        data: {
+          ownerProfileId: profileId,
+          plateNumber: vehiclePlateNumber,
+          make: vehicleMake,
+          model: vehicleModel,
+          year: vehicleYear,
+          color: vehicleColor,
+          capacity: vehicleCapacity,
+          photoUrl: vehiclePhotoUrl || null,
+          documents: {
+            create: [
+              { type: 'cr', url: crDocumentUrl },
+              { type: 'or', url: orDocumentUrl },
+              { type: 'insurance', url: insuranceDocumentUrl },
+              ...(inspectionDocumentUrl
+                ? [{ type: 'inspection' as const, url: inspectionDocumentUrl }]
+                : []),
+            ],
+          },
+        },
       })
 
       return tx.driverApplication.create({
@@ -149,15 +290,21 @@ export const DriverApplicationModel = {
           lastName,
           suffix: suffix || null,
           ...rest,
-          profilePhotoUrl: rest.profilePhotoUrl || null,
-          vehiclePhotoUrl: rest.vehiclePhotoUrl || null,
-          inspectionDocumentUrl: rest.inspectionDocumentUrl || null,
-          gcashNumber: rest.gcashNumber || null,
-          bankAccountName: rest.bankAccountName || null,
-          bankName: rest.bankName || null,
-          bankAccountNumber: rest.bankAccountNumber || null,
+          addressId: address.id,
+          emergencyContactId: emergencyContact.id,
+          bankAccountId: bankAccount?.id ?? null,
+          vehicleId: vehicle.id,
+          documents: {
+            create: [
+              ...(profilePhotoUrl
+                ? [{ type: 'profile_photo' as const, url: profilePhotoUrl }]
+                : []),
+              { type: 'license_front', url: licenseFrontUrl },
+              { type: 'license_back', url: licenseBackUrl },
+            ],
+          },
         },
-        include: { profile: true },
+        include: applicationInclude,
       })
     })
   },
@@ -165,7 +312,7 @@ export const DriverApplicationModel = {
   async listPending() {
     return prisma.driverApplication.findMany({
       where: { status: 'pending' },
-      include: { profile: true },
+      include: applicationInclude,
       orderBy: { createdAt: 'asc' },
     })
   },
@@ -185,7 +332,7 @@ export const DriverApplicationModel = {
           reviewedAt: new Date(),
           adminNotes,
         },
-        include: { profile: true },
+        include: applicationInclude,
       })
 
       if (status === 'approved') {
@@ -199,3 +346,5 @@ export const DriverApplicationModel = {
     })
   },
 }
+
+export type { SerializedApplication }

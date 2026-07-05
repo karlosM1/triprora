@@ -6,6 +6,7 @@ import type {
   UpdateBookingInput,
 } from './booking.types.js'
 import { prisma } from '../lib/prisma.js'
+import { presentVan, vanInclude } from '../lib/van-presenter.js'
 import { AppError } from '../utils/app-error.js'
 
 export type {
@@ -32,7 +33,12 @@ function formatDisplayDate(dateStr: string) {
 function calculateTotal(baseFare: number) {
   const serviceFee = Math.round(baseFare * 0.05)
   const tax = Math.round((baseFare + serviceFee) * 0.05)
-  return baseFare + serviceFee + tax
+  return {
+    baseFare,
+    serviceFee,
+    tax,
+    total: baseFare + serviceFee + tax,
+  }
 }
 
 function createBookingId() {
@@ -47,47 +53,53 @@ function formatPrice(amount: number) {
   return `₱${amount.toLocaleString()}`
 }
 
-function toUpcomingBooking(booking: {
-  id: string
-  reference: string | null
+type BookingSnapshotView = {
   routeCode: string | null
-  image: string | null
-  date: string
-  time: string | null
-  seat: string | null
-  pickupAddress: string | null
-  dropoffAddress: string | null
-  route: string
-  vehicle: string | null
-  price: string | null
-}): UpcomingBooking | null {
+  routeLabel: string
+  imageUrl: string | null
+  departureDate: string
+  departureTime: string | null
+  seatLabel: string
+  vehicleLabel: string | null
+  tripType: string | null
+  priceDisplay: string
+}
+
+function toUpcomingBooking(
+  bookingId: string,
+  reference: string | null,
+  pickupAddress: string | null,
+  dropoffAddress: string | null,
+  snapshot: BookingSnapshotView | null,
+): UpcomingBooking | null {
   if (
-    !booking.reference ||
-    !booking.routeCode ||
-    !booking.image ||
-    !booking.time ||
-    !booking.seat ||
-    !booking.pickupAddress ||
-    !booking.dropoffAddress ||
-    !booking.vehicle ||
-    !booking.price
+    !reference ||
+    !snapshot ||
+    !snapshot.routeCode ||
+    !snapshot.imageUrl ||
+    !snapshot.departureTime ||
+    !snapshot.seatLabel ||
+    !pickupAddress ||
+    !dropoffAddress ||
+    !snapshot.vehicleLabel ||
+    !snapshot.priceDisplay
   ) {
     return null
   }
 
   return {
-    id: booking.id,
-    reference: booking.reference,
-    routeCode: booking.routeCode,
-    image: booking.image,
-    date: booking.date,
-    time: booking.time,
-    seat: booking.seat,
-    pickupAddress: booking.pickupAddress,
-    dropoffAddress: booking.dropoffAddress,
-    route: booking.route,
-    vehicle: booking.vehicle,
-    price: booking.price,
+    id: bookingId,
+    reference,
+    routeCode: snapshot.routeCode,
+    image: snapshot.imageUrl,
+    date: snapshot.departureDate,
+    time: snapshot.departureTime,
+    seat: snapshot.seatLabel,
+    pickupAddress,
+    dropoffAddress,
+    route: snapshot.routeLabel,
+    vehicle: snapshot.vehicleLabel,
+    price: snapshot.priceDisplay,
     status: 'confirmed',
   }
 }
@@ -98,6 +110,7 @@ export const BookingModel = {
       const van = await tx.van.findFirst({
         where: { id: input.vanId, status: 'published' },
         include: {
+          ...vanInclude,
           seats: { where: { label: input.seat } },
         },
       })
@@ -119,11 +132,13 @@ export const BookingModel = {
         throw new AppError('No seats remaining on this trip', 409)
       }
 
-      const total = calculateTotal(van.price)
+      const presented = presentVan(van)
+      const fare = calculateTotal(van.price)
       const reference = createReference()
-      const route = `${van.departureLocation} → ${van.arrivalLocation}`
-      const vehicle = van.vehicleName ?? van.operator
+      const routeLabel = `${presented.departureLocation} → ${presented.arrivalLocation}`
+      const vehicleLabel = presented.vehicleName ?? presented.operator
       const date = formatDisplayDate(van.departureDate)
+      const tripType = van.tripCategory ?? presented.classType
 
       await tx.seat.update({
         where: { id: seat.id },
@@ -140,34 +155,44 @@ export const BookingModel = {
           id: createBookingId(),
           userId: input.userId,
           vanId: van.id,
+          seatId: seat.id,
           reference,
-          routeCode: van.id,
-          image: DEFAULT_IMAGE,
-          date,
-          time: van.departureTime,
-          seat: input.seat,
           pickupAddress: input.pickupAddress.trim(),
           dropoffAddress: input.dropoffAddress.trim(),
-          route,
-          vehicle,
-          tripType: van.tripCategory ?? van.classType,
           status: 'confirmed',
-          price: formatPrice(total),
+          snapshot: {
+            create: {
+              routeCode: van.id,
+              routeLabel,
+              imageUrl: DEFAULT_IMAGE,
+              departureDate: date,
+              departureTime: van.departureTime,
+              seatLabel: input.seat,
+              vehicleLabel,
+              tripType,
+              baseFareCents: fare.baseFare * 100,
+              serviceFeeCents: fare.serviceFee * 100,
+              taxCents: fare.tax * 100,
+              totalCents: fare.total * 100,
+              priceDisplay: formatPrice(fare.total),
+            },
+          },
         },
+        include: { snapshot: true },
       })
 
       return {
         id: booking.id,
         reference: booking.reference!,
-        route,
+        route: routeLabel,
         date,
         time: van.departureTime,
         seat: input.seat,
         pickupAddress: input.pickupAddress.trim(),
         dropoffAddress: input.dropoffAddress.trim(),
-        vehicle,
-        operator: van.operator,
-        price: formatPrice(total),
+        vehicle: vehicleLabel,
+        operator: presented.operator,
+        price: formatPrice(fare.total),
       }
     })
   },
@@ -175,11 +200,18 @@ export const BookingModel = {
   async getUpcoming(userId: string): Promise<UpcomingBooking | null> {
     const booking = await prisma.booking.findFirst({
       where: { userId, status: 'confirmed' },
+      include: { snapshot: true },
       orderBy: { createdAt: 'desc' },
     })
 
     if (!booking) return null
-    return toUpcomingBooking(booking)
+    return toUpcomingBooking(
+      booking.id,
+      booking.reference,
+      booking.pickupAddress,
+      booking.dropoffAddress,
+      booking.snapshot,
+    )
   },
 
   async getHistory(userId: string): Promise<HistoryBooking[]> {
@@ -188,17 +220,18 @@ export const BookingModel = {
         userId,
         status: { in: ['completed', 'cancelled'] },
       },
+      include: { snapshot: true },
       orderBy: { createdAt: 'desc' },
     })
 
     return bookings.map((booking) => ({
       id: booking.id,
       reference: booking.reference ?? '',
-      date: booking.date,
-      route: booking.route,
-      tripType: booking.tripType ?? '',
+      date: booking.snapshot?.departureDate ?? '',
+      route: booking.snapshot?.routeLabel ?? '',
+      tripType: booking.snapshot?.tripType ?? '',
       status: booking.status as 'completed' | 'cancelled',
-      price: booking.price ?? '',
+      price: booking.snapshot?.priceDisplay ?? '',
     }))
   },
 
@@ -211,33 +244,38 @@ export const BookingModel = {
       const booking = await tx.booking.findFirst({
         where: { id: bookingId, userId, status: 'confirmed' },
         include: {
+          snapshot: true,
           van: {
             include: { seats: true },
           },
         },
       })
 
-      if (!booking || !booking.van) {
+      if (!booking || !booking.van || !booking.snapshot) {
         throw new AppError('Booking not found', 404)
       }
 
       const pickupAddress = input.pickupAddress?.trim() ?? booking.pickupAddress
       const dropoffAddress = input.dropoffAddress?.trim() ?? booking.dropoffAddress
-      const nextSeat = input.seat?.trim() ?? booking.seat
+      const nextSeatLabel = input.seat?.trim() ?? booking.snapshot.seatLabel
 
-      if (!pickupAddress || !dropoffAddress || !nextSeat) {
+      if (!pickupAddress || !dropoffAddress || !nextSeatLabel) {
         throw new AppError('Booking details are incomplete', 400)
       }
 
-      if (nextSeat !== booking.seat) {
-        const currentSeat = booking.van.seats.find((seat) => seat.label === booking.seat)
-        const targetSeat = booking.van.seats.find((seat) => seat.label === nextSeat)
+      let nextSeatId = booking.seatId
+
+      if (nextSeatLabel !== booking.snapshot.seatLabel) {
+        const currentSeat = booking.van.seats.find(
+          (seat) => seat.label === booking.snapshot!.seatLabel,
+        )
+        const targetSeat = booking.van.seats.find((seat) => seat.label === nextSeatLabel)
 
         if (!targetSeat) {
           throw new AppError('Seat not found', 404)
         }
 
-        if (targetSeat.status === 'occupied') {
+        if (targetSeat.status === 'occupied' && targetSeat.id !== booking.seatId) {
           throw new AppError('This seat is no longer available', 409)
         }
 
@@ -252,6 +290,8 @@ export const BookingModel = {
           where: { id: targetSeat.id },
           data: { status: 'occupied' },
         })
+
+        nextSeatId = targetSeat.id
       }
 
       const updated = await tx.booking.update({
@@ -259,11 +299,23 @@ export const BookingModel = {
         data: {
           pickupAddress,
           dropoffAddress,
-          seat: nextSeat,
+          seatId: nextSeatId,
+          snapshot: {
+            update: {
+              seatLabel: nextSeatLabel,
+            },
+          },
         },
+        include: { snapshot: true },
       })
 
-      const upcoming = toUpcomingBooking(updated)
+      const upcoming = toUpcomingBooking(
+        updated.id,
+        updated.reference,
+        updated.pickupAddress,
+        updated.dropoffAddress,
+        updated.snapshot,
+      )
       if (!upcoming) {
         throw new AppError('Unable to load updated booking', 500)
       }
