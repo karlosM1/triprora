@@ -20,7 +20,7 @@ const baseNavLinks = [
   { label: "Find Vans", to: "/find-vans" as const, key: "find-vans" },
   { label: "Schedules", to: "/schedules" as const, key: "schedules" },
   { label: "My Bookings", to: "/my-bookings" as const, key: "my-bookings" },
-  { label: "Support", to: "/" as const, key: "support" },
+  { label: "Support", to: "/support" as const, key: "support" },
 ] as const;
 
 type HeaderProps = {

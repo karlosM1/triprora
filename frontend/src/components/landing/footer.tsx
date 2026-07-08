@@ -11,8 +11,8 @@ const productLinks = [
 ] as const
 
 const legalLinks = [
-  { label: 'Privacy Policy', to: '/' as const },
-  { label: 'Terms of Service', to: '/' as const },
+  { label: 'Privacy Policy', to: '/privacy' as const },
+  { label: 'Terms of Service', to: '/terms-of-service' as const },
 ] as const
 
 export function Footer() {
@@ -20,7 +20,7 @@ export function Footer() {
 
   const resourceLinks = [
     { label: 'Articles', to: '/articles' as const },
-    { label: 'Support', to: '/' as const },
+    { label: 'Support', to: '/support' as const },
     ...(profileReady && isDriver
       ? [{ label: 'Driver Portal', to: '/driver' as const }]
       : [{ label: 'Become a Driver', to: user ? '/driver/register' : '/sign-up' }]),

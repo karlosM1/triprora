@@ -9,10 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsOfServiceRouteImport } from './routes/terms-of-service'
+import { Route as SupportRouteImport } from './routes/support'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SchedulesRouteImport } from './routes/schedules'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as MyBookingsRouteImport } from './routes/my-bookings'
 import { Route as FindVansRouteImport } from './routes/find-vans'
 import { Route as DriverRouteRouteImport } from './routes/driver/route'
@@ -37,6 +40,16 @@ import { Route as BookVanIdCheckoutRouteImport } from './routes/book/$vanId/chec
 import { Route as DriverTripsTripIdIndexRouteImport } from './routes/driver/trips/$tripId/index'
 import { Route as DriverTripsTripIdEditRouteImport } from './routes/driver/trips/$tripId/edit'
 
+const TermsOfServiceRoute = TermsOfServiceRouteImport.update({
+  id: '/terms-of-service',
+  path: '/terms-of-service',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignUpRoute = SignUpRouteImport.update({
   id: '/sign-up',
   path: '/sign-up',
@@ -55,6 +68,11 @@ const SchedulesRoute = SchedulesRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MyBookingsRoute = MyBookingsRouteImport.update({
@@ -180,10 +198,13 @@ export interface FileRoutesByFullPath {
   '/driver': typeof DriverRouteRouteWithChildren
   '/find-vans': typeof FindVansRoute
   '/my-bookings': typeof MyBookingsRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/schedules': typeof SchedulesRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/support': typeof SupportRoute
+  '/terms-of-service': typeof TermsOfServiceRoute
   '/driver/trips': typeof DriverTripsRouteRouteWithChildren
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/drivers': typeof AdminDriversRoute
@@ -206,10 +227,13 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/find-vans': typeof FindVansRoute
   '/my-bookings': typeof MyBookingsRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/schedules': typeof SchedulesRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/support': typeof SupportRoute
+  '/terms-of-service': typeof TermsOfServiceRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/drivers': typeof AdminDriversRoute
   '/admin/trips': typeof AdminTripsRoute
@@ -235,10 +259,13 @@ export interface FileRoutesById {
   '/driver': typeof DriverRouteRouteWithChildren
   '/find-vans': typeof FindVansRoute
   '/my-bookings': typeof MyBookingsRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/schedules': typeof SchedulesRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/support': typeof SupportRoute
+  '/terms-of-service': typeof TermsOfServiceRoute
   '/driver/trips': typeof DriverTripsRouteRouteWithChildren
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/drivers': typeof AdminDriversRoute
@@ -266,10 +293,13 @@ export interface FileRouteTypes {
     | '/driver'
     | '/find-vans'
     | '/my-bookings'
+    | '/privacy'
     | '/profile'
     | '/schedules'
     | '/sign-in'
     | '/sign-up'
+    | '/support'
+    | '/terms-of-service'
     | '/driver/trips'
     | '/admin/bookings'
     | '/admin/drivers'
@@ -292,10 +322,13 @@ export interface FileRouteTypes {
     | '/'
     | '/find-vans'
     | '/my-bookings'
+    | '/privacy'
     | '/profile'
     | '/schedules'
     | '/sign-in'
     | '/sign-up'
+    | '/support'
+    | '/terms-of-service'
     | '/admin/bookings'
     | '/admin/drivers'
     | '/admin/trips'
@@ -320,10 +353,13 @@ export interface FileRouteTypes {
     | '/driver'
     | '/find-vans'
     | '/my-bookings'
+    | '/privacy'
     | '/profile'
     | '/schedules'
     | '/sign-in'
     | '/sign-up'
+    | '/support'
+    | '/terms-of-service'
     | '/driver/trips'
     | '/admin/bookings'
     | '/admin/drivers'
@@ -350,10 +386,13 @@ export interface RootRouteChildren {
   DriverRouteRoute: typeof DriverRouteRouteWithChildren
   FindVansRoute: typeof FindVansRoute
   MyBookingsRoute: typeof MyBookingsRoute
+  PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
   SchedulesRoute: typeof SchedulesRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
+  SupportRoute: typeof SupportRoute
+  TermsOfServiceRoute: typeof TermsOfServiceRoute
   BookVanIdCheckoutRoute: typeof BookVanIdCheckoutRoute
   BookVanIdConfirmationRoute: typeof BookVanIdConfirmationRoute
   BookVanIdIndexRoute: typeof BookVanIdIndexRoute
@@ -361,6 +400,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms-of-service': {
+      id: '/terms-of-service'
+      path: '/terms-of-service'
+      fullPath: '/terms-of-service'
+      preLoaderRoute: typeof TermsOfServiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sign-up': {
       id: '/sign-up'
       path: '/sign-up'
@@ -387,6 +440,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/my-bookings': {
@@ -627,10 +687,13 @@ const rootRouteChildren: RootRouteChildren = {
   DriverRouteRoute: DriverRouteRouteWithChildren,
   FindVansRoute: FindVansRoute,
   MyBookingsRoute: MyBookingsRoute,
+  PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
   SchedulesRoute: SchedulesRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
+  SupportRoute: SupportRoute,
+  TermsOfServiceRoute: TermsOfServiceRoute,
   BookVanIdCheckoutRoute: BookVanIdCheckoutRoute,
   BookVanIdConfirmationRoute: BookVanIdConfirmationRoute,
   BookVanIdIndexRoute: BookVanIdIndexRoute,
