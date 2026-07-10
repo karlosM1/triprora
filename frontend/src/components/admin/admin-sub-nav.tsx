@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 const adminNavItems = [
   { label: 'Overview', to: '/admin' as const, exact: true },
   { label: 'Driver Approvals', to: '/admin/drivers' as const, exact: false },
+  { label: 'Wallets', to: '/admin/wallets' as const, exact: false },
   { label: 'Trips', to: '/admin/trips' as const, exact: false },
   { label: 'Bookings', to: '/admin/bookings' as const, exact: false },
   { label: 'Users', to: '/admin/users' as const, exact: false },

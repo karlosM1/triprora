@@ -52,6 +52,31 @@ enum VehicleDocumentType {
   inspection
 }
 
+enum WalletLedgerType {
+  cash_commission
+  cashless_earnings
+  payout
+  settlement_adjustment
+  manual_adjustment
+}
+
+enum WalletSettlementStatus {
+  open
+  finalized
+}
+
+enum DriverPayoutStatus {
+  requested
+  approved
+  paid
+  rejected
+}
+
+enum DriverPayoutMethod {
+  manual
+  paymongo
+}
+
 model Operator {
   id   String @id @default(cuid())
   name String @unique
@@ -176,6 +201,10 @@ model Profile {
   vans              Van[]
   vehicles          Vehicle[]
   payments          Payment[]
+  driverWallet      DriverWallet?
+  driverPayouts     DriverPayout[]
+  walletSettlements WalletDailySettlement[]
+  walletAuditLogs   WalletAuditLog[]        @relation("WalletAuditActor")
 
   @@map("profiles")
 }
@@ -283,6 +312,7 @@ model Booking {
   status         BookingStatus
   snapshot       BookingSnapshot?
   payment        Payment?
+  walletLedgerEntries WalletLedgerEntry[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 }
@@ -325,4 +355,110 @@ model Payment {
   updatedAt        DateTime @updatedAt
 
   @@map("payments")
+}
+
+model DriverWallet {
+  id           String   @id @default(cuid())
+  driverId     String   @unique @db.Uuid
+  driver       Profile  @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  balancePesos Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  ledgerEntries WalletLedgerEntry[]
+  auditLogs     WalletAuditLog[]
+
+  @@map("driver_wallets")
+}
+
+model WalletLedgerEntry {
+  id                String          @id @default(cuid())
+  walletId          String
+  wallet            DriverWallet    @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  bookingId         String?
+  booking           Booking?        @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  payoutId          String?
+  payout            DriverPayout?   @relation(fields: [payoutId], references: [id], onDelete: SetNull)
+  settlementId      String?
+  settlement        WalletDailySettlement? @relation(fields: [settlementId], references: [id], onDelete: SetNull)
+  type              WalletLedgerType
+  amountPesos       Int
+  balanceAfterPesos Int
+  baseFarePesos     Int?
+  commissionPesos   Int?
+  earningsPesos     Int?
+  reason            String
+  idempotencyKey    String          @unique
+  createdAt         DateTime        @default(now())
+
+  @@unique([bookingId])
+  @@index([walletId, createdAt])
+  @@map("wallet_ledger_entries")
+}
+
+model WalletDailySettlement {
+  id                     String                 @id @default(cuid())
+  driverId               String                 @db.Uuid
+  driver                 Profile                @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  settlementDate         DateTime               @db.Date
+  cashCommissionTotal    Int                    @default(0)
+  cashlessEarningsTotal  Int                    @default(0)
+  netChange              Int                    @default(0)
+  openingBalance         Int
+  closingBalance         Int
+  bookingCount           Int                    @default(0)
+  status                 WalletSettlementStatus @default(open)
+  finalizedAt            DateTime?
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+
+  ledgerEntries WalletLedgerEntry[]
+
+  @@unique([driverId, settlementDate])
+  @@index([settlementDate])
+  @@map("wallet_daily_settlements")
+}
+
+model DriverPayout {
+  id              String             @id @default(cuid())
+  driverId        String             @db.Uuid
+  driver          Profile            @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  amountPesos     Int
+  status          DriverPayoutStatus @default(requested)
+  method          DriverPayoutMethod @default(manual)
+  gcashNumber     String?
+  accountName     String?
+  bankName        String?
+  accountNumber   String?
+  adminNotes      String?
+  reviewedBy      String?            @db.Uuid
+  reviewedAt      DateTime?
+  paidAt          DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  ledgerEntries WalletLedgerEntry[]
+
+  @@index([driverId, createdAt])
+  @@index([status])
+  @@map("driver_payouts")
+}
+
+model WalletAuditLog {
+  id             String       @id @default(cuid())
+  walletId       String?
+  wallet         DriverWallet? @relation(fields: [walletId], references: [id], onDelete: SetNull)
+  actorProfileId String?      @db.Uuid
+  actor          Profile?     @relation("WalletAuditActor", fields: [actorProfileId], references: [id], onDelete: SetNull)
+  action         String
+  entityType     String
+  entityId       String?
+  before         Json?
+  after          Json?
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+
+  @@index([walletId, createdAt])
+  @@index([entityType, entityId])
+  @@map("wallet_audit_logs")
 }

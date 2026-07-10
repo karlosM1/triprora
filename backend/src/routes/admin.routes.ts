@@ -7,6 +7,14 @@ import {
   listPendingDriverApplications,
   reviewDriverApplication,
 } from '../controllers/admin.controller.js'
+import {
+  finalizeAdminSettlements,
+  getAdminDriverWallet,
+  listAdminPayouts,
+  listAdminSettlements,
+  listAdminWallets,
+  updateAdminPayout,
+} from '../controllers/wallet.controller.js'
 import { asyncHandler } from '../middleware/async-handler.middleware.js'
 import { authenticate, requireRole } from '../middleware/auth.middleware.js'
 import { validateRequest } from '../middleware/validate-request.middleware.js'
@@ -14,6 +22,14 @@ import {
   applicationIdParamSchema,
   reviewDriverApplicationSchema,
 } from '../validators/driver-applications.validator.js'
+import {
+  adminPayoutsQuerySchema,
+  adminUpdatePayoutSchema,
+  driverIdParamSchema,
+  finalizeSettlementSchema,
+  payoutIdParamSchema,
+  settlementsQuerySchema,
+} from '../validators/wallet.validator.js'
 
 export const adminRouter = Router()
 
@@ -36,4 +52,39 @@ adminRouter.patch(
     body: reviewDriverApplicationSchema,
   }),
   asyncHandler(reviewDriverApplication),
+)
+
+adminRouter.get('/wallets', asyncHandler(listAdminWallets))
+
+adminRouter.get(
+  '/wallets/:driverId',
+  validateRequest({ params: driverIdParamSchema }),
+  asyncHandler(getAdminDriverWallet),
+)
+
+adminRouter.get(
+  '/settlements',
+  validateRequest({ query: settlementsQuerySchema }),
+  asyncHandler(listAdminSettlements),
+)
+
+adminRouter.post(
+  '/settlements/finalize',
+  validateRequest({ body: finalizeSettlementSchema }),
+  asyncHandler(finalizeAdminSettlements),
+)
+
+adminRouter.get(
+  '/payouts',
+  validateRequest({ query: adminPayoutsQuerySchema }),
+  asyncHandler(listAdminPayouts),
+)
+
+adminRouter.patch(
+  '/payouts/:id',
+  validateRequest({
+    params: payoutIdParamSchema,
+    body: adminUpdatePayoutSchema,
+  }),
+  asyncHandler(updateAdminPayout),
 )

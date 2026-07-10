@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 const driverNavItems = [
   { label: 'Dashboard', to: '/driver' as const, exact: true },
   { label: 'My Trips', to: '/driver/trips' as const, exact: false },
+  { label: 'Wallet', to: '/driver/wallet' as const, exact: false },
   { label: 'Create Trip', to: '/driver/create' as const, exact: false },
 ] as const
 

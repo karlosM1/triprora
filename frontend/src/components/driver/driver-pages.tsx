@@ -16,6 +16,7 @@ import { AppleCard, PageHeader, SectionTitle } from '@/components/layout/page-he
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { driverTripsQueryKey, fetchDriverTrips } from '@/lib/api/driver-trips'
+import { driverWalletQueryKey, fetchDriverWallet } from '@/lib/api/wallet'
 import { useAuth } from '@/lib/auth-context'
 import {
   countTodayTrips,
@@ -24,7 +25,6 @@ import {
   getTripStatusLabel,
   isPastTrip,
   isUpcomingTrip,
-  sumPotentialEarnings,
 } from '@/lib/driver-trips'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
 import { cn } from '@/lib/utils'
@@ -106,7 +106,17 @@ export function DriverDashboardPage() {
     )
     .slice(0, 5)
   const todayCount = countTodayTrips(trips)
-  const earnings = sumPotentialEarnings(publishedTrips)
+  const walletQuery = useQuery({
+    queryKey: driverWalletQueryKey,
+    queryFn: fetchDriverWallet,
+  })
+  const walletBalance = walletQuery.data?.balancePesos ?? 0
+  const walletFooter =
+    walletQuery.data?.meaning === 'platform_owes_driver'
+      ? 'Platform owes you'
+      : walletQuery.data?.meaning === 'driver_owes_platform'
+        ? 'You owe the platform'
+        : 'Settled after completed trips'
 
   return (
     <motion.div
@@ -134,9 +144,9 @@ export function DriverDashboardPage() {
           footer="Published trips in the past"
         />
         <StatCard
-          title="Total earnings"
-          value={`₱${earnings.toLocaleString()}`}
-          footer={`${publishedTrips.length} published trip${publishedTrips.length === 1 ? '' : 's'}`}
+          title="Wallet balance"
+          value={walletQuery.isLoading ? '…' : `₱${walletBalance.toLocaleString()}`}
+          footer={walletFooter}
         />
         <StatCard
           title="Upcoming trips"
@@ -316,9 +326,9 @@ export function DriverDashboardPage() {
                 className="h-11 w-full justify-start rounded-xl px-3 text-[14px] text-[#1d1d1f] hover:bg-[#e8e8ed]"
                 asChild
               >
-                <Link to="/driver/trips">
+                <Link to="/driver/wallet">
                   <Wallet className="size-4" />
-                  My trips
+                  Wallet
                 </Link>
               </Button>
             </div>
@@ -403,7 +413,11 @@ export function DriverMyTripsPage() {
     tripsTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  const earnings = sumPotentialEarnings(completedTrips)
+  const earningsQuery = useQuery({
+    queryKey: driverWalletQueryKey,
+    queryFn: fetchDriverWallet,
+  })
+  const walletBalance = earningsQuery.data?.balancePesos ?? 0
 
   return (
     <div className="space-y-10">
@@ -425,9 +439,9 @@ export function DriverMyTripsPage() {
           footer="Scheduled departures"
         />
         <StatCard
-          title="Completed earnings"
-          value={`₱${earnings.toLocaleString()}`}
-          footer="Based on booked seats"
+          title="Wallet balance"
+          value={earningsQuery.isLoading ? '…' : `₱${walletBalance.toLocaleString()}`}
+          footer="From completed trip settlements"
         />
       </div>
 

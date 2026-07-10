@@ -13,6 +13,7 @@ import {
   resolveTargetSeatCount,
   syncVanSeatLayout,
 } from '../lib/seat-layout.js'
+import { postBookingSettlement } from './wallet.model.js'
 
 export type { Van, VanClassType, VanClassVariant }
 
@@ -417,6 +418,22 @@ export const VanModel = {
         where: { id: tripId },
         data: { status: 'completed' },
       })
+
+      const bookings = await tx.booking.findMany({
+        where: { vanId: tripId, status: 'completed' },
+        include: {
+          snapshot: true,
+          payment: true,
+        },
+      })
+
+      for (const booking of bookings) {
+        await postBookingSettlement(tx, {
+          driverId,
+          booking,
+          actorProfileId: driverId,
+        })
+      }
 
       return tx.van.findUniqueOrThrow({
         where: { id: tripId },

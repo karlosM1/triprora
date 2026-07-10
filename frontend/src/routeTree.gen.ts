@@ -25,9 +25,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DriverIndexRouteImport } from './routes/driver/index'
 import { Route as ArticlesIndexRouteImport } from './routes/articles/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as DriverWalletRouteImport } from './routes/driver/wallet'
 import { Route as DriverRegisterRouteImport } from './routes/driver/register'
 import { Route as DriverCreateRouteImport } from './routes/driver/create'
 import { Route as ArticlesSlugRouteImport } from './routes/articles/$slug'
+import { Route as AdminWalletsRouteImport } from './routes/admin/wallets'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminTripsRouteImport } from './routes/admin/trips'
 import { Route as AdminDriversRouteImport } from './routes/admin/drivers'
@@ -120,6 +122,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const DriverWalletRoute = DriverWalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
+  getParentRoute: () => DriverRouteRoute,
+} as any)
 const DriverRegisterRoute = DriverRegisterRouteImport.update({
   id: '/register',
   path: '/register',
@@ -134,6 +141,11 @@ const ArticlesSlugRoute = ArticlesSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
   getParentRoute: () => ArticlesRouteRoute,
+} as any)
+const AdminWalletsRoute = AdminWalletsRouteImport.update({
+  id: '/wallets',
+  path: '/wallets',
+  getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
@@ -210,9 +222,11 @@ export interface FileRoutesByFullPath {
   '/admin/drivers': typeof AdminDriversRoute
   '/admin/trips': typeof AdminTripsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/wallets': typeof AdminWalletsRoute
   '/articles/$slug': typeof ArticlesSlugRoute
   '/driver/create': typeof DriverCreateRoute
   '/driver/register': typeof DriverRegisterRoute
+  '/driver/wallet': typeof DriverWalletRoute
   '/admin/': typeof AdminIndexRoute
   '/articles/': typeof ArticlesIndexRoute
   '/driver/': typeof DriverIndexRoute
@@ -238,9 +252,11 @@ export interface FileRoutesByTo {
   '/admin/drivers': typeof AdminDriversRoute
   '/admin/trips': typeof AdminTripsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/wallets': typeof AdminWalletsRoute
   '/articles/$slug': typeof ArticlesSlugRoute
   '/driver/create': typeof DriverCreateRoute
   '/driver/register': typeof DriverRegisterRoute
+  '/driver/wallet': typeof DriverWalletRoute
   '/admin': typeof AdminIndexRoute
   '/articles': typeof ArticlesIndexRoute
   '/driver': typeof DriverIndexRoute
@@ -271,9 +287,11 @@ export interface FileRoutesById {
   '/admin/drivers': typeof AdminDriversRoute
   '/admin/trips': typeof AdminTripsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/wallets': typeof AdminWalletsRoute
   '/articles/$slug': typeof ArticlesSlugRoute
   '/driver/create': typeof DriverCreateRoute
   '/driver/register': typeof DriverRegisterRoute
+  '/driver/wallet': typeof DriverWalletRoute
   '/admin/': typeof AdminIndexRoute
   '/articles/': typeof ArticlesIndexRoute
   '/driver/': typeof DriverIndexRoute
@@ -305,9 +323,11 @@ export interface FileRouteTypes {
     | '/admin/drivers'
     | '/admin/trips'
     | '/admin/users'
+    | '/admin/wallets'
     | '/articles/$slug'
     | '/driver/create'
     | '/driver/register'
+    | '/driver/wallet'
     | '/admin/'
     | '/articles/'
     | '/driver/'
@@ -333,9 +353,11 @@ export interface FileRouteTypes {
     | '/admin/drivers'
     | '/admin/trips'
     | '/admin/users'
+    | '/admin/wallets'
     | '/articles/$slug'
     | '/driver/create'
     | '/driver/register'
+    | '/driver/wallet'
     | '/admin'
     | '/articles'
     | '/driver'
@@ -365,9 +387,11 @@ export interface FileRouteTypes {
     | '/admin/drivers'
     | '/admin/trips'
     | '/admin/users'
+    | '/admin/wallets'
     | '/articles/$slug'
     | '/driver/create'
     | '/driver/register'
+    | '/driver/wallet'
     | '/admin/'
     | '/articles/'
     | '/driver/'
@@ -512,6 +536,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/driver/wallet': {
+      id: '/driver/wallet'
+      path: '/wallet'
+      fullPath: '/driver/wallet'
+      preLoaderRoute: typeof DriverWalletRouteImport
+      parentRoute: typeof DriverRouteRoute
+    }
     '/driver/register': {
       id: '/driver/register'
       path: '/register'
@@ -532,6 +563,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/articles/$slug'
       preLoaderRoute: typeof ArticlesSlugRouteImport
       parentRoute: typeof ArticlesRouteRoute
+    }
+    '/admin/wallets': {
+      id: '/admin/wallets'
+      path: '/wallets'
+      fullPath: '/admin/wallets'
+      preLoaderRoute: typeof AdminWalletsRouteImport
+      parentRoute: typeof AdminRouteRoute
     }
     '/admin/users': {
       id: '/admin/users'
@@ -618,6 +656,7 @@ interface AdminRouteRouteChildren {
   AdminDriversRoute: typeof AdminDriversRoute
   AdminTripsRoute: typeof AdminTripsRoute
   AdminUsersRoute: typeof AdminUsersRoute
+  AdminWalletsRoute: typeof AdminWalletsRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
@@ -626,6 +665,7 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminDriversRoute: AdminDriversRoute,
   AdminTripsRoute: AdminTripsRoute,
   AdminUsersRoute: AdminUsersRoute,
+  AdminWalletsRoute: AdminWalletsRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 
@@ -666,6 +706,7 @@ interface DriverRouteRouteChildren {
   DriverTripsRouteRoute: typeof DriverTripsRouteRouteWithChildren
   DriverCreateRoute: typeof DriverCreateRoute
   DriverRegisterRoute: typeof DriverRegisterRoute
+  DriverWalletRoute: typeof DriverWalletRoute
   DriverIndexRoute: typeof DriverIndexRoute
 }
 
@@ -673,6 +714,7 @@ const DriverRouteRouteChildren: DriverRouteRouteChildren = {
   DriverTripsRouteRoute: DriverTripsRouteRouteWithChildren,
   DriverCreateRoute: DriverCreateRoute,
   DriverRegisterRoute: DriverRegisterRoute,
+  DriverWalletRoute: DriverWalletRoute,
   DriverIndexRoute: DriverIndexRoute,
 }
 
