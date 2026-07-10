@@ -19,7 +19,6 @@ import {
 import { loadVanBooking, vanBookingQueryKey, vanBookingQueryOptions } from '@/lib/api/load-van-booking'
 import { vansQueryKey } from '@/lib/api/vans'
 import type { PassengerDetails } from '@/lib/booking'
-import { calculateTotals } from '@/lib/booking'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
 import { requireAuth } from '@/lib/route-guards'
 
@@ -60,18 +59,24 @@ function CheckoutPage() {
   const [passenger, setPassenger] = useState<PassengerDetails>(emptyPassenger)
   const [checkoutStep, setCheckoutStep] = useState<1 | 2>(1)
   const [error, setError] = useState<string | null>(null)
+  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null)
+  const [paymentPaid, setPaymentPaid] = useState(false)
 
   const addresses = { pickupAddress, dropoffAddress }
-  const { total } = calculateTotals(van.price)
 
   const bookingMutation = useMutation({
-    mutationFn: () =>
-      createBooking({
+    mutationFn: () => {
+      if (!paymentIntentId) {
+        throw new Error('Payment is required before completing booking.')
+      }
+      return createBooking({
         vanId,
         seat,
         pickupAddress,
         dropoffAddress,
-      }),
+        paymentIntentId,
+      })
+    },
     onSuccess: (booking) => {
       queryClient.invalidateQueries({ queryKey: upcomingBookingQueryKey })
       queryClient.invalidateQueries({ queryKey: bookingHistoryQueryKey })
@@ -102,6 +107,10 @@ function CheckoutPage() {
   }
 
   function handleCompleteBooking() {
+    if (!paymentPaid || !paymentIntentId) {
+      setError('Please complete QR Ph payment before continuing.')
+      return
+    }
     setError(null)
     bookingMutation.mutate()
   }
@@ -162,7 +171,15 @@ function CheckoutPage() {
             <div className="min-w-0 flex-1 space-y-5">
               <PassengerForm values={passenger} onChange={setPassenger} />
 
-              {checkoutStep === 2 && <PaymentForm baseFare={van.price} />}
+              {checkoutStep === 2 && (
+                <PaymentForm
+                  baseFare={van.price}
+                  onPaymentChange={({ paymentIntentId: id, paid }) => {
+                    setPaymentIntentId(id)
+                    setPaymentPaid(paid)
+                  }}
+                />
+              )}
 
               {error && (
                 <p className="rounded-xl bg-[#fef2f2] px-4 py-3 text-[14px] text-[#b42318] ring-1 ring-[#fecaca]">
@@ -182,9 +199,13 @@ function CheckoutPage() {
                 <Button
                   className="h-12 w-full rounded-full bg-[#0071e3] text-[15px] font-medium hover:bg-[#0077ed]"
                   onClick={handleCompleteBooking}
-                  disabled={bookingMutation.isPending}
+                  disabled={bookingMutation.isPending || !paymentPaid}
                 >
-                  {bookingMutation.isPending ? 'Processing…' : 'Complete booking'}
+                  {bookingMutation.isPending
+                    ? 'Processing…'
+                    : paymentPaid
+                      ? 'Complete booking'
+                      : 'Waiting for payment…'}
                   <ArrowRight className="size-4" />
                 </Button>
               )}

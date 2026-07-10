@@ -175,6 +175,7 @@ model Profile {
   bookings          Booking[]
   vans              Van[]
   vehicles          Vehicle[]
+  payments          Payment[]
 
   @@map("profiles")
 }
@@ -308,18 +309,20 @@ model BookingSnapshot {
 }
 
 model Payment {
-  id              String   @id @default(cuid())
-  bookingId       String?  @unique
-  booking         Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
-  provider        String   // e.g. "paymongo"
-  providerIntentId String  // PayMongo payment_intent id
-  providerMethodId String? // PayMongo payment_method id (if available)
-  amount          Int      // in centavos
-  currency        String   @default("PHP")
-  status          String   // e.g. "awaiting_next_action", "succeeded", "failed"
-  rawPayload      Json?    // optional: last payload from provider (for debugging/audits)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id               String   @id @default(cuid())
+  bookingId        String?  @unique
+  booking          Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  userId           String?  @db.Uuid
+  user             Profile? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  provider         String
+  providerIntentId String   @unique
+  providerMethodId String?
+  amount           Int      // pesos (not centavos)
+  currency         String   @default("PHP")
+  status           String
+  rawPayload       Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@map("payments")
 }

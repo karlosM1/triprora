@@ -11,6 +11,7 @@ export type CreateBookingInput = {
   seat: string
   pickupAddress: string
   dropoffAddress: string
+  paymentIntentId: string
 }
 
 export async function createBooking(input: CreateBookingInput) {

@@ -4,7 +4,9 @@ export type CreateQrPhPaymentResponse = {
   paymentIntentId: string
   clientKey: string
   qrImageUrl: string
+  testUrl: string | null
   amount: number
+  status: string
 }
 
 export async function createQrPhPayment(amount: number) {
@@ -19,6 +21,7 @@ export type QrPhPaymentStatusResponse = {
   status: string
   amount: number
   currency: string
+  paid: boolean
 }
 
 export async function fetchQrPhPaymentStatus(paymentIntentId: string) {
@@ -27,4 +30,3 @@ export async function fetchQrPhPaymentStatus(paymentIntentId: string) {
   )
   return data
 }
-

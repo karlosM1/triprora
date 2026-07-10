@@ -1,19 +1,13 @@
 import type { Request, Response } from 'express'
-
-const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY
-
-if (!PAYMONGO_SECRET_KEY) {
-  throw new Error('PAYMONGO_SECRET_KEY must be set')
-}
-
-const PAYMONGO_API_BASE = 'https://api.paymongo.com/v1'
-const BASIC_AUTH_HEADER =
-  'Basic ' + Buffer.from(`${PAYMONGO_SECRET_KEY}:`).toString('base64')
+import { prisma } from '../lib/prisma.js'
+import { paymongoRequest, syncPaymentStatus } from '../lib/paymongo.js'
+import { AppError } from '../utils/app-error.js'
 
 type PaymongoPaymentIntent = {
   id: string
   attributes: {
     client_key: string
+    status?: string
   }
 }
 
@@ -21,170 +15,117 @@ type PaymongoPaymentMethod = {
   id: string
 }
 
-type PaymongoErrorBody = {
-  errors?: { detail?: string; code?: string }[]
-  message?: string
-}
-
-async function paymongoRequest(path: string, init: RequestInit): Promise<any> {
-  const response = await fetch(`${PAYMONGO_API_BASE}${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: BASIC_AUTH_HEADER,
-      ...(init.headers ?? {}),
-    },
-  })
-
-  const rawJson = await response.json().catch(() => null)
-  const json = (rawJson ?? null) as PaymongoErrorBody | null
-
-  if (!response.ok) {
-    const message =
-      (json &&
-        (json.errors?.[0]?.detail ||
-          json.errors?.[0]?.code ||
-          json.message)) ||
-      `PayMongo request failed with status ${response.status}`
-    const error: any = new Error(message)
-    error.status = response.status
-    error.body = json
-    throw error
-  }
-
-  return json
-}
-
 export async function createQrPhPayment(req: Request, res: Response) {
+  const profile = req.profile!
   const amount = Number(req.body.amount)
 
   if (!Number.isFinite(amount) || amount <= 0) {
-    return res.status(400).json({ message: 'Invalid amount' })
+    throw new AppError('Invalid amount', 400)
   }
 
-  // PayMongo expects amount in centavos
-  const amountInCents = Math.round(amount * 100)
+  // Store pesos in our DB; PayMongo API still requires centavos.
+  const amountInPesos = Math.round(amount)
+  const amountInCents = amountInPesos * 100
 
-  try {
-    // 1. Create Payment Intent
-    const intentResponse = await paymongoRequest('/payment_intents', {
-      method: 'POST',
-      body: JSON.stringify({
-        data: {
-          attributes: {
-            amount: amountInCents,
-            currency: 'PHP',
-            payment_method_allowed: ['qrph'],
-            description: 'Triprora booking',
-          },
+  const intentResponse = await paymongoRequest('/payment_intents', {
+    method: 'POST',
+    body: JSON.stringify({
+      data: {
+        attributes: {
+          amount: amountInCents,
+          currency: 'PHP',
+          payment_method_allowed: ['qrph'],
+          description: 'Triprora booking',
         },
-      }),
-    })
-
-    const intent: PaymongoPaymentIntent = intentResponse.data
-    const paymentIntentId = intent.id
-    const clientKey = intent.attributes.client_key
-
-    // 2. Create QR Ph Payment Method
-    const methodResponse = await paymongoRequest('/payment_methods', {
-      method: 'POST',
-      body: JSON.stringify({
-        data: {
-          attributes: {
-            type: 'qrph',
-            // Optional: 30 minutes expiry (configurable 60–9000 seconds)
-            expiry_seconds: 1800,
-          },
-        },
-      }),
-    })
-
-    const paymentMethod: PaymongoPaymentMethod = methodResponse.data
-
-    // 3. Attach Payment Method to Intent
-    const attachResponse = await paymongoRequest(
-      `/payment_intents/${paymentIntentId}/attach`,
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          data: {
-            attributes: {
-              payment_method: paymentMethod.id,
-              client_key: clientKey,
-            },
-          },
-        }),
       },
-    )
+    }),
+  })
 
-    const attributes = attachResponse.data.attributes
-    const qrCodeImageUrl =
-      attributes.next_action?.code?.image_url ||
-      attributes.next_action?.qrph?.image_url ||
-      null
+  const intent: PaymongoPaymentIntent = intentResponse.data
+  const paymentIntentId = intent.id
+  const clientKey = intent.attributes.client_key
 
-    if (!qrCodeImageUrl) {
-      return res.status(502).json({
-        message: 'Failed to generate QR Ph code from PayMongo',
-      })
-    }
+  const methodResponse = await paymongoRequest('/payment_methods', {
+    method: 'POST',
+    body: JSON.stringify({
+      data: {
+        attributes: {
+          type: 'qrph',
+          expiry_seconds: 1800,
+        },
+      },
+    }),
+  })
 
-    return res.json({
-      paymentIntentId,
-      clientKey,
-      qrImageUrl: qrCodeImageUrl,
-      amount,
-    })
-  } catch (error: any) {
-    const status =
-      typeof error.status === 'number' && error.status >= 400 && error.status < 600
-        ? error.status
-        : 502
+  const paymentMethod: PaymongoPaymentMethod = methodResponse.data
 
-    return res.status(status).json({
-      message:
-        error.body?.errors?.[0]?.detail ||
-        error.message ||
-        'Failed to create QR Ph payment',
-    })
+  const attachResponse = await paymongoRequest(
+    `/payment_intents/${paymentIntentId}/attach`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        data: {
+          attributes: {
+            payment_method: paymentMethod.id,
+            client_key: clientKey,
+          },
+        },
+      }),
+    },
+  )
+
+  const attributes = attachResponse.data.attributes
+  const status = attributes.status ?? 'awaiting_next_action'
+  const nextActionCode = attributes.next_action?.code ?? attributes.next_action?.qrph
+  const qrCodeImageUrl = nextActionCode?.image_url || null
+  // PayMongo test mode: open this URL to simulate success/fail (do not scan real QR)
+  const testUrl =
+    nextActionCode?.test_url ||
+    attributes.next_action?.redirect?.url ||
+    null
+
+  if (!qrCodeImageUrl) {
+    throw new AppError('Failed to generate QR Ph code from PayMongo', 502)
   }
+
+  await prisma.payment.create({
+    data: {
+      userId: profile.id,
+      provider: 'paymongo',
+      providerIntentId: paymentIntentId,
+      providerMethodId: paymentMethod.id,
+      amount: amountInPesos,
+      currency: 'PHP',
+      status,
+      rawPayload: attachResponse.data,
+    },
+  })
+
+  return res.json({
+    paymentIntentId,
+    clientKey,
+    qrImageUrl: qrCodeImageUrl,
+    testUrl,
+    amount: amountInPesos,
+    status,
+  })
 }
 
 export async function getQrPhPaymentStatus(req: Request, res: Response) {
+  const profile = req.profile!
   const { paymentIntentId } = req.params
 
   if (!paymentIntentId) {
-    return res.status(400).json({ message: 'paymentIntentId is required' })
+    throw new AppError('paymentIntentId is required', 400)
   }
 
-  try {
-    const intentResponse = await paymongoRequest(
-      `/payment_intents/${encodeURIComponent(paymentIntentId)}`,
-      {
-        method: 'GET',
-      },
-    )
+  const updated = await syncPaymentStatus(profile.id, paymentIntentId)
 
-    const data = intentResponse.data
-
-    return res.json({
-      id: data.id,
-      status: data.attributes.status,
-      amount: data.attributes.amount,
-      currency: data.attributes.currency,
-    })
-  } catch (error: any) {
-    const status =
-      typeof error.status === 'number' && error.status >= 400 && error.status < 600
-        ? error.status
-        : 502
-
-    return res.status(status).json({
-      message:
-        error.body?.errors?.[0]?.detail ||
-        error.message ||
-        'Failed to fetch QR Ph payment status',
-    })
-  }
+  return res.json({
+    id: updated.providerIntentId,
+    status: updated.status,
+    amount: updated.amount,
+    currency: updated.currency,
+    paid: updated.status === 'succeeded',
+  })
 }
-

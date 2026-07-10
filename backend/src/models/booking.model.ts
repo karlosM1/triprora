@@ -113,6 +113,26 @@ function toUpcomingBooking(
 export const BookingModel = {
   async create(input: CreateBookingInput): Promise<CreatedBooking> {
     return prisma.$transaction(async (tx) => {
+      const payment = await tx.payment.findFirst({
+        where: {
+          providerIntentId: input.paymentIntentId,
+          userId: input.userId,
+        },
+      })
+
+      if (!payment) {
+        throw new AppError('Payment not found', 404)
+      }
+
+      if (payment.bookingId) {
+        throw new AppError('This payment has already been used', 409)
+      }
+
+      if (payment.status !== 'succeeded') {
+        // Re-check with latest DB status only; frontend polls PayMongo before this.
+        throw new AppError('Payment is not completed yet', 402)
+      }
+
       const van = await tx.van.findFirst({
         where: { id: input.vanId, status: 'published' },
         include: {
@@ -140,6 +160,10 @@ export const BookingModel = {
 
       const presented = presentVan(van)
       const fare = calculateTotal(van.price)
+      if (payment.amount !== fare.total) {
+        throw new AppError('Payment amount does not match booking total', 400)
+      }
+
       const reference = createReference()
       const routeLabel = `${presented.departureLocation} → ${presented.arrivalLocation}`
       const vehicleLabel = presented.vehicleName ?? presented.operator
@@ -185,6 +209,11 @@ export const BookingModel = {
           },
         },
         include: { snapshot: true },
+      })
+
+      await tx.payment.update({
+        where: { id: payment.id },
+        data: { bookingId: booking.id },
       })
 
       return {

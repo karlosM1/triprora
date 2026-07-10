@@ -5,6 +5,7 @@ export const createBookingSchema = z.object({
   seat: z.string().trim().min(1).max(10),
   pickupAddress: z.string().trim().min(5).max(500),
   dropoffAddress: z.string().trim().min(5).max(500),
+  paymentIntentId: z.string().trim().min(1),
 })
 
 export const updateBookingSchema = z
