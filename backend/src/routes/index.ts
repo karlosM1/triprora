@@ -7,6 +7,7 @@ import { driverRouter } from './driver.routes.js'
 import { meRouter } from './me.routes.js'
 import { schedulesRouter } from './schedules.routes.js'
 import { vansRouter } from './vans.routes.js'
+import { paymentsRouter } from './payments.routes.js'
 
 export const apiRouter = Router()
 
@@ -17,3 +18,4 @@ apiRouter.use('/admin', adminRouter)
 apiRouter.use('/bookings', bookingsRouter)
 apiRouter.use('/schedules', schedulesRouter)
 apiRouter.use('/vans', vansRouter)
+apiRouter.use('/payments', paymentsRouter)

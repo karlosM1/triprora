@@ -19,6 +19,7 @@ import {
 import { loadVanBooking, vanBookingQueryKey, vanBookingQueryOptions } from '@/lib/api/load-van-booking'
 import { vansQueryKey } from '@/lib/api/vans'
 import type { PassengerDetails } from '@/lib/booking'
+import { calculateTotals } from '@/lib/booking'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
 import { requireAuth } from '@/lib/route-guards'
 
@@ -61,6 +62,7 @@ function CheckoutPage() {
   const [error, setError] = useState<string | null>(null)
 
   const addresses = { pickupAddress, dropoffAddress }
+  const { total } = calculateTotals(van.price)
 
   const bookingMutation = useMutation({
     mutationFn: () =>
@@ -160,7 +162,7 @@ function CheckoutPage() {
             <div className="min-w-0 flex-1 space-y-5">
               <PassengerForm values={passenger} onChange={setPassenger} />
 
-              {checkoutStep === 2 && <PaymentForm />}
+              {checkoutStep === 2 && <PaymentForm baseFare={van.price} />}
 
               {error && (
                 <p className="rounded-xl bg-[#fef2f2] px-4 py-3 text-[14px] text-[#b42318] ring-1 ring-[#fecaca]">
