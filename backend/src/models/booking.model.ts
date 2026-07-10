@@ -18,6 +18,7 @@ export type {
   CreateBookingInput,
   CreatedBooking,
   HistoryBooking,
+  PaymentMethod,
   UpcomingBooking,
   UpdateBookingInput,
 } from './booking.types.js'
@@ -113,26 +114,6 @@ function toUpcomingBooking(
 export const BookingModel = {
   async create(input: CreateBookingInput): Promise<CreatedBooking> {
     return prisma.$transaction(async (tx) => {
-      const payment = await tx.payment.findFirst({
-        where: {
-          providerIntentId: input.paymentIntentId,
-          userId: input.userId,
-        },
-      })
-
-      if (!payment) {
-        throw new AppError('Payment not found', 404)
-      }
-
-      if (payment.bookingId) {
-        throw new AppError('This payment has already been used', 409)
-      }
-
-      if (payment.status !== 'succeeded') {
-        // Re-check with latest DB status only; frontend polls PayMongo before this.
-        throw new AppError('Payment is not completed yet', 402)
-      }
-
       const van = await tx.van.findFirst({
         where: { id: input.vanId, status: 'published' },
         include: {
@@ -160,8 +141,38 @@ export const BookingModel = {
 
       const presented = presentVan(van)
       const fare = calculateTotal(van.price)
-      if (payment.amount !== fare.total) {
-        throw new AppError('Payment amount does not match booking total', 400)
+
+      let existingPaymentId: string | null = null
+
+      if (input.paymentMethod === 'qrph') {
+        if (!input.paymentIntentId) {
+          throw new AppError('paymentIntentId is required for QR Ph payments', 400)
+        }
+
+        const payment = await tx.payment.findFirst({
+          where: {
+            providerIntentId: input.paymentIntentId,
+            userId: input.userId,
+          },
+        })
+
+        if (!payment) {
+          throw new AppError('Payment not found', 404)
+        }
+
+        if (payment.bookingId) {
+          throw new AppError('This payment has already been used', 409)
+        }
+
+        if (payment.status !== 'succeeded') {
+          throw new AppError('Payment is not completed yet', 402)
+        }
+
+        if (payment.amount !== fare.total) {
+          throw new AppError('Payment amount does not match booking total', 400)
+        }
+
+        existingPaymentId = payment.id
       }
 
       const reference = createReference()
@@ -211,10 +222,24 @@ export const BookingModel = {
         include: { snapshot: true },
       })
 
-      await tx.payment.update({
-        where: { id: payment.id },
-        data: { bookingId: booking.id },
-      })
+      if (existingPaymentId) {
+        await tx.payment.update({
+          where: { id: existingPaymentId },
+          data: { bookingId: booking.id },
+        })
+      } else {
+        await tx.payment.create({
+          data: {
+            userId: input.userId,
+            bookingId: booking.id,
+            provider: 'cash',
+            providerIntentId: `cash_${booking.id}`,
+            amount: fare.total,
+            currency: 'PHP',
+            status: 'pending',
+          },
+        })
+      }
 
       return {
         id: booking.id,

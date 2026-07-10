@@ -1,12 +1,23 @@
 import { z } from 'zod'
 
-export const createBookingSchema = z.object({
-  vanId: z.string().trim().min(1),
-  seat: z.string().trim().min(1).max(10),
-  pickupAddress: z.string().trim().min(5).max(500),
-  dropoffAddress: z.string().trim().min(5).max(500),
-  paymentIntentId: z.string().trim().min(1),
-})
+export const createBookingSchema = z
+  .object({
+    vanId: z.string().trim().min(1),
+    seat: z.string().trim().min(1).max(10),
+    pickupAddress: z.string().trim().min(5).max(500),
+    dropoffAddress: z.string().trim().min(5).max(500),
+    paymentMethod: z.enum(['qrph', 'cash']).default('qrph'),
+    paymentIntentId: z.string().trim().min(1).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.paymentMethod === 'qrph' && !data.paymentIntentId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'paymentIntentId is required for QR Ph payments',
+        path: ['paymentIntentId'],
+      })
+    }
+  })
 
 export const updateBookingSchema = z
   .object({

@@ -1,16 +1,27 @@
 import type { Request, Response } from 'express'
 import { syncPaymentStatus } from '../lib/paymongo.js'
 import { BookingModel } from '../models/booking.model.js'
+import type { PaymentMethod } from '../models/booking.types.js'
 import { AppError } from '../utils/app-error.js'
 
 export async function createBooking(req: Request, res: Response) {
   const profile = req.profile!
-  const paymentIntentId = req.body.paymentIntentId as string
+  const paymentMethod = (req.body.paymentMethod as PaymentMethod) ?? 'qrph'
+  const paymentIntentId = req.body.paymentIntentId as string | undefined
 
-  const payment = await syncPaymentStatus(profile.id, paymentIntentId)
+  if (paymentMethod === 'qrph') {
+    if (!paymentIntentId) {
+      throw new AppError('paymentIntentId is required for QR Ph payments', 400)
+    }
 
-  if (payment.status !== 'succeeded') {
-    throw new AppError('Payment is not completed yet. Please finish paying via QR Ph.', 402)
+    const payment = await syncPaymentStatus(profile.id, paymentIntentId)
+
+    if (payment.status !== 'succeeded') {
+      throw new AppError(
+        'Payment is not completed yet. Please finish paying via QR Ph.',
+        402,
+      )
+    }
   }
 
   const booking = await BookingModel.create({
@@ -19,6 +30,7 @@ export async function createBooking(req: Request, res: Response) {
     seat: req.body.seat,
     pickupAddress: req.body.pickupAddress,
     dropoffAddress: req.body.dropoffAddress,
+    paymentMethod,
     paymentIntentId,
   })
 

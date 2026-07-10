@@ -7,7 +7,10 @@ import { BookingStepper } from '@/components/booking/booking-stepper'
 import { CheckoutFooter } from '@/components/booking/booking-footer'
 import { CheckoutSummary } from '@/components/booking/checkout-summary'
 import { PassengerForm } from '@/components/booking/passenger-form'
-import { PaymentForm } from '@/components/booking/payment-form'
+import {
+  PaymentForm,
+  type CheckoutPaymentMethod,
+} from '@/components/booking/payment-form'
 import { PageHeader } from '@/components/layout/page-header'
 import { Header } from '@/components/landing/header'
 import { Button } from '@/components/ui/button'
@@ -59,14 +62,15 @@ function CheckoutPage() {
   const [passenger, setPassenger] = useState<PassengerDetails>(emptyPassenger)
   const [checkoutStep, setCheckoutStep] = useState<1 | 2>(1)
   const [error, setError] = useState<string | null>(null)
+  const [paymentMethod, setPaymentMethod] = useState<CheckoutPaymentMethod>('qrph')
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null)
-  const [paymentPaid, setPaymentPaid] = useState(false)
+  const [paymentReady, setPaymentReady] = useState(false)
 
   const addresses = { pickupAddress, dropoffAddress }
 
   const bookingMutation = useMutation({
     mutationFn: () => {
-      if (!paymentIntentId) {
+      if (paymentMethod === 'qrph' && !paymentIntentId) {
         throw new Error('Payment is required before completing booking.')
       }
       return createBooking({
@@ -74,7 +78,10 @@ function CheckoutPage() {
         seat,
         pickupAddress,
         dropoffAddress,
-        paymentIntentId,
+        paymentMethod,
+        ...(paymentMethod === 'qrph' && paymentIntentId
+          ? { paymentIntentId }
+          : {}),
       })
     },
     onSuccess: (booking) => {
@@ -92,6 +99,7 @@ function CheckoutPage() {
           ref: booking.reference,
           pickupAddress,
           dropoffAddress,
+          paymentMethod,
         },
       })
     },
@@ -107,7 +115,15 @@ function CheckoutPage() {
   }
 
   function handleCompleteBooking() {
-    if (!paymentPaid || !paymentIntentId) {
+    if (!paymentReady) {
+      setError(
+        paymentMethod === 'cash'
+          ? 'Please select cash payment before continuing.'
+          : 'Please complete QR Ph payment before continuing.',
+      )
+      return
+    }
+    if (paymentMethod === 'qrph' && !paymentIntentId) {
       setError('Please complete QR Ph payment before continuing.')
       return
     }
@@ -174,9 +190,14 @@ function CheckoutPage() {
               {checkoutStep === 2 && (
                 <PaymentForm
                   baseFare={van.price}
-                  onPaymentChange={({ paymentIntentId: id, paid }) => {
+                  onPaymentChange={({
+                    paymentMethod: method,
+                    paymentIntentId: id,
+                    ready,
+                  }) => {
+                    setPaymentMethod(method)
                     setPaymentIntentId(id)
-                    setPaymentPaid(paid)
+                    setPaymentReady(ready)
                   }}
                 />
               )}
@@ -199,11 +220,11 @@ function CheckoutPage() {
                 <Button
                   className="h-12 w-full rounded-full bg-[#0071e3] text-[15px] font-medium hover:bg-[#0077ed]"
                   onClick={handleCompleteBooking}
-                  disabled={bookingMutation.isPending || !paymentPaid}
+                  disabled={bookingMutation.isPending || !paymentReady}
                 >
                   {bookingMutation.isPending
                     ? 'Processing…'
-                    : paymentPaid
+                    : paymentReady
                       ? 'Complete booking'
                       : 'Waiting for payment…'}
                   <ArrowRight className="size-4" />

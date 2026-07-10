@@ -47,11 +47,14 @@ export type CreatedBooking = {
   price: string
 }
 
+export type PaymentMethod = 'qrph' | 'cash'
+
 export type CreateBookingInput = {
   userId: string
   vanId: string
   seat: string
   pickupAddress: string
   dropoffAddress: string
-  paymentIntentId: string
+  paymentMethod: PaymentMethod
+  paymentIntentId?: string
 }
