@@ -36,13 +36,13 @@ function formatDisplayDate(dateStr: string) {
 }
 
 function calculateTotal(baseFare: number) {
-  const serviceFee = Math.round(baseFare * 0.05)
-  const tax = Math.round((baseFare + serviceFee) * 0.05)
+  const serviceFee = Math.round(baseFare * 0.04)
+  const tax = 0
   return {
     baseFare,
     serviceFee,
     tax,
-    total: baseFare + serviceFee + tax,
+    total: baseFare + serviceFee,
   }
 }
 

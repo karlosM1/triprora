@@ -1,4 +1,4 @@
-export const PLATFORM_COMMISSION_RATE = 0.1
+export const PLATFORM_COMMISSION_RATE = 0.04
 
 export function commissionFromBase(baseFarePesos: number) {
   return Math.round(baseFarePesos * PLATFORM_COMMISSION_RATE)

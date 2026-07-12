@@ -71,6 +71,7 @@ type CreateDriverTripInput = {
   arrivalLocation: string
   departureDate: string
   departureTime: string
+  durationHours: number
   tripCategory: 'express' | 'business' | 'standard'
   vehicleName: string
   plateNumber?: string
@@ -101,7 +102,8 @@ const categoryConfig = {
 
 function addHoursToTime(time: string, hours: number) {
   const [hourPart, minutePart] = time.split(':').map(Number)
-  const totalMinutes = hourPart * 60 + minutePart + hours * 60
+  const addedMinutes = Math.round(hours * 60)
+  const totalMinutes = hourPart * 60 + minutePart + addedMinutes
   const nextHour = Math.floor(totalMinutes / 60) % 24
   const nextMinute = totalMinutes % 60
   return `${String(nextHour).padStart(2, '0')}:${String(nextMinute).padStart(2, '0')}`
@@ -288,8 +290,8 @@ export const VanModel = {
 
   async createDriverTrip(input: CreateDriverTripInput): Promise<DriverTrip> {
     const config = categoryConfig[input.tripCategory]
-    const arrivalTime = addHoursToTime(input.departureTime, config.durationHours)
-    const duration = formatDuration(config.durationHours)
+    const arrivalTime = addHoursToTime(input.departureTime, input.durationHours)
+    const duration = formatDuration(input.durationHours)
     const operatorName = input.driverName?.trim() || 'Crabr Partner'
     const seatLabels = generateSeatLabels(input.totalSeats)
     const tripId = createTripId()
@@ -351,8 +353,8 @@ export const VanModel = {
     if (!existing) return null
 
     const config = categoryConfig[input.tripCategory]
-    const arrivalTime = addHoursToTime(input.departureTime, config.durationHours)
-    const duration = formatDuration(config.durationHours)
+    const arrivalTime = addHoursToTime(input.departureTime, input.durationHours)
+    const duration = formatDuration(input.durationHours)
     const seatLabels = generateSeatLabels(input.totalSeats)
 
     const van = await prisma.$transaction(async (tx) => {

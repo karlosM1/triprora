@@ -5,6 +5,7 @@ const driverTripBodySchema = z.object({
   arrivalLocation: z.string().trim().min(2).max(200),
   departureDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   departureTime: z.string().regex(/^\d{2}:\d{2}$/),
+  durationHours: z.number().min(1).max(24),
   tripCategory: z.enum(['express', 'business', 'standard']),
   vehicleName: z.string().trim().min(2).max(200),
   plateNumber: z.string().trim().min(2).max(20).optional(),

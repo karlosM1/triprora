@@ -25,9 +25,9 @@ export function formatPrice(amount: number): string {
 }
 
 export function calculateTotals(baseFare: number) {
-  const serviceFee = Math.round(baseFare * 0.05)
-  const tax = Math.round((baseFare + serviceFee) * 0.05)
-  const total = baseFare + serviceFee + tax
+  const serviceFee = Math.round(baseFare * 0.04)
+  const tax = 0
+  const total = baseFare + serviceFee
 
   return { baseFare, serviceFee, tax, total }
 }

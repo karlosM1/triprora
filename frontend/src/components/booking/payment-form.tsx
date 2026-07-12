@@ -169,8 +169,8 @@ export function PaymentForm({
         </p>
         <p className="mt-1 text-[13px] text-[#86868b]">
           {paymentMethod === 'cash'
-            ? 'Includes service fees and taxes. Pay this amount in cash to your driver.'
-            : 'Includes service fees and taxes. You\u2019ll pay this amount via your bank or e\u2011wallet app using QR Ph.'}
+            ? 'Includes the 4% system fee. Pay this amount in cash to your driver.'
+            : 'Includes the 4% system fee. You\u2019ll pay this amount via your bank or e\u2011wallet app using QR Ph.'}
         </p>
       </div>
 

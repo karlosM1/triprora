@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { PlaceInput } from '@/components/ui/place-input'
 import { TimePicker } from '@/components/ui/time-picker'
 import {
   Select,
@@ -26,43 +27,30 @@ import {
 } from '@/lib/api/driver-trips'
 import { vansQueryKey } from '@/lib/api/vans'
 import { useAuth } from '@/lib/auth-context'
+import { TRIP_DESTINATION_PLACES } from '@/lib/places'
 import type { DriverApplication } from '@/lib/types/profile'
 import { todayDateInputValue } from '@/lib/trip-search'
 import { cn } from '@/lib/utils'
-
-const pickupAreas = [
-  'Casiguran, Aurora (Door-to-Door)',
-  'Brgy. Poblacion, Casiguran',
-  'Brgy. Calabgan, Casiguran',
-  'Brgy. Dibacong, Casiguran',
-  'Brgy. Esteves, Casiguran',
-]
-
-const manilaDropOffAreas = [
-  'Cubao, Quezon City',
-  'Makati CBD',
-  'Pasay / NAIA Area',
-  'Quezon City',
-  'Manila City',
-  'Taguig / BGC',
-  'Pasig City',
-]
 
 type FormState = {
   departureLocation: string
   arrivalLocation: string
   departureDate: string
   departureTime: string
+  durationHours: string
+  durationMinutes: string
   vehicleName: string
   plateNumber: string
   price: string
 }
 
 const initialForm: FormState = {
-  departureLocation: 'Casiguran, Aurora (Door-to-Door)',
-  arrivalLocation: '',
+  departureLocation: 'Aurora',
+  arrivalLocation: 'Metro Manila',
   departureDate: '',
   departureTime: '',
+  durationHours: '8',
+  durationMinutes: '0',
   vehicleName: '',
   plateNumber: '',
   price: '',
@@ -70,6 +58,52 @@ const initialForm: FormState = {
 
 const appleInputClass =
   'h-11 rounded-xl border-[#d2d2d7] bg-white text-[15px] focus-visible:ring-[#0071e3]/40'
+
+const placeFieldClass =
+  'h-11 gap-2 rounded-xl bg-white px-3 ring-1 ring-[#d2d2d7] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#0071e3]/40'
+
+const DURATION_MINUTE_OPTIONS = [
+  { value: '0', label: '0 min' },
+  { value: '15', label: '15 min' },
+  { value: '30', label: '30 min' },
+  { value: '45', label: '45 min' },
+] as const
+
+function parseDurationParts(duration: string): {
+  durationHours: string
+  durationMinutes: string
+} {
+  const match = duration.trim().match(/^(\d+)\s*h(?:\s+(\d+)\s*m)?$/i)
+  if (!match) {
+    return { durationHours: '8', durationMinutes: '0' }
+  }
+
+  const hours = Number(match[1])
+  const minutes = Number(match[2] ?? 0)
+  const nearest = DURATION_MINUTE_OPTIONS.reduce((best, option) => {
+    const candidate = Number(option.value)
+    return Math.abs(candidate - minutes) < Math.abs(Number(best) - minutes)
+      ? option.value
+      : best
+  }, '0')
+
+  return {
+    durationHours: String(hours),
+    durationMinutes: nearest,
+  }
+}
+
+function toDurationHours(hours: string, minutes: string) {
+  return Number(hours) + Number(minutes) / 60
+}
+
+function formatDurationPreview(hours: string, minutes: string) {
+  const wholeHours = Number(hours)
+  const mins = Number(minutes)
+  if (!Number.isFinite(wholeHours) || wholeHours < 1) return null
+  if (mins === 0) return `${wholeHours}h`
+  return `${wholeHours}h ${mins}m`
+}
 
 type DriverCreateTripPageProps = {
   draftTripId?: string
@@ -80,6 +114,7 @@ function formStateFromTrip(trip: {
   arrivalLocation: string
   departureDate: string
   departureTime: string
+  duration: string
   vehicleName: string | null
   plateNumber?: string | null
   price: number
@@ -89,6 +124,7 @@ function formStateFromTrip(trip: {
     arrivalLocation: trip.arrivalLocation,
     departureDate: trip.departureDate,
     departureTime: trip.departureTime,
+    ...parseDurationParts(trip.duration),
     vehicleName: trip.vehicleName ?? '',
     plateNumber: trip.plateNumber ?? '',
     price: String(trip.price),
@@ -149,8 +185,13 @@ export function DriverCreateTripPage({ draftTripId }: DriverCreateTripPageProps 
   }, [draftQuery.data, initialized, isEditing, navigate])
 
   const baseFare = Number.parseFloat(form.price) || 0
+  const durationHoursValue = toDurationHours(form.durationHours, form.durationMinutes)
+  const durationPreview = formatDurationPreview(
+    form.durationHours,
+    form.durationMinutes,
+  )
   const estimatedRevenue = baseFare * seats[0]!
-  const systemFee = estimatedRevenue * 0.08
+  const systemFee = estimatedRevenue * 0.04
   const expectedNet = estimatedRevenue - systemFee
 
   const saveMutation = useMutation({
@@ -160,6 +201,7 @@ export function DriverCreateTripPage({ draftTripId }: DriverCreateTripPageProps 
         arrivalLocation: form.arrivalLocation,
         departureDate: form.departureDate,
         departureTime: form.departureTime,
+        durationHours: durationHoursValue,
         tripCategory: 'standard',
         vehicleName: form.vehicleName,
         plateNumber: form.plateNumber.trim() || undefined,
@@ -197,9 +239,16 @@ export function DriverCreateTripPage({ draftTripId }: DriverCreateTripPageProps 
 
   function validateForm() {
     if (!form.departureLocation.trim()) return 'Select a pickup service area.'
-    if (!form.arrivalLocation.trim()) return 'Select a Metro Manila drop-off area.'
+    if (!form.arrivalLocation.trim()) return 'Select a drop-off service area.'
     if (!form.departureDate) return 'Select a departure date.'
     if (!form.departureTime) return 'Select a departure time.'
+    if (
+      !Number.isFinite(durationHoursValue) ||
+      durationHoursValue < 1 ||
+      durationHoursValue > 24
+    ) {
+      return 'Enter a trip duration between 1 and 24 hours.'
+    }
     if (!form.vehicleName.trim()) return 'Enter a vehicle name.'
     if (!form.plateNumber.trim()) return 'Enter the plate number.'
     if (!baseFare || baseFare <= 0) return 'Enter a valid base fare.'
@@ -305,21 +354,14 @@ export function DriverCreateTripPage({ draftTripId }: DriverCreateTripPageProps 
                 <Label htmlFor="pickup-area" className="text-[13px] text-[#1d1d1f]">
                   Pickup service area
                 </Label>
-                <Select
+                <PlaceInput
                   value={form.departureLocation}
-                  onValueChange={(value) => updateField('departureLocation', value)}
-                >
-                  <SelectTrigger id="pickup-area" className={cn('w-full', appleInputClass)}>
-                    <SelectValue placeholder="Select pickup area" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    {pickupAreas.map((area) => (
-                      <SelectItem key={area} value={area}>
-                        {area}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(value) => updateField('departureLocation', value)}
+                  places={TRIP_DESTINATION_PLACES}
+                  placeholder="Aurora or Metro Manila"
+                  fieldClassName={placeFieldClass}
+                  inputClassName="text-[15px] placeholder:text-[#86868b]"
+                />
                 <p className="text-[13px] text-[#86868b]">
                   Passengers enter their exact home address when booking.
                 </p>
@@ -327,23 +369,16 @@ export function DriverCreateTripPage({ draftTripId }: DriverCreateTripPageProps 
 
               <div className="space-y-2">
                 <Label htmlFor="destination" className="text-[13px] text-[#1d1d1f]">
-                  Metro Manila drop-off area
+                  Drop-off service area
                 </Label>
-                <Select
+                <PlaceInput
                   value={form.arrivalLocation}
-                  onValueChange={(value) => updateField('arrivalLocation', value)}
-                >
-                  <SelectTrigger id="destination" className={cn('w-full', appleInputClass)}>
-                    <SelectValue placeholder="Select Metro Manila area" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    {manilaDropOffAreas.map((area) => (
-                      <SelectItem key={area} value={area}>
-                        {area}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(value) => updateField('arrivalLocation', value)}
+                  places={TRIP_DESTINATION_PLACES}
+                  placeholder="Metro Manila or Aurora"
+                  fieldClassName={placeFieldClass}
+                  inputClassName="text-[15px] placeholder:text-[#86868b]"
+                />
               </div>
             </div>
           </AppleCard>
@@ -378,6 +413,66 @@ export function DriverCreateTripPage({ draftTripId }: DriverCreateTripPageProps 
                   onChange={(value) => updateField('departureTime', value)}
                   placeholder="Select time"
                 />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label className="text-[13px] text-[#1d1d1f]">
+                  Estimated trip duration
+                </Label>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="relative">
+                    <Input
+                      id="duration-hours"
+                      type="number"
+                      min={1}
+                      max={24}
+                      step={1}
+                      placeholder="8"
+                      className={cn(
+                        appleInputClass,
+                        'pr-14 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
+                      )}
+                      value={form.durationHours}
+                      onChange={(event) =>
+                        updateField('durationHours', event.target.value)
+                      }
+                    />
+                    <span className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-[13px] text-[#86868b]">
+                      hours
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <Select
+                      value={form.durationMinutes}
+                      onValueChange={(value) =>
+                        updateField('durationMinutes', value)
+                      }
+                    >
+                      <SelectTrigger
+                        className={cn(
+                          '!h-11 min-h-11 w-full rounded-xl border-[#d2d2d7] bg-white pr-14 text-[15px] shadow-none focus-visible:ring-[#0071e3]/40',
+                          '[&_svg]:hidden',
+                        )}
+                      >
+                        <SelectValue placeholder="0" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl">
+                        {DURATION_MINUTE_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.value}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <span className="pointer-events-none absolute top-1/2 right-4 z-10 -translate-y-1/2 text-[13px] text-[#86868b]">
+                      mins
+                    </span>
+                  </div>
+                </div>
+                <p className="text-[13px] text-[#86868b]">
+                  {durationPreview
+                    ? `Shown to passengers as ${durationPreview}. Arrival time is calculated from departure.`
+                    : 'Passengers will see this duration on Find Vans.'}
+                </p>
               </div>
             </div>
           </AppleCard>
@@ -476,7 +571,7 @@ export function DriverCreateTripPage({ draftTripId }: DriverCreateTripPageProps 
                 </span>
               </div>
               <div className="flex justify-between text-[#86868b]">
-                <span>System fee (8%)</span>
+                <span>System fee (4%)</span>
                 <span className="text-[#bf4800]">−₱{systemFee.toFixed(2)}</span>
               </div>
               <div className="flex justify-between border-t border-[#d2d2d7]/60 pt-3">
