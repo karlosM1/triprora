@@ -28,7 +28,7 @@ export function FrequentRoutes() {
     <section>
       <SectionTitle
         title="Frequent routes"
-        subtitle="Popular door-to-door connections across Aurora and Metro Manila."
+        subtitle="Popular door-to-door connections across Aurora — plus Casiguran to Metro Manila."
         action={
           <span className="text-[13px] font-medium text-[#0066cc]">
             Live fleet data

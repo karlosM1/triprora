@@ -44,37 +44,38 @@ const featuredRoute: FeaturedRoute = {
 }
 
 const businessRoute: BusinessRoute = {
-  id: 'express-casiguran',
-  label: 'Express Service',
-  title: 'Casiguran — Cubao / Makati',
-  description: 'Direct door-to-door vans with air-conditioning and comfortable seating.',
+  id: 'casiguran-baler',
+  label: 'Aurora Route',
+  title: 'Casiguran — Baler',
+  description:
+    'Door-to-door vans linking northern Aurora with the provincial capital.',
   frequency: 'Frequency: Daily departures',
 }
 
 const compactRoutes: RouteCard[] = [
   {
-    id: 'cubao',
+    id: 'baler-casiguran',
     icon: 'bus',
-    name: 'Casiguran — Cubao',
-    location: 'Quezon City drop-offs',
+    name: 'Baler — Casiguran',
+    location: 'Aurora Province',
     frequency: 'Daily',
-    duration: '6h 30m trip',
+    duration: '2h 30m trip',
   },
   {
-    id: 'makati',
-    icon: 'building',
-    name: 'Casiguran — Makati',
-    location: 'Makati & BGC area',
-    frequency: 'Daily',
-    duration: '7h trip',
-  },
-  {
-    id: 'pasay',
+    id: 'baler-dingalan',
     icon: 'mountains',
-    name: 'Casiguran — Pasay',
-    location: 'Pasay & NAIA area',
+    name: 'Baler — Dingalan',
+    location: 'Southern Aurora coast',
     frequency: 'Daily',
-    duration: '7h 15m trip',
+    duration: '2h trip',
+  },
+  {
+    id: 'manila-casiguran',
+    icon: 'building',
+    name: 'Metro Manila — Casiguran',
+    location: 'Return trips to Aurora',
+    frequency: 'Daily',
+    duration: '6–8h trip',
   },
 ]
 
