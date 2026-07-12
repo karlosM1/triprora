@@ -7,5 +7,7 @@ dist
 **/.env
 *.log
 .agents
+.tanstack
+.vscode
 frontend/node_modules/.vite
 backend/node_modules/.cache

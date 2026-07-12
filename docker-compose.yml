@@ -26,17 +26,33 @@ services:
     ports:
       - '3001:3001'
     env_file:
-      - backend/.env
+      - path: backend/.env
+        required: false
     environment:
       PORT: 3001
+      NODE_ENV: development
       DATABASE_URL: postgresql://triprora:triprora@postgres:5432/triprora?schema=public
       DIRECT_URL: postgresql://triprora:triprora@postgres:5432/triprora?schema=public
+      # File watching through Docker Desktop / bind mounts (esp. Windows)
+      CHOKIDAR_USEPOLLING: 'true'
+      WATCHPACK_POLLING: 'true'
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
       - ./backend/src:/app/backend/src
       - ./backend/prisma:/app/backend/prisma
+      - ./backend/prisma.config.ts:/app/backend/prisma.config.ts:ro
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'node -e "fetch(\"http://127.0.0.1:3001/api/health\").then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 90s
 
   frontend:
     build:
@@ -47,12 +63,24 @@ services:
     ports:
       - '5173:5173'
     env_file:
-      - frontend/.env
+      - path: frontend/.env
+        required: false
     environment:
       VITE_API_URL: /api
       VITE_API_PROXY_TARGET: http://backend:3001
+      CHOKIDAR_USEPOLLING: 'true'
+      WATCHPACK_POLLING: 'true'
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    volumes:
+      - ./frontend/src:/app/frontend/src
+      - ./frontend/public:/app/frontend/public
+      - ./frontend/index.html:/app/frontend/index.html:ro
+      - ./frontend/vite.config.ts:/app/frontend/vite.config.ts:ro
+      - ./frontend/tsconfig.json:/app/frontend/tsconfig.json:ro
+      - ./frontend/tsconfig.app.json:/app/frontend/tsconfig.app.json:ro
+      - ./frontend/components.json:/app/frontend/components.json:ro
 
 volumes:
   triprora_postgres_data:

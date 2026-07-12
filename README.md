@@ -1,13 +1,17 @@
 # Crabr
 
-Door-to-door van booking platform for travel between Aurora Province and Metro Manila, Philippines. Passengers search routes, pick seats, and manage bookings; drivers register, publish trips, and complete rides; admins review driver applications and oversee operations.
+Door-to-door van booking platform for travel between Aurora Province and Metro Manila, Philippines. Passengers search routes, pick seats, and pay online or in cash; drivers register, publish trips, and manage earnings; admins review applications and oversee wallets and operations.
+
+> Monorepo package name: `triprora` (npm workspaces). Product brand: **Crabr**.
 
 ## Features
 
-- **Passengers** — Search vans by route and date, select seats, complete checkout, and view or modify bookings
-- **Drivers** — Multi-step registration with document uploads, trip creation and editing, and trip completion
-- **Admins** — Dashboard stats, trip and booking management, user listing, and driver application review
+- **Passengers** — Search vans by route and date, select seats, checkout with QR Ph or cash, manage bookings, and save destination addresses
+- **Drivers** — Multi-step registration with document uploads, trip creation and editing, trip completion, and wallet balance with payouts
+- **Admins** — Dashboard stats, trip and booking management, user listing, driver application review, and wallet / settlement / payout oversight
+- **Payments** — PayMongo QR Ph for cashless checkout; cash bookings with platform commission tracking
 - **Schedules** — Browse frequent routes and network monitoring views
+- **Account** — Profile management, privacy policy, and terms of service
 
 ## Tech stack
 
@@ -17,11 +21,13 @@ Door-to-door van booking platform for travel between Aurora Province and Metro M
 | Backend | Express, Prisma, Zod |
 | Database | PostgreSQL (Supabase or local Docker) |
 | Auth | Supabase Auth (JWT verified by the API) |
+| Payments | PayMongo (QR Ph) |
+| Storage | Supabase Storage (driver documents) |
 
 ## Project structure
 
 ```
-crabr/
+triprora/
 ├── frontend/          # React SPA (Vite)
 ├── backend/           # Express API + Prisma schema
 ├── docker-compose.yml # Postgres + optional full stack
@@ -32,7 +38,8 @@ crabr/
 
 - [Node.js](https://nodejs.org/) 22+
 - [npm](https://www.npmjs.com/) 10+
-- A [Supabase](https://supabase.com/) project (for authentication)
+- A [Supabase](https://supabase.com/) project (for authentication and storage)
+- A [PayMongo](https://www.paymongo.com/) account (for QR Ph payments)
 - PostgreSQL — either Supabase hosted or local via Docker
 
 ## Getting started
@@ -62,6 +69,7 @@ cp frontend/.env.example frontend/.env
 | `ADMIN_EMAIL` | Email that receives the `admin` role on sign-up |
 | `DATABASE_URL` | Postgres connection string (transaction pooler, port 6543 for Supabase) |
 | `DIRECT_URL` | Direct Postgres connection (migrations / `db push`, port 5432) |
+| `PAYMONGO_SECRET_KEY` | PayMongo secret key (`sk_test_...` or `sk_live_...`) |
 
 **Frontend** (`frontend/.env`):
 
@@ -134,7 +142,11 @@ The Vite dev server proxies `/api` requests to `http://localhost:3001` (override
 
 ## Docker
 
-Run the full stack (Postgres, backend, frontend):
+Compose runs a local **development** stack (Postgres, Express with `tsx watch`, Vite with HMR). Source under `backend/src`, `backend/prisma`, and `frontend/src` is bind-mounted so edits hot-reload inside the containers.
+
+Copy env files first (`backend/.env`, `frontend/.env`) — Supabase Auth and PayMongo keys are still required. Compose overrides `DATABASE_URL` / `DIRECT_URL` to the in-compose Postgres service.
+
+Run the full stack:
 
 ```bash
 npm run docker:up
@@ -153,8 +165,7 @@ npm run docker:down    # Stop containers
 npm run docker:logs    # Follow container logs
 ```
 
-When using Docker Compose, the backend container applies the schema and runs the seed on startup.
-
+On backend startup the container regenerates the Prisma client and runs `db push`. Set `SEED_RESET=true` in `backend/.env` to also run the seed. Frontend waits until the API health check passes before starting.
 ## Scripts
 
 | Command | Description |
@@ -177,11 +188,12 @@ All routes are prefixed with `/api`.
 | --- | --- | --- |
 | `GET /health` | — | Health check |
 | `/vans` | — | Search and list van trips |
-| `/schedules` | — | Route schedules |
+| `/schedules` | — | Route schedules and frequent routes |
 | `/bookings` | User | Create and manage bookings |
-| `/me` | User | Profile and account |
-| `/driver/*` | Driver / Passenger | Driver registration, trips |
-| `/admin/*` | Admin | Stats, users, bookings, driver review |
+| `/payments` | User | QR Ph payment intents and status |
+| `/me` | User | Profile, account, and destination addresses |
+| `/driver/*` | Driver / Passenger | Registration, trips, and wallet |
+| `/admin/*` | Admin | Stats, users, bookings, drivers, wallets, settlements, payouts |
 
 Authentication uses Supabase JWTs sent as `Authorization: Bearer <token>`.
 
@@ -189,9 +201,9 @@ Authentication uses Supabase JWTs sent as `Authorization: Bearer <token>`.
 
 | Role | Capabilities |
 | --- | --- |
-| `passenger` | Search, book, manage own bookings; submit driver application |
-| `driver` | Create and manage trips; complete rides |
-| `admin` | Full admin panel; review driver applications |
+| `passenger` | Search, book (QR Ph or cash), manage bookings and destinations; submit driver application |
+| `driver` | Create and manage trips; complete rides; view wallet and request payouts |
+| `admin` | Full admin panel; review driver applications; settle wallets and approve payouts |
 
 The account matching `ADMIN_EMAIL` in the backend env is assigned the `admin` role automatically on sign-up.
 

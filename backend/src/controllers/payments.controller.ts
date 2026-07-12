@@ -35,7 +35,7 @@ export async function createQrPhPayment(req: Request, res: Response) {
           amount: amountInCents,
           currency: 'PHP',
           payment_method_allowed: ['qrph'],
-          description: 'Triprora booking',
+          description: 'Crabr booking',
         },
       },
     }),
@@ -88,6 +88,37 @@ export async function createQrPhPayment(req: Request, res: Response) {
     throw new AppError('Failed to generate QR Ph code from PayMongo', 502)
   }
 
+  // Avoid orphaning a prior paid intent if the user regenerates QR.
+  const existingPaid = await prisma.payment.findFirst({
+    where: {
+      userId: profile.id,
+      provider: 'paymongo',
+      amount: amountInPesos,
+      status: 'succeeded',
+      bookingId: null,
+    },
+    orderBy: { createdAt: 'desc' },
+  })
+
+  if (existingPaid) {
+    throw new AppError(
+      'A completed QR Ph payment already exists for this amount. Continue to book with that payment.',
+      409,
+    )
+  }
+
+  await prisma.payment.updateMany({
+    where: {
+      userId: profile.id,
+      provider: 'paymongo',
+      bookingId: null,
+      status: {
+        in: ['awaiting_next_action', 'awaiting_payment_method', 'processing'],
+      },
+    },
+    data: { status: 'superseded' },
+  })
+
   await prisma.payment.create({
     data: {
       userId: profile.id,
@@ -101,7 +132,7 @@ export async function createQrPhPayment(req: Request, res: Response) {
     },
   })
 
-  return res.json({
+  res.json({
     paymentIntentId,
     clientKey,
     qrImageUrl: qrCodeImageUrl,
@@ -121,7 +152,7 @@ export async function getQrPhPaymentStatus(req: Request, res: Response) {
 
   const updated = await syncPaymentStatus(profile.id, paymentIntentId)
 
-  return res.json({
+  res.json({
     id: updated.providerIntentId,
     status: updated.status,
     amount: updated.amount,

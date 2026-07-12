@@ -1,15 +1,15 @@
 import { prisma } from './prisma.js'
 import { AppError } from '../utils/app-error.js'
 
-const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY
-
-if (!PAYMONGO_SECRET_KEY) {
-  throw new Error('PAYMONGO_SECRET_KEY must be set')
-}
-
 const PAYMONGO_API_BASE = 'https://api.paymongo.com/v1'
-const BASIC_AUTH_HEADER =
-  'Basic ' + Buffer.from(`${PAYMONGO_SECRET_KEY}:`).toString('base64')
+
+function getPaymongoAuthHeader() {
+  const secret = process.env.PAYMONGO_SECRET_KEY
+  if (!secret) {
+    throw new AppError('PAYMONGO_SECRET_KEY must be set', 503)
+  }
+  return 'Basic ' + Buffer.from(`${secret}:`).toString('base64')
+}
 
 type PaymongoErrorBody = {
   errors?: { detail?: string; code?: string }[]
@@ -21,11 +21,10 @@ export async function paymongoRequest(path: string, init: RequestInit = {}) {
     ...init,
     headers: {
       'Content-Type': 'application/json',
-      Authorization: BASIC_AUTH_HEADER,
+      Authorization: getPaymongoAuthHeader(),
       ...(init.headers ?? {}),
     },
   })
-
   const rawJson = await response.json().catch(() => null)
   const json = (rawJson ?? null) as PaymongoErrorBody | null
 

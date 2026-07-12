@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { isAxiosError } from 'axios'
 import { Banknote, CheckCircle2, QrCode, RefreshCw } from 'lucide-react'
 import { AppleCard, SectionTitle } from '@/components/layout/page-header'
 import { cn } from '@/lib/utils'
@@ -83,9 +84,10 @@ export function PaymentForm({
   }
 
   async function handleGenerateQr() {
+    if (paid) return
+
     setError(null)
     setPaymentStatus(null)
-    setPaid(false)
     setIsGenerating(true)
     try {
       const payment = await createQrPhPayment(total)
@@ -93,8 +95,12 @@ export function PaymentForm({
       setTestUrl(payment.testUrl)
       setPaymentIntentId(payment.paymentIntentId)
       setPaymentStatus(payment.status)
-    } catch {
-      setError('Failed to generate QR code. Please try again.')
+      setPaid(false)
+    } catch (err) {
+      const message = isAxiosError(err)
+        ? (err.response?.data as { message?: string } | undefined)?.message
+        : undefined
+      setError(message || 'Failed to generate QR code. Please try again.')
     } finally {
       setIsGenerating(false)
     }

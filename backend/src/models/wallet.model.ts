@@ -235,14 +235,16 @@ export async function postBookingSettlement(
   }
 
   const commissionPesos = commissionFromBase(baseFarePesos)
-  const earningsPesos = earningsFromBase(baseFarePesos)
 
   let amountPesos: number
+  let earningsPesos: number
   let type: 'cash_commission' | 'cashless_earnings'
   let reason: string
 
   if (payment.provider === 'cash') {
+    // Driver collected the base fare in cash; platform is owed commission.
     amountPesos = -commissionPesos
+    earningsPesos = earningsFromBase(baseFarePesos)
     type = 'cash_commission'
     reason = 'Platform commission owed'
   } else if (payment.provider === 'paymongo') {
@@ -261,7 +263,10 @@ export async function postBookingSettlement(
       })
       return null
     }
-    amountPesos = earningsPesos
+    // Platform already collected base + service fee from the passenger;
+    // remit the full base fare to the driver (fee stays with the platform).
+    amountPesos = baseFarePesos
+    earningsPesos = baseFarePesos
     type = 'cashless_earnings'
     reason = 'Cashless earnings'
   } else {

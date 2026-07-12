@@ -223,10 +223,18 @@ export const BookingModel = {
       })
 
       if (existingPaymentId) {
-        await tx.payment.update({
-          where: { id: existingPaymentId },
+        const claimed = await tx.payment.updateMany({
+          where: {
+            id: existingPaymentId,
+            bookingId: null,
+            status: 'succeeded',
+          },
           data: { bookingId: booking.id },
         })
+
+        if (claimed.count !== 1) {
+          throw new AppError('This payment has already been used', 409)
+        }
       } else {
         await tx.payment.create({
           data: {
