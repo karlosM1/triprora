@@ -10,7 +10,7 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import { MapPin } from 'lucide-react'
-import { searchPlaces, type PlaceRegion } from '@/lib/places'
+import { searchPlaces, type Place, type PlaceRegion } from '@/lib/places'
 import { cn } from '@/lib/utils'
 
 type PlaceInputProps = {
@@ -18,6 +18,8 @@ type PlaceInputProps = {
   onChange: (value: string) => void
   placeholder?: string
   region?: PlaceRegion
+  /** Custom candidate list. Takes precedence over `region`. */
+  places?: Place[]
   className?: string
   fieldClassName?: string
   inputClassName?: string
@@ -48,6 +50,7 @@ export function PlaceInput({
   onChange,
   placeholder,
   region,
+  places,
   className,
   fieldClassName,
   inputClassName,
@@ -59,8 +62,16 @@ export function PlaceInput({
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
   const [rect, setRect] = useState<DropdownRect | null>(null)
+  // Show the full candidate list on focus; filter only after the user types.
+  const [browseAll, setBrowseAll] = useState(false)
 
-  const suggestions = open ? searchPlaces(value, { region, limit: 20 }) : []
+  const suggestions = open
+    ? searchPlaces(browseAll ? '' : value, {
+        region,
+        places,
+        limit: places?.length ?? 20,
+      })
+    : []
   const showDropdown = open && suggestions.length > 0
 
   const updateRect = useCallback(() => {
@@ -100,6 +111,7 @@ export function PlaceInput({
         return
       }
       setOpen(false)
+      setBrowseAll(false)
       setActiveIndex(-1)
     }
 
@@ -110,11 +122,13 @@ export function PlaceInput({
   function selectPlace(name: string) {
     onChange(name)
     setOpen(false)
+    setBrowseAll(false)
     setActiveIndex(-1)
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (!open && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+      setBrowseAll(true)
       setOpen(true)
       return
     }
@@ -134,6 +148,7 @@ export function PlaceInput({
       selectPlace(suggestions[activeIndex].name)
     } else if (event.key === 'Escape') {
       setOpen(false)
+      setBrowseAll(false)
       setActiveIndex(-1)
     }
   }
@@ -156,10 +171,15 @@ export function PlaceInput({
           value={value}
           onChange={(event) => {
             onChange(event.target.value)
+            setBrowseAll(false)
             setOpen(true)
             setActiveIndex(-1)
           }}
-          onFocus={() => setOpen(true)}
+          onFocus={() => {
+            setBrowseAll(true)
+            setOpen(true)
+            setActiveIndex(-1)
+          }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           className={cn(

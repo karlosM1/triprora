@@ -14,6 +14,7 @@ import {
   DEFAULT_TRIP_SEARCH,
   todayDateInputValue,
 } from '@/lib/trip-search'
+import { TRIP_DESTINATION_PLACES } from '@/lib/places'
 import heroBackground from '@/assets/beach-view.jpg'
 
 export function HeroSection() {
@@ -113,7 +114,7 @@ export function HeroSection() {
                   value={from}
                   onChange={setFrom}
                   placeholder="Aurora"
-                  region="aurora"
+                  places={TRIP_DESTINATION_PLACES}
                 />
                 <button
                   type="button"
@@ -128,7 +129,7 @@ export function HeroSection() {
                   value={to}
                   onChange={setTo}
                   placeholder="Metro Manila"
-                  region="metro-manila"
+                  places={TRIP_DESTINATION_PLACES}
                 />
               </div>
               <DatePicker

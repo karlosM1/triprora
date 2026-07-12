@@ -202,6 +202,12 @@ export const PLACES: Place[] = [
   },
 ]
 
+/** Trip search place choices: Metro Manila + Aurora province + municipalities. */
+export const TRIP_DESTINATION_PLACES: Place[] = [
+  ...PLACES.filter((place) => place.id === 'metro-manila'),
+  ...PLACES.filter((place) => place.region === 'aurora'),
+]
+
 const AURORA_KEYWORDS = [
   'aurora',
   'dilasag',
@@ -254,14 +260,20 @@ function placeSearchText(place: Place) {
 
 export function searchPlaces(
   query: string,
-  options?: { region?: PlaceRegion; limit?: number },
+  options?: {
+    region?: PlaceRegion
+    places?: Place[]
+    limit?: number
+  },
 ): Place[] {
   const limit = options?.limit ?? 6
   const normalizedQuery = normalizeText(query)
 
-  let candidates = options?.region
-    ? PLACES.filter((place) => place.region === options.region)
-    : PLACES
+  let candidates = options?.places
+    ? options.places
+    : options?.region
+      ? PLACES.filter((place) => place.region === options.region)
+      : PLACES
 
   if (!normalizedQuery) {
     return candidates.slice(0, limit)
