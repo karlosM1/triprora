@@ -205,8 +205,26 @@ model Profile {
   driverPayouts     DriverPayout[]
   walletSettlements WalletDailySettlement[]
   walletAuditLogs   WalletAuditLog[]        @relation("WalletAuditActor")
+  destinationAddresses DestinationAddress[]
 
   @@map("profiles")
+}
+
+model DestinationAddress {
+  id          String   @id @default(cuid())
+  profileId   String   @db.Uuid
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  label       String
+  houseStreet String
+  barangay    String?
+  city        String
+  province    String
+  zipCode     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([profileId])
+  @@map("destination_addresses")
 }
 
 model Address {

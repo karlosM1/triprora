@@ -49,6 +49,27 @@ export type Role = 'passenger' | 'driver' | 'admin'
 
 export type DriverApplicationStatus = 'pending' | 'approved' | 'rejected'
 
+export type DestinationAddress = {
+  id: string
+  label: string
+  houseStreet: string
+  barangay: string | null
+  city: string
+  province: string
+  zipCode: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type DestinationAddressPayload = {
+  label: string
+  houseStreet: string
+  barangay: string
+  city: string
+  province: string
+  zipCode: string
+}
+
 export type Profile = {
   id: string
   email: string

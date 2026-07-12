@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { DestinationAddressesSection } from '@/components/profile/destination-addresses-section'
 import { profileQueryKey, updateProfile } from '@/lib/api/profile'
 import { useAuth } from '@/lib/auth-context'
 import type {
@@ -199,7 +200,7 @@ export function ProfilePage() {
         <PageHeader
           eyebrow="Account"
           title="Profile"
-          subtitle="Manage your personal details, address, and emergency contact."
+          subtitle="Manage your personal details, home address, destinations, and emergency contact."
         />
 
         {profileLoading && !profile ? (
@@ -207,7 +208,7 @@ export function ProfilePage() {
         ) : (
           <div className="mt-12 space-y-8">
             <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
-              <AppleCard className="p-6">
+              <AppleCard className="p-6 lg:self-start">
                 <div className="flex flex-col items-center text-center">
                   <Avatar size="lg" className="size-20">
                     <AvatarFallback className="bg-[#0071e3] text-[22px] font-semibold text-white">
@@ -236,6 +237,11 @@ export function ProfilePage() {
                     </span>
                   )}
                 </div>
+
+                <DestinationAddressesSection
+                  enabled={Boolean(user && profileReady)}
+                  className="mt-6 border-t border-[#d2d2d7]/60 pt-5"
+                />
               </AppleCard>
 
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -325,7 +331,7 @@ export function ProfilePage() {
                 <AppleCard className="p-6 sm:p-8">
                   <SectionHeading
                     title="Home address"
-                    subtitle="Used as your default location for pickup and drop-off."
+                    subtitle="Used as your default pickup location when booking a trip."
                   />
 
                   <div className="mt-8 space-y-5">

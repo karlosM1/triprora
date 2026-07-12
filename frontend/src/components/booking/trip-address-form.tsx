@@ -1,6 +1,13 @@
-import { Home, MapPin } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { Home, MapPin, UserRound } from 'lucide-react'
 import { AppleCard, SectionTitle } from '@/components/layout/page-header'
+import {
+  destinationAddressesQueryKey,
+  fetchDestinationAddresses,
+} from '@/lib/api/destination-addresses'
+import { useAuth } from '@/lib/auth-context'
 import type { TripAddresses } from '@/lib/booking'
+import { formatProfileAddress } from '@/lib/format-profile-address'
 import { cn } from '@/lib/utils'
 
 type TripAddressFormProps = {
@@ -8,10 +15,43 @@ type TripAddressFormProps = {
   onChange: (values: TripAddresses) => void
 }
 
+type AddressSuggestion = {
+  key: string
+  label: string
+  address: string
+  onSelect: () => void
+}
+
 export function TripAddressForm({ values, onChange }: TripAddressFormProps) {
+  const { profile, user } = useAuth()
+  const destinationsQuery = useQuery({
+    queryKey: destinationAddressesQueryKey,
+    queryFn: fetchDestinationAddresses,
+    enabled: Boolean(user),
+  })
+
   function update(field: keyof TripAddresses, value: string) {
     onChange({ ...values, [field]: value })
   }
+
+  const profileAddress = formatProfileAddress(profile)
+  const showPickupSuggestion =
+    Boolean(profileAddress) &&
+    values.pickupAddress.trim() !== profileAddress
+
+  const destinationSuggestions: AddressSuggestion[] = (destinationsQuery.data ?? [])
+    .map((destination) => {
+      const address = formatProfileAddress(destination)
+      if (!address) return null
+      return {
+        key: destination.id,
+        label: destination.label,
+        address,
+        onSelect: () => update('dropoffAddress', address),
+      }
+    })
+    .filter((item): item is AddressSuggestion => item !== null)
+    .filter((item) => item.address !== values.dropoffAddress.trim())
 
   return (
     <AppleCard className="p-6 sm:p-8">
@@ -28,6 +68,18 @@ export function TripAddressForm({ values, onChange }: TripAddressFormProps) {
           placeholder="e.g. Brgy. Poblacion, Casiguran, Aurora"
           value={values.pickupAddress}
           onChange={(v) => update('pickupAddress', v)}
+          suggestions={
+            showPickupSuggestion && profileAddress
+              ? [
+                  {
+                    key: 'profile-home',
+                    label: 'Suggested from your profile',
+                    address: profileAddress,
+                    onSelect: () => update('pickupAddress', profileAddress),
+                  },
+                ]
+              : []
+          }
         />
         <AddressField
           icon={<MapPin className="size-4 text-[#0066cc]" strokeWidth={1.75} />}
@@ -36,6 +88,7 @@ export function TripAddressForm({ values, onChange }: TripAddressFormProps) {
           placeholder="e.g. 123 EDSA, Cubao, Quezon City"
           value={values.dropoffAddress}
           onChange={(v) => update('dropoffAddress', v)}
+          suggestions={destinationSuggestions}
         />
       </div>
     </AppleCard>
@@ -49,6 +102,7 @@ function AddressField({
   placeholder,
   value,
   onChange,
+  suggestions = [],
 }: {
   icon: React.ReactNode
   label: string
@@ -56,6 +110,7 @@ function AddressField({
   placeholder: string
   value: string
   onChange: (value: string) => void
+  suggestions?: AddressSuggestion[]
 }) {
   return (
     <label className="block">
@@ -64,6 +119,33 @@ function AddressField({
         {label}
       </span>
       <span className="mt-0.5 block text-[12px] text-[#86868b]">{hint}</span>
+
+      {suggestions.length > 0 && (
+        <div className="mt-2 space-y-2">
+          {suggestions.map((suggestion) => (
+            <button
+              key={suggestion.key}
+              type="button"
+              onClick={suggestion.onSelect}
+              className="flex w-full items-start gap-3 rounded-xl bg-[#f0f7ff] px-3.5 py-3 text-left ring-1 ring-[#0071e3]/15 transition-colors hover:bg-[#e8f2ff]"
+            >
+              <UserRound
+                className="mt-0.5 size-4 shrink-0 text-[#0066cc]"
+                strokeWidth={1.75}
+              />
+              <span className="min-w-0">
+                <span className="block text-[12px] font-medium text-[#0066cc]">
+                  {suggestion.label}
+                </span>
+                <span className="mt-0.5 block text-[13px] leading-snug text-[#1d1d1f]">
+                  {suggestion.address}
+                </span>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
       <textarea
         placeholder={placeholder}
         value={value}
