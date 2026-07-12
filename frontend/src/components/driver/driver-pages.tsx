@@ -15,6 +15,8 @@ import {
 import { AppleCard, PageHeader, SectionTitle } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
+import { TablePagination } from '@/components/ui/table-pagination'
+import { usePagination } from '@/hooks/use-pagination'
 import { driverTripsQueryKey, fetchDriverTrips } from '@/lib/api/driver-trips'
 import { driverWalletQueryKey, fetchDriverWallet } from '@/lib/api/wallet'
 import { useAuth } from '@/lib/auth-context'
@@ -98,13 +100,21 @@ export function DriverDashboardPage() {
     )
   const pastTrips = publishedTrips.filter((trip) => isPastTrip(trip))
   const nextTrip = upcomingTrips[0]
-  const recentTrips = [...pastTrips]
-    .sort((a, b) =>
-      `${b.departureDate}T${b.departureTime}`.localeCompare(
-        `${a.departureDate}T${a.departureTime}`,
-      ),
-    )
-    .slice(0, 5)
+  const recentTrips = [...pastTrips].sort((a, b) =>
+    `${b.departureDate}T${b.departureTime}`.localeCompare(
+      `${a.departureDate}T${a.departureTime}`,
+    ),
+  )
+  const {
+    pageItems: recentTripPage,
+    currentPage: recentPage,
+    totalPages: recentTotalPages,
+    rangeStart: recentRangeStart,
+    rangeEnd: recentRangeEnd,
+    totalItems: recentTotalItems,
+    goToPage: goToRecentPage,
+    showPagination: showRecentPagination,
+  } = usePagination(recentTrips)
   const todayCount = countTodayTrips(trips)
   const walletQuery = useQuery({
     queryKey: driverWalletQueryKey,
@@ -267,7 +277,7 @@ export function DriverDashboardPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {recentTrips.map((trip) => (
+                      {recentTripPage.map((trip) => (
                         <tr
                           key={trip.id}
                           className="border-b border-[#d2d2d7]/40 last:border-b-0"
@@ -295,6 +305,17 @@ export function DriverDashboardPage() {
                     </tbody>
                   </table>
                 </div>
+                {showRecentPagination && (
+                  <TablePagination
+                    currentPage={recentPage}
+                    totalPages={recentTotalPages}
+                    rangeStart={recentRangeStart}
+                    rangeEnd={recentRangeEnd}
+                    totalItems={recentTotalItems}
+                    itemLabel="trips"
+                    onPageChange={goToRecentPage}
+                  />
+                )}
               </AppleCard>
             )}
           </div>

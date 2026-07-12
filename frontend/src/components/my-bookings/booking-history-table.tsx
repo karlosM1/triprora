@@ -1,4 +1,6 @@
 import { AppleCard, SectionTitle } from '@/components/layout/page-header'
+import { TablePagination } from '@/components/ui/table-pagination'
+import { usePagination } from '@/hooks/use-pagination'
 import { cn } from '@/lib/utils'
 import type { HistoryBooking } from '@/lib/types/api'
 
@@ -7,6 +9,17 @@ type BookingHistoryTableProps = {
 }
 
 export function BookingHistoryTable({ bookings }: BookingHistoryTableProps) {
+  const {
+    pageItems,
+    currentPage,
+    totalPages,
+    rangeStart,
+    rangeEnd,
+    totalItems,
+    goToPage,
+    showPagination,
+  } = usePagination(bookings)
+
   return (
     <section>
       <SectionTitle title="Booking history" />
@@ -31,7 +44,7 @@ export function BookingHistoryTable({ bookings }: BookingHistoryTableProps) {
               </tr>
             </thead>
             <tbody>
-              {bookings.map((booking) => (
+              {pageItems.map((booking) => (
                 <tr
                   key={booking.id}
                   className="border-b border-[#d2d2d7]/40 last:border-b-0"
@@ -63,6 +76,17 @@ export function BookingHistoryTable({ bookings }: BookingHistoryTableProps) {
             </tbody>
           </table>
         </div>
+        {showPagination && (
+          <TablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            rangeStart={rangeStart}
+            rangeEnd={rangeEnd}
+            totalItems={totalItems}
+            itemLabel="bookings"
+            onPageChange={goToPage}
+          />
+        )}
       </AppleCard>
     </section>
   )

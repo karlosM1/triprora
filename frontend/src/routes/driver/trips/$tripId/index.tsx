@@ -15,6 +15,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
+import { TablePagination } from '@/components/ui/table-pagination'
+import { usePagination } from '@/hooks/use-pagination'
 import {
   completeDriverTrip,
   driverTripDetailsQueryKey,
@@ -147,6 +149,17 @@ function DriverTripDetailsPage() {
   const queryClient = useQueryClient()
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false)
   const detailsQuery = useQuery(driverTripDetailsQueryOptions(tripId))
+  const passengers = detailsQuery.data?.passengers ?? []
+  const {
+    pageItems: passengerPage,
+    currentPage: passengerPageNumber,
+    totalPages: passengerTotalPages,
+    rangeStart: passengerRangeStart,
+    rangeEnd: passengerRangeEnd,
+    totalItems: passengerTotalItems,
+    goToPage: goToPassengerPage,
+    showPagination: showPassengerPagination,
+  } = usePagination(passengers)
 
   const completeMutation = useMutation({
     mutationFn: () => completeDriverTrip(tripId),
@@ -173,7 +186,7 @@ function DriverTripDetailsPage() {
     )
   }
 
-  const { trip, seats, passengers, seatsAvailable, seatsOccupied } = details
+  const { trip, seats, seatsAvailable, seatsOccupied } = details
   const seatRows = groupSeatsByRow(seats)
   const statusTone =
     trip.status === 'draft'
@@ -306,48 +319,61 @@ function DriverTripDetailsPage() {
               No passengers have booked this trip yet.
             </p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[520px] text-left">
-                <thead>
-                  <tr className="border-b border-[#d2d2d7]/60 bg-[#f5f5f7]/50">
-                    {['Passenger', 'Seat', 'Contact', 'Reference'].map((head) => (
-                      <th
-                        key={head}
-                        className="px-6 py-3 text-[12px] font-medium text-[#86868b] uppercase"
-                      >
-                        {head}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {passengers.map((passenger) => (
-                    <tr
-                      key={passenger.id}
-                      className="border-b border-[#d2d2d7]/40 last:border-b-0"
-                    >
-                      <td className="px-6 py-4">
-                        <p className="text-[15px] font-medium text-[#1d1d1f]">
-                          {passenger.name}
-                        </p>
-                        {passenger.email && (
-                          <p className="text-[13px] text-[#86868b]">{passenger.email}</p>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-[14px] font-medium text-[#1d1d1f]">
-                        {passenger.seat ?? '—'}
-                      </td>
-                      <td className="px-6 py-4 text-[14px] text-[#86868b]">
-                        {passenger.phone ?? '—'}
-                      </td>
-                      <td className="px-6 py-4 font-mono text-[13px] text-[#0066cc]">
-                        {passenger.reference ?? '—'}
-                      </td>
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[520px] text-left">
+                  <thead>
+                    <tr className="border-b border-[#d2d2d7]/60 bg-[#f5f5f7]/50">
+                      {['Passenger', 'Seat', 'Contact', 'Reference'].map((head) => (
+                        <th
+                          key={head}
+                          className="px-6 py-3 text-[12px] font-medium text-[#86868b] uppercase"
+                        >
+                          {head}
+                        </th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {passengerPage.map((passenger) => (
+                      <tr
+                        key={passenger.id}
+                        className="border-b border-[#d2d2d7]/40 last:border-b-0"
+                      >
+                        <td className="px-6 py-4">
+                          <p className="text-[15px] font-medium text-[#1d1d1f]">
+                            {passenger.name}
+                          </p>
+                          {passenger.email && (
+                            <p className="text-[13px] text-[#86868b]">{passenger.email}</p>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-[14px] font-medium text-[#1d1d1f]">
+                          {passenger.seat ?? '—'}
+                        </td>
+                        <td className="px-6 py-4 text-[14px] text-[#86868b]">
+                          {passenger.phone ?? '—'}
+                        </td>
+                        <td className="px-6 py-4 font-mono text-[13px] text-[#0066cc]">
+                          {passenger.reference ?? '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {showPassengerPagination && (
+                <TablePagination
+                  currentPage={passengerPageNumber}
+                  totalPages={passengerTotalPages}
+                  rangeStart={passengerRangeStart}
+                  rangeEnd={passengerRangeEnd}
+                  totalItems={passengerTotalItems}
+                  itemLabel="passengers"
+                  onPageChange={goToPassengerPage}
+                />
+              )}
+            </>
           )}
         </AppleCard>
 

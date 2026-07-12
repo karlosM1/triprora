@@ -7,6 +7,7 @@ import {
 } from '@/lib/trip-search'
 import { AppleCard } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 const departureTimes: { id: DepartureTimeFilter; label: string }[] = [
   { id: 'morning', label: 'Morning (06:00 – 12:00)' },
@@ -17,9 +18,24 @@ const departureTimes: { id: DepartureTimeFilter; label: string }[] = [
 type SearchFiltersProps = {
   filters: VanSidebarFilters
   onChange: (filters: VanSidebarFilters) => void
+  /** Omit card chrome and title when rendered inside a drawer/sheet. */
+  embedded?: boolean
+  className?: string
 }
 
-export function SearchFilters({ filters, onChange }: SearchFiltersProps) {
+export function countActiveSidebarFilters(filters: VanSidebarFilters) {
+  return (
+    filters.departureTimes.length +
+    (filters.priceMax < VAN_PRICE_FILTER_MAX ? 1 : 0)
+  )
+}
+
+export function SearchFilters({
+  filters,
+  onChange,
+  embedded = false,
+  className,
+}: SearchFiltersProps) {
   function toggleTime(id: DepartureTimeFilter) {
     onChange({
       ...filters,
@@ -33,11 +49,13 @@ export function SearchFilters({ filters, onChange }: SearchFiltersProps) {
     onChange(DEFAULT_VAN_SIDEBAR_FILTERS)
   }
 
-  return (
-    <AppleCard className="p-5">
-      <h2 className="text-[17px] font-semibold text-[#1d1d1f]">Filters</h2>
+  const content = (
+    <>
+      {!embedded && (
+        <h2 className="text-[17px] font-semibold text-[#1d1d1f]">Filters</h2>
+      )}
 
-      <div className="mt-5 space-y-6">
+      <div className={cn(embedded ? 'space-y-6' : 'mt-5 space-y-6')}>
         <fieldset>
           <legend className="text-[13px] font-medium text-[#1d1d1f]">
             Departure time
@@ -97,8 +115,14 @@ export function SearchFilters({ filters, onChange }: SearchFiltersProps) {
       >
         Reset filters
       </Button>
-    </AppleCard>
+    </>
   )
+
+  if (embedded) {
+    return <div className={cn(className)}>{content}</div>
+  }
+
+  return <AppleCard className={cn('p-5', className)}>{content}</AppleCard>
 }
 
 export function PriorityPassCard() {

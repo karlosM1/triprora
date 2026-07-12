@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useSearch } from '@tanstack/react-router'
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -55,7 +55,13 @@ function formatDisplayDate(departureDate?: string) {
   })
 }
 
-export function SearchResults({ sidebarFilters }: { sidebarFilters: VanSidebarFilters }) {
+export function SearchResults({
+  sidebarFilters,
+  filterAction,
+}: {
+  sidebarFilters: VanSidebarFilters
+  filterAction?: ReactNode
+}) {
   const search = resolveTripSearch(useSearch({ from: '/find-vans' }))
   const [sortBy, setSortBy] = useState<SortOption>('price')
   const [page, setPage] = useState(1)
@@ -157,7 +163,12 @@ export function SearchResults({ sidebarFilters }: { sidebarFilters: VanSidebarFi
             : heading.title
         }
         subtitle={`${displayDate} · ${heading.subtitle}`}
-        action={sortControl}
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            {filterAction}
+            {sortControl}
+          </div>
+        }
       />
 
       <motion.div

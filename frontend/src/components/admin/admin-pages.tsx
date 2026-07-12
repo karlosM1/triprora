@@ -12,6 +12,8 @@ import { useState } from 'react'
 import { DocumentLink } from '@/components/driver/document-link'
 import { AppleCard, PageHeader, SectionTitle } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
+import { TablePagination } from '@/components/ui/table-pagination'
+import { usePagination } from '@/hooks/use-pagination'
 import {
   adminBookingsQueryKey,
   adminStatsQueryKey,
@@ -548,6 +550,16 @@ export function AdminTripsPage() {
     queryFn: fetchAdminTrips,
   })
   const trips = tripsQuery.data ?? []
+  const {
+    pageItems,
+    currentPage,
+    totalPages,
+    rangeStart,
+    rangeEnd,
+    totalItems,
+    goToPage,
+    showPagination,
+  } = usePagination(trips)
 
   return (
     <motion.div
@@ -588,7 +600,7 @@ export function AdminTripsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {trips.map((trip) => (
+                  {pageItems.map((trip) => (
                     <tr key={trip.id} className="border-b border-black/5 last:border-0">
                       <td className="px-5 py-4 font-medium text-[#1d1d1f]">{trip.route}</td>
                       <td className="px-5 py-4 text-[#86868b]">
@@ -620,6 +632,17 @@ export function AdminTripsPage() {
                 </tbody>
               </table>
             </div>
+            {showPagination && (
+              <TablePagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                rangeStart={rangeStart}
+                rangeEnd={rangeEnd}
+                totalItems={totalItems}
+                itemLabel="trips"
+                onPageChange={goToPage}
+              />
+            )}
           </AppleCard>
         )}
       </motion.div>
@@ -633,6 +656,16 @@ export function AdminBookingsPage() {
     queryFn: fetchAdminBookings,
   })
   const bookings = bookingsQuery.data ?? []
+  const {
+    pageItems,
+    currentPage,
+    totalPages,
+    rangeStart,
+    rangeEnd,
+    totalItems,
+    goToPage,
+    showPagination,
+  } = usePagination(bookings)
 
   return (
     <motion.div
@@ -673,7 +706,7 @@ export function AdminBookingsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {bookings.map((booking) => (
+                  {pageItems.map((booking) => (
                     <tr key={booking.id} className="border-b border-black/5 last:border-0">
                       <td className="px-5 py-4 font-medium text-[#1d1d1f]">
                         {booking.reference ?? booking.id.slice(0, 8)}
@@ -704,6 +737,17 @@ export function AdminBookingsPage() {
                 </tbody>
               </table>
             </div>
+            {showPagination && (
+              <TablePagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                rangeStart={rangeStart}
+                rangeEnd={rangeEnd}
+                totalItems={totalItems}
+                itemLabel="bookings"
+                onPageChange={goToPage}
+              />
+            )}
           </AppleCard>
         )}
       </motion.div>
@@ -717,6 +761,16 @@ export function AdminUsersPage() {
     queryFn: fetchAdminUsers,
   })
   const users = usersQuery.data ?? []
+  const {
+    pageItems,
+    currentPage,
+    totalPages,
+    rangeStart,
+    rangeEnd,
+    totalItems,
+    goToPage,
+    showPagination,
+  } = usePagination(users)
 
   return (
     <motion.div
@@ -756,7 +810,7 @@ export function AdminUsersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((user) => (
+                  {pageItems.map((user) => (
                     <tr key={user.id} className="border-b border-black/5 last:border-0">
                       <td className="px-5 py-4 font-medium text-[#1d1d1f]">
                         {user.fullName ?? '—'}
@@ -775,6 +829,17 @@ export function AdminUsersPage() {
                 </tbody>
               </table>
             </div>
+            {showPagination && (
+              <TablePagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                rangeStart={rangeStart}
+                rangeEnd={rangeEnd}
+                totalItems={totalItems}
+                itemLabel="users"
+                onPageChange={goToPage}
+              />
+            )}
           </AppleCard>
         )}
       </motion.div>
