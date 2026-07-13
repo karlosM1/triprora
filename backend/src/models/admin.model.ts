@@ -34,7 +34,9 @@ export const AdminModel = {
     }
   },
 
-  async listTrips() {
+  async listTrips(options?: { page?: number; pageSize?: number }) {
+    const page = options?.page ?? 1
+    const pageSize = options?.pageSize ?? 100
     const trips = await prisma.van.findMany({
       include: {
         route: true,
@@ -51,6 +53,8 @@ export const AdminModel = {
         },
       },
       orderBy: [{ departureDate: 'desc' }, { createdAt: 'desc' }],
+      skip: (page - 1) * pageSize,
+      take: pageSize,
     })
 
     return trips.map((trip) => ({
@@ -102,7 +106,9 @@ export const AdminModel = {
     }))
   },
 
-  async listUsers() {
+  async listUsers(options?: { page?: number; pageSize?: number }) {
+    const page = options?.page ?? 1
+    const pageSize = options?.pageSize ?? 100
     const users = await prisma.profile.findMany({
       include: {
         driverApplication: {
@@ -113,6 +119,8 @@ export const AdminModel = {
         },
       },
       orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
     })
 
     return users.map((user) => ({

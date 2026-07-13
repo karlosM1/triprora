@@ -1,10 +1,12 @@
 import type { Request, Response } from 'express'
 import { VanModel } from '../models/van.model.js'
 import { AppError } from '../utils/app-error.js'
+import type { ListVansQuery } from '../validators/vans.validator.js'
 
-export async function getVans(_req: Request, res: Response) {
-  const vans = await VanModel.findAll()
-  res.json(vans)
+export async function getVans(req: Request, res: Response) {
+  const query = req.query as unknown as ListVansQuery
+  const result = await VanModel.findAll(query)
+  res.json(result)
 }
 
 export async function getVanById(req: Request, res: Response) {

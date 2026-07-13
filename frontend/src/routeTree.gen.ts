@@ -18,10 +18,13 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as MyBookingsRouteImport } from './routes/my-bookings'
 import { Route as FindVansRouteImport } from './routes/find-vans'
+import { Route as MyDeliveriesRouteRouteImport } from './routes/my-deliveries/route'
 import { Route as DriverRouteRouteImport } from './routes/driver/route'
 import { Route as ArticlesRouteRouteImport } from './routes/articles/route'
 import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SendPackageIndexRouteImport } from './routes/send-package/index'
+import { Route as MyDeliveriesIndexRouteImport } from './routes/my-deliveries/index'
 import { Route as DriverIndexRouteImport } from './routes/driver/index'
 import { Route as ArticlesIndexRouteImport } from './routes/articles/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
@@ -35,8 +38,12 @@ import { Route as AdminTripsRouteImport } from './routes/admin/trips'
 import { Route as AdminDriversRouteImport } from './routes/admin/drivers'
 import { Route as AdminBookingsRouteImport } from './routes/admin/bookings'
 import { Route as DriverTripsRouteRouteImport } from './routes/driver/trips/route'
+import { Route as SendPackageVanIdIndexRouteImport } from './routes/send-package/$vanId/index'
 import { Route as DriverTripsIndexRouteImport } from './routes/driver/trips/index'
 import { Route as BookVanIdIndexRouteImport } from './routes/book/$vanId/index'
+import { Route as SendPackageVanIdConfirmationRouteImport } from './routes/send-package/$vanId/confirmation'
+import { Route as SendPackageVanIdCheckoutRouteImport } from './routes/send-package/$vanId/checkout'
+import { Route as MyDeliveriesDeliveryIdPayRouteImport } from './routes/my-deliveries/$deliveryId/pay'
 import { Route as BookVanIdConfirmationRouteImport } from './routes/book/$vanId/confirmation'
 import { Route as BookVanIdCheckoutRouteImport } from './routes/book/$vanId/checkout'
 import { Route as DriverTripsTripIdIndexRouteImport } from './routes/driver/trips/$tripId/index'
@@ -87,6 +94,11 @@ const FindVansRoute = FindVansRouteImport.update({
   path: '/find-vans',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MyDeliveriesRouteRoute = MyDeliveriesRouteRouteImport.update({
+  id: '/my-deliveries',
+  path: '/my-deliveries',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DriverRouteRoute = DriverRouteRouteImport.update({
   id: '/driver',
   path: '/driver',
@@ -106,6 +118,16 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const SendPackageIndexRoute = SendPackageIndexRouteImport.update({
+  id: '/send-package/',
+  path: '/send-package/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MyDeliveriesIndexRoute = MyDeliveriesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => MyDeliveriesRouteRoute,
 } as any)
 const DriverIndexRoute = DriverIndexRouteImport.update({
   id: '/',
@@ -172,6 +194,11 @@ const DriverTripsRouteRoute = DriverTripsRouteRouteImport.update({
   path: '/trips',
   getParentRoute: () => DriverRouteRoute,
 } as any)
+const SendPackageVanIdIndexRoute = SendPackageVanIdIndexRouteImport.update({
+  id: '/send-package/$vanId/',
+  path: '/send-package/$vanId/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DriverTripsIndexRoute = DriverTripsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -182,6 +209,24 @@ const BookVanIdIndexRoute = BookVanIdIndexRouteImport.update({
   path: '/book/$vanId/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SendPackageVanIdConfirmationRoute =
+  SendPackageVanIdConfirmationRouteImport.update({
+    id: '/send-package/$vanId/confirmation',
+    path: '/send-package/$vanId/confirmation',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const SendPackageVanIdCheckoutRoute =
+  SendPackageVanIdCheckoutRouteImport.update({
+    id: '/send-package/$vanId/checkout',
+    path: '/send-package/$vanId/checkout',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const MyDeliveriesDeliveryIdPayRoute =
+  MyDeliveriesDeliveryIdPayRouteImport.update({
+    id: '/$deliveryId/pay',
+    path: '/$deliveryId/pay',
+    getParentRoute: () => MyDeliveriesRouteRoute,
+  } as any)
 const BookVanIdConfirmationRoute = BookVanIdConfirmationRouteImport.update({
   id: '/book/$vanId/confirmation',
   path: '/book/$vanId/confirmation',
@@ -208,6 +253,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteRouteWithChildren
   '/articles': typeof ArticlesRouteRouteWithChildren
   '/driver': typeof DriverRouteRouteWithChildren
+  '/my-deliveries': typeof MyDeliveriesRouteRouteWithChildren
   '/find-vans': typeof FindVansRoute
   '/my-bookings': typeof MyBookingsRoute
   '/privacy': typeof PrivacyRoute
@@ -230,10 +276,16 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/articles/': typeof ArticlesIndexRoute
   '/driver/': typeof DriverIndexRoute
+  '/my-deliveries/': typeof MyDeliveriesIndexRoute
+  '/send-package/': typeof SendPackageIndexRoute
   '/book/$vanId/checkout': typeof BookVanIdCheckoutRoute
   '/book/$vanId/confirmation': typeof BookVanIdConfirmationRoute
+  '/my-deliveries/$deliveryId/pay': typeof MyDeliveriesDeliveryIdPayRoute
+  '/send-package/$vanId/checkout': typeof SendPackageVanIdCheckoutRoute
+  '/send-package/$vanId/confirmation': typeof SendPackageVanIdConfirmationRoute
   '/book/$vanId/': typeof BookVanIdIndexRoute
   '/driver/trips/': typeof DriverTripsIndexRoute
+  '/send-package/$vanId/': typeof SendPackageVanIdIndexRoute
   '/driver/trips/$tripId/edit': typeof DriverTripsTripIdEditRoute
   '/driver/trips/$tripId/': typeof DriverTripsTripIdIndexRoute
 }
@@ -260,10 +312,16 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/articles': typeof ArticlesIndexRoute
   '/driver': typeof DriverIndexRoute
+  '/my-deliveries': typeof MyDeliveriesIndexRoute
+  '/send-package': typeof SendPackageIndexRoute
   '/book/$vanId/checkout': typeof BookVanIdCheckoutRoute
   '/book/$vanId/confirmation': typeof BookVanIdConfirmationRoute
+  '/my-deliveries/$deliveryId/pay': typeof MyDeliveriesDeliveryIdPayRoute
+  '/send-package/$vanId/checkout': typeof SendPackageVanIdCheckoutRoute
+  '/send-package/$vanId/confirmation': typeof SendPackageVanIdConfirmationRoute
   '/book/$vanId': typeof BookVanIdIndexRoute
   '/driver/trips': typeof DriverTripsIndexRoute
+  '/send-package/$vanId': typeof SendPackageVanIdIndexRoute
   '/driver/trips/$tripId/edit': typeof DriverTripsTripIdEditRoute
   '/driver/trips/$tripId': typeof DriverTripsTripIdIndexRoute
 }
@@ -273,6 +331,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteRouteWithChildren
   '/articles': typeof ArticlesRouteRouteWithChildren
   '/driver': typeof DriverRouteRouteWithChildren
+  '/my-deliveries': typeof MyDeliveriesRouteRouteWithChildren
   '/find-vans': typeof FindVansRoute
   '/my-bookings': typeof MyBookingsRoute
   '/privacy': typeof PrivacyRoute
@@ -295,10 +354,16 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/articles/': typeof ArticlesIndexRoute
   '/driver/': typeof DriverIndexRoute
+  '/my-deliveries/': typeof MyDeliveriesIndexRoute
+  '/send-package/': typeof SendPackageIndexRoute
   '/book/$vanId/checkout': typeof BookVanIdCheckoutRoute
   '/book/$vanId/confirmation': typeof BookVanIdConfirmationRoute
+  '/my-deliveries/$deliveryId/pay': typeof MyDeliveriesDeliveryIdPayRoute
+  '/send-package/$vanId/checkout': typeof SendPackageVanIdCheckoutRoute
+  '/send-package/$vanId/confirmation': typeof SendPackageVanIdConfirmationRoute
   '/book/$vanId/': typeof BookVanIdIndexRoute
   '/driver/trips/': typeof DriverTripsIndexRoute
+  '/send-package/$vanId/': typeof SendPackageVanIdIndexRoute
   '/driver/trips/$tripId/edit': typeof DriverTripsTripIdEditRoute
   '/driver/trips/$tripId/': typeof DriverTripsTripIdIndexRoute
 }
@@ -309,6 +374,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/articles'
     | '/driver'
+    | '/my-deliveries'
     | '/find-vans'
     | '/my-bookings'
     | '/privacy'
@@ -331,10 +397,16 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/articles/'
     | '/driver/'
+    | '/my-deliveries/'
+    | '/send-package/'
     | '/book/$vanId/checkout'
     | '/book/$vanId/confirmation'
+    | '/my-deliveries/$deliveryId/pay'
+    | '/send-package/$vanId/checkout'
+    | '/send-package/$vanId/confirmation'
     | '/book/$vanId/'
     | '/driver/trips/'
+    | '/send-package/$vanId/'
     | '/driver/trips/$tripId/edit'
     | '/driver/trips/$tripId/'
   fileRoutesByTo: FileRoutesByTo
@@ -361,10 +433,16 @@ export interface FileRouteTypes {
     | '/admin'
     | '/articles'
     | '/driver'
+    | '/my-deliveries'
+    | '/send-package'
     | '/book/$vanId/checkout'
     | '/book/$vanId/confirmation'
+    | '/my-deliveries/$deliveryId/pay'
+    | '/send-package/$vanId/checkout'
+    | '/send-package/$vanId/confirmation'
     | '/book/$vanId'
     | '/driver/trips'
+    | '/send-package/$vanId'
     | '/driver/trips/$tripId/edit'
     | '/driver/trips/$tripId'
   id:
@@ -373,6 +451,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/articles'
     | '/driver'
+    | '/my-deliveries'
     | '/find-vans'
     | '/my-bookings'
     | '/privacy'
@@ -395,10 +474,16 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/articles/'
     | '/driver/'
+    | '/my-deliveries/'
+    | '/send-package/'
     | '/book/$vanId/checkout'
     | '/book/$vanId/confirmation'
+    | '/my-deliveries/$deliveryId/pay'
+    | '/send-package/$vanId/checkout'
+    | '/send-package/$vanId/confirmation'
     | '/book/$vanId/'
     | '/driver/trips/'
+    | '/send-package/$vanId/'
     | '/driver/trips/$tripId/edit'
     | '/driver/trips/$tripId/'
   fileRoutesById: FileRoutesById
@@ -408,6 +493,7 @@ export interface RootRouteChildren {
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
   ArticlesRouteRoute: typeof ArticlesRouteRouteWithChildren
   DriverRouteRoute: typeof DriverRouteRouteWithChildren
+  MyDeliveriesRouteRoute: typeof MyDeliveriesRouteRouteWithChildren
   FindVansRoute: typeof FindVansRoute
   MyBookingsRoute: typeof MyBookingsRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -417,9 +503,13 @@ export interface RootRouteChildren {
   SignUpRoute: typeof SignUpRoute
   SupportRoute: typeof SupportRoute
   TermsOfServiceRoute: typeof TermsOfServiceRoute
+  SendPackageIndexRoute: typeof SendPackageIndexRoute
   BookVanIdCheckoutRoute: typeof BookVanIdCheckoutRoute
   BookVanIdConfirmationRoute: typeof BookVanIdConfirmationRoute
+  SendPackageVanIdCheckoutRoute: typeof SendPackageVanIdCheckoutRoute
+  SendPackageVanIdConfirmationRoute: typeof SendPackageVanIdConfirmationRoute
   BookVanIdIndexRoute: typeof BookVanIdIndexRoute
+  SendPackageVanIdIndexRoute: typeof SendPackageVanIdIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -487,6 +577,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FindVansRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/my-deliveries': {
+      id: '/my-deliveries'
+      path: '/my-deliveries'
+      fullPath: '/my-deliveries'
+      preLoaderRoute: typeof MyDeliveriesRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/driver': {
       id: '/driver'
       path: '/driver'
@@ -514,6 +611,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/send-package/': {
+      id: '/send-package/'
+      path: '/send-package'
+      fullPath: '/send-package/'
+      preLoaderRoute: typeof SendPackageIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/my-deliveries/': {
+      id: '/my-deliveries/'
+      path: '/'
+      fullPath: '/my-deliveries/'
+      preLoaderRoute: typeof MyDeliveriesIndexRouteImport
+      parentRoute: typeof MyDeliveriesRouteRoute
     }
     '/driver/': {
       id: '/driver/'
@@ -606,6 +717,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DriverTripsRouteRouteImport
       parentRoute: typeof DriverRouteRoute
     }
+    '/send-package/$vanId/': {
+      id: '/send-package/$vanId/'
+      path: '/send-package/$vanId'
+      fullPath: '/send-package/$vanId/'
+      preLoaderRoute: typeof SendPackageVanIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/driver/trips/': {
       id: '/driver/trips/'
       path: '/'
@@ -619,6 +737,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/book/$vanId/'
       preLoaderRoute: typeof BookVanIdIndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/send-package/$vanId/confirmation': {
+      id: '/send-package/$vanId/confirmation'
+      path: '/send-package/$vanId/confirmation'
+      fullPath: '/send-package/$vanId/confirmation'
+      preLoaderRoute: typeof SendPackageVanIdConfirmationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/send-package/$vanId/checkout': {
+      id: '/send-package/$vanId/checkout'
+      path: '/send-package/$vanId/checkout'
+      fullPath: '/send-package/$vanId/checkout'
+      preLoaderRoute: typeof SendPackageVanIdCheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/my-deliveries/$deliveryId/pay': {
+      id: '/my-deliveries/$deliveryId/pay'
+      path: '/$deliveryId/pay'
+      fullPath: '/my-deliveries/$deliveryId/pay'
+      preLoaderRoute: typeof MyDeliveriesDeliveryIdPayRouteImport
+      parentRoute: typeof MyDeliveriesRouteRoute
     }
     '/book/$vanId/confirmation': {
       id: '/book/$vanId/confirmation'
@@ -722,11 +861,25 @@ const DriverRouteRouteWithChildren = DriverRouteRoute._addFileChildren(
   DriverRouteRouteChildren,
 )
 
+interface MyDeliveriesRouteRouteChildren {
+  MyDeliveriesIndexRoute: typeof MyDeliveriesIndexRoute
+  MyDeliveriesDeliveryIdPayRoute: typeof MyDeliveriesDeliveryIdPayRoute
+}
+
+const MyDeliveriesRouteRouteChildren: MyDeliveriesRouteRouteChildren = {
+  MyDeliveriesIndexRoute: MyDeliveriesIndexRoute,
+  MyDeliveriesDeliveryIdPayRoute: MyDeliveriesDeliveryIdPayRoute,
+}
+
+const MyDeliveriesRouteRouteWithChildren =
+  MyDeliveriesRouteRoute._addFileChildren(MyDeliveriesRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRouteRoute: AdminRouteRouteWithChildren,
   ArticlesRouteRoute: ArticlesRouteRouteWithChildren,
   DriverRouteRoute: DriverRouteRouteWithChildren,
+  MyDeliveriesRouteRoute: MyDeliveriesRouteRouteWithChildren,
   FindVansRoute: FindVansRoute,
   MyBookingsRoute: MyBookingsRoute,
   PrivacyRoute: PrivacyRoute,
@@ -736,9 +889,13 @@ const rootRouteChildren: RootRouteChildren = {
   SignUpRoute: SignUpRoute,
   SupportRoute: SupportRoute,
   TermsOfServiceRoute: TermsOfServiceRoute,
+  SendPackageIndexRoute: SendPackageIndexRoute,
   BookVanIdCheckoutRoute: BookVanIdCheckoutRoute,
   BookVanIdConfirmationRoute: BookVanIdConfirmationRoute,
+  SendPackageVanIdCheckoutRoute: SendPackageVanIdCheckoutRoute,
+  SendPackageVanIdConfirmationRoute: SendPackageVanIdConfirmationRoute,
   BookVanIdIndexRoute: BookVanIdIndexRoute,
+  SendPackageVanIdIndexRoute: SendPackageVanIdIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

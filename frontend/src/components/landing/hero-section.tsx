@@ -90,7 +90,7 @@ export function HeroSection() {
               className="h-11 w-full rounded-full px-7 text-[15px] font-normal text-[#2997ff] hover:bg-white/10 hover:text-[#2997ff] sm:w-auto sm:text-[17px]"
               asChild
             >
-              <Link to="/schedules">View schedules ›</Link>
+              <Link to="/send-package">Send a Package</Link>
             </Button>
           </motion.div>
         </motion.div>

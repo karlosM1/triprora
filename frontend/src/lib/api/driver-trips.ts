@@ -39,10 +39,32 @@ export type DriverTripPassenger = {
   bookedAt: string
 }
 
+export type DriverTripDelivery = {
+  id: string
+  reference: string
+  status: 'pending' | 'accepted' | 'confirmed' | 'picked_up' | 'delivered' | 'declined' | 'cancelled'
+  packageLabel: string
+  description: string
+  packageType: string
+  weightBand: string
+  size: string
+  pickupAddress: string
+  dropoffAddress: string
+  receiverName: string
+  receiverPhone: string
+  specialInstructions: string | null
+  price: string
+  suggestedFee: number
+  senderName: string
+  senderPhone: string | null
+  createdAt: string
+}
+
 export type DriverTripDetails = {
   trip: DriverTrip
   seats: DriverTripSeat[]
   passengers: DriverTripPassenger[]
+  deliveries: DriverTripDelivery[]
   seatsAvailable: number
   seatsOccupied: number
 }
@@ -94,6 +116,25 @@ export async function updateDriverTrip(
 export async function completeDriverTrip(tripId: string) {
   const { data } = await api.post<DriverTrip>(
     `/driver/trips/${encodeURIComponent(tripId)}/complete`,
+  )
+  return data
+}
+
+export async function acceptDriverDelivery(
+  tripId: string,
+  deliveryId: string,
+  deliveryFee: number,
+) {
+  const { data } = await api.post<DriverTripDelivery>(
+    `/driver/trips/${encodeURIComponent(tripId)}/deliveries/${encodeURIComponent(deliveryId)}/accept`,
+    { deliveryFee },
+  )
+  return data
+}
+
+export async function declineDriverDelivery(tripId: string, deliveryId: string) {
+  const { data } = await api.post<DriverTripDelivery>(
+    `/driver/trips/${encodeURIComponent(tripId)}/deliveries/${encodeURIComponent(deliveryId)}/decline`,
   )
   return data
 }

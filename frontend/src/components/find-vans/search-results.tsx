@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useSearch } from '@tanstack/react-router'
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -7,8 +7,6 @@ import { PageHeader } from '@/components/layout/page-header'
 import { vansQueryOptions } from '@/lib/api/vans'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
 import {
-  filterVansBySidebarFilters,
-  filterVansByTripSearch,
   formatTripSearchDate,
   resolveTripSearch,
   type VanSidebarFilters,
@@ -22,26 +20,17 @@ const RESULTS_PAGE_SIZE = 6
 
 type SortOption = 'price' | 'departure'
 
-function getRouteHeading(vans: ReturnType<typeof mapApiVans>) {
-  if (vans.length === 0) {
+function getRouteHeading(total: number, from: string, to: string) {
+  if (total === 0) {
     return {
       title: 'Available trips',
       subtitle: 'No published trips yet',
     }
   }
 
-  const first = vans[0]!
-  const sameRoute = vans.every(
-    (van) =>
-      van.departureLocation === first.departureLocation &&
-      van.arrivalLocation === first.arrivalLocation,
-  )
-
   return {
-    title: sameRoute
-      ? `${first.departureLocation} to ${first.arrivalLocation}`
-      : 'Available trips',
-    subtitle: `${vans.length} trip${vans.length === 1 ? '' : 's'} available`,
+    title: from && to ? `${from} to ${to}` : 'Available trips',
+    subtitle: `${total} trip${total === 1 ? '' : 's'} available`,
   }
 }
 
@@ -66,38 +55,28 @@ export function SearchResults({
   const [sortBy, setSortBy] = useState<SortOption>('price')
   const [page, setPage] = useState(1)
   const resultsTopRef = useRef<HTMLDivElement>(null)
-  const { data: vans = [], isLoading } = useQuery({
-    ...vansQueryOptions(),
-    select: mapApiVans,
-  })
 
-  const filteredResults = useMemo(() => {
-    const searchMatches = filterVansByTripSearch(vans, search)
-    return filterVansBySidebarFilters(searchMatches, sidebarFilters)
-  }, [search, sidebarFilters, vans])
+  const listParams = {
+    from: search.from,
+    to: search.to,
+    departureDate: search.departureDate,
+    passengers: search.passengers,
+    priceMax: sidebarFilters.priceMax,
+    departureTimes: sidebarFilters.departureTimes,
+    sort: sortBy,
+    page,
+    pageSize: RESULTS_PAGE_SIZE,
+  }
 
-  const sortedResults = useMemo(
-    () =>
-      [...filteredResults].sort((a, b) => {
-        if (sortBy === 'price') return a.price - b.price
-        const aKey = `${a.departureDate ?? ''}T${a.departureTime}`
-        const bKey = `${b.departureDate ?? ''}T${b.departureTime}`
-        return aKey.localeCompare(bKey)
-      }),
-    [filteredResults, sortBy],
-  )
-
-  const totalPages = Math.max(1, Math.ceil(sortedResults.length / RESULTS_PAGE_SIZE))
+  const { data, isLoading } = useQuery(vansQueryOptions(listParams))
+  const results = mapApiVans(data?.items ?? [])
+  const total = data?.total ?? 0
+  const pageSize = data?.pageSize ?? RESULTS_PAGE_SIZE
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
   const currentPage = Math.min(page, totalPages)
 
-  const paginatedResults = useMemo(() => {
-    const start = (currentPage - 1) * RESULTS_PAGE_SIZE
-    return sortedResults.slice(start, start + RESULTS_PAGE_SIZE)
-  }, [currentPage, sortedResults])
-
-  const resultRangeStart =
-    sortedResults.length === 0 ? 0 : (currentPage - 1) * RESULTS_PAGE_SIZE + 1
-  const resultRangeEnd = Math.min(currentPage * RESULTS_PAGE_SIZE, sortedResults.length)
+  const resultRangeStart = total === 0 ? 0 : (currentPage - 1) * pageSize + 1
+  const resultRangeEnd = Math.min(currentPage * pageSize, total)
 
   useEffect(() => {
     setPage(1)
@@ -109,7 +88,6 @@ export function SearchResults({
     sidebarFilters.departureTimes.join(','),
     sidebarFilters.priceMax,
     sortBy,
-    sortedResults.length,
   ])
 
   function goToPage(nextPage: number) {
@@ -117,10 +95,10 @@ export function SearchResults({
     resultsTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  const heading = getRouteHeading(filteredResults)
+  const heading = getRouteHeading(total, search.from, search.to)
   const displayDate =
     formatTripSearchDate(search.departureDate) ??
-    formatDisplayDate(filteredResults[0]?.departureDate)
+    formatDisplayDate(results[0]?.departureDate)
 
   const sortControl = (
     <div className="shrink-0 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -179,7 +157,7 @@ export function SearchResults({
       >
         {isLoading ? (
           <p className="text-[15px] text-[#86868b]">Loading trips...</p>
-        ) : sortedResults.length === 0 ? (
+        ) : total === 0 ? (
           <motion.div
             variants={fadeInUp}
             className="rounded-2xl bg-white px-8 py-16 text-center ring-1 ring-black/5"
@@ -194,13 +172,13 @@ export function SearchResults({
           </motion.div>
         ) : (
           <>
-            {paginatedResults.map((result) => (
+            {results.map((result) => (
               <motion.div key={result.id} variants={fadeInUp}>
                 <VanResultCard result={result} />
               </motion.div>
             ))}
 
-            {sortedResults.length > RESULTS_PAGE_SIZE && (
+            {total > pageSize && (
               <motion.div
                 variants={fadeInUp}
                 className="flex flex-col items-center justify-between gap-4 rounded-2xl bg-white px-4 py-4 ring-1 ring-black/5 sm:flex-row sm:px-6"
@@ -211,9 +189,7 @@ export function SearchResults({
                     {resultRangeStart}–{resultRangeEnd}
                   </span>{' '}
                   of{' '}
-                  <span className="font-medium text-[#1d1d1f]">
-                    {sortedResults.length}
-                  </span>{' '}
+                  <span className="font-medium text-[#1d1d1f]">{total}</span>{' '}
                   trips
                 </p>
                 <div className="flex items-center gap-2">

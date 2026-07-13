@@ -11,6 +11,9 @@ export type CheckoutPaymentMethod = 'qrph' | 'cash'
 type PaymentFormProps = {
   readOnly?: boolean
   baseFare: number
+  /** When set, used as the charged amount instead of recalculating from baseFare. */
+  totalAmount?: number
+  purpose?: 'trip' | 'delivery'
   onPaymentChange?: (state: {
     paymentMethod: CheckoutPaymentMethod
     paymentIntentId: string | null
@@ -23,6 +26,8 @@ const POLL_INTERVAL_MS = 3000
 export function PaymentForm({
   readOnly = false,
   baseFare,
+  totalAmount,
+  purpose = 'trip',
   onPaymentChange,
 }: PaymentFormProps) {
   const [paymentMethod, setPaymentMethod] = useState<CheckoutPaymentMethod>('qrph')
@@ -37,7 +42,11 @@ export function PaymentForm({
   const onPaymentChangeRef = useRef(onPaymentChange)
   onPaymentChangeRef.current = onPaymentChange
 
-  const { total } = calculateTotals(baseFare)
+  const calculatedTotal = calculateTotals(baseFare).total
+  const total =
+    typeof totalAmount === 'number' && Number.isFinite(totalAmount) && totalAmount > 0
+      ? Math.round(totalAmount)
+      : calculatedTotal
   const ready = paymentMethod === 'cash' || paid
 
   useEffect(() => {
@@ -186,7 +195,9 @@ export function PaymentForm({
           <div>
             <p className="text-[14px] font-medium text-[#067647]">Cash on trip selected</p>
             <p className="mt-0.5 text-[13px] text-[#079455]">
-              Your seat will be reserved now. Bring exact change when possible.
+              {purpose === 'delivery'
+                ? 'Your delivery will be confirmed now. Pay this amount in cash to your driver.'
+                : 'Your seat will be reserved now. Bring exact change when possible.'}
             </p>
           </div>
         </div>

@@ -98,6 +98,8 @@ export function FeaturesSection() {
             <motion.img
               src={image.src}
               alt={image.alt}
+              loading="lazy"
+              decoding="async"
               className="size-full min-h-[160px] object-cover lg:min-h-0 lg:h-full"
               whileHover={{ scale: 1.04 }}
               transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}

@@ -1,8 +1,13 @@
 #!/bin/sh
 set -e
 
-echo "Generating Prisma client..."
-npx prisma generate
+# Client is generated at image build; only regenerate if missing.
+if [ ! -d /app/node_modules/.prisma/client ] && [ ! -d node_modules/.prisma/client ]; then
+  echo "Prisma client missing — generating..."
+  npx prisma generate
+else
+  echo "Prisma client present — skipping generate."
+fi
 
 echo "Applying database schema..."
 npx prisma db push

@@ -34,7 +34,7 @@ export type VanWithRelations = {
     phone: string | null
     driverApplication: {
       licenseNo: string
-      vehicle: {
+      vehicle?: {
         make: string
         model: string
         plateNumber: string
@@ -94,11 +94,26 @@ export function presentVan(van: VanWithRelations): Van {
   }
 }
 
-export const vanInclude = {
+export const vanListInclude = {
   route: true,
   operator: true,
   vanClass: true,
   vehicle: true,
+  driver: {
+    select: {
+      fullName: true,
+      phone: true,
+      driverApplication: {
+        select: {
+          licenseNo: true,
+        },
+      },
+    },
+  },
+} as const
+
+export const vanInclude = {
+  ...vanListInclude,
   driver: {
     select: {
       fullName: true,

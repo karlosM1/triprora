@@ -96,6 +96,7 @@ export async function createQrPhPayment(req: Request, res: Response) {
       amount: amountInPesos,
       status: 'succeeded',
       bookingId: null,
+      deliveryId: null,
     },
     orderBy: { createdAt: 'desc' },
   })
@@ -112,6 +113,7 @@ export async function createQrPhPayment(req: Request, res: Response) {
       userId: profile.id,
       provider: 'paymongo',
       bookingId: null,
+      deliveryId: null,
       status: {
         in: ['awaiting_next_action', 'awaiting_payment_method', 'processing'],
       },

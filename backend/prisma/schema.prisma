@@ -77,6 +77,36 @@ enum DriverPayoutMethod {
   paymongo
 }
 
+enum PackageType {
+  documents
+  food
+  clothes
+  electronics
+  others
+}
+
+enum PackageWeightBand {
+  up_to_1kg
+  one_to_5kg
+  five_to_10kg
+}
+
+enum PackageSize {
+  small
+  medium
+  large
+}
+
+enum DeliveryStatus {
+  pending
+  accepted
+  confirmed
+  picked_up
+  delivered
+  declined
+  cancelled
+}
+
 model Operator {
   id   String @id @default(cuid())
   name String @unique
@@ -160,8 +190,13 @@ model Van {
   driver        Profile?     @relation(fields: [driverId], references: [id], onDelete: Cascade)
   seats         Seat[]
   bookings      Booking[]
+  deliveries    Delivery[]
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
+
+  @@index([status, departureDate])
+  @@index([driverId])
+  @@index([routeId])
 }
 
 model Seat {
@@ -198,6 +233,7 @@ model Profile {
 
   driverApplication DriverApplication?
   bookings          Booking[]
+  deliveries        Delivery[]
   vans              Van[]
   vehicles          Vehicle[]
   payments          Payment[]
@@ -333,6 +369,9 @@ model Booking {
   walletLedgerEntries WalletLedgerEntry[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+
+  @@index([userId, status])
+  @@index([vanId])
 }
 
 model BookingSnapshot {
@@ -356,21 +395,72 @@ model BookingSnapshot {
   @@map("booking_snapshots")
 }
 
+model Delivery {
+  id                  String            @id
+  userId              String?           @db.Uuid
+  user                Profile?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  vanId               String?
+  van                 Van?              @relation(fields: [vanId], references: [id], onDelete: SetNull)
+  reference           String?           @unique
+  pickupAddress       String
+  dropoffAddress      String
+  packageType         PackageType
+  weightBand          PackageWeightBand
+  size                PackageSize
+  description         String
+  receiverName        String
+  receiverPhone       String
+  specialInstructions String?
+  photoUrl            String?
+  status              DeliveryStatus
+  snapshot            DeliverySnapshot?
+  payment             Payment?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  @@index([userId, status])
+  @@index([vanId])
+  @@map("deliveries")
+}
+
+model DeliverySnapshot {
+  deliveryId      String   @id
+  delivery        Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  routeCode       String?
+  routeLabel      String
+  imageUrl        String?
+  departureDate   String
+  departureTime   String?
+  packageLabel    String
+  vehicleLabel    String?
+  tripType        String?
+  baseFareCents   Int
+  serviceFeeCents Int
+  taxCents        Int
+  totalCents      Int
+  currency        String   @default("PHP")
+  priceDisplay    String
+
+  @@map("delivery_snapshots")
+}
+
 model Payment {
-  id               String   @id @default(cuid())
-  bookingId        String?  @unique
-  booking          Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
-  userId           String?  @db.Uuid
-  user             Profile? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id               String    @id @default(cuid())
+  bookingId        String?   @unique
+  booking          Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  deliveryId       String?   @unique
+  delivery         Delivery? @relation(fields: [deliveryId], references: [id], onDelete: SetNull)
+  userId           String?   @db.Uuid
+  user             Profile?  @relation(fields: [userId], references: [id], onDelete: SetNull)
   provider         String
-  providerIntentId String   @unique
+  providerIntentId String    @unique
   providerMethodId String?
-  amount           Int      // pesos (not centavos)
-  currency         String   @default("PHP")
+  amount           Int // pesos (not centavos)
+  currency         String    @default("PHP")
   status           String
   rawPayload       Json?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   @@map("payments")
 }

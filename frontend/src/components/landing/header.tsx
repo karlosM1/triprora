@@ -13,20 +13,24 @@ import {
 } from "@/components/ui/drawer";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
-import heroLogo from "@/assets/crabr.png";
+import heroLogo from "@/assets/crabr-logo.png";
 
 const baseNavLinks = [
   { label: "Home", to: "/" as const, key: "home" },
   { label: "Find Vans", to: "/find-vans" as const, key: "find-vans" },
+  { label: "Send Package", to: "/send-package" as const, key: "send-package" },
   { label: "Schedules", to: "/schedules" as const, key: "schedules" },
   { label: "My Bookings", to: "/my-bookings" as const, key: "my-bookings" },
+  { label: "My Deliveries", to: "/my-deliveries" as const, key: "my-deliveries" },
   { label: "Support", to: "/support" as const, key: "support" },
 ] as const;
 
 type HeaderProps = {
   activeLink?:
     | "find-vans"
+    | "send-package"
     | "my-bookings"
+    | "my-deliveries"
     | "schedules"
     | "articles"
     | "home"
@@ -137,13 +141,13 @@ export function Header({
           </Link>
         </div>
 
-        <ul className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-0.5 md:flex">
+        <ul className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-0 md:flex lg:gap-0.5">
           {navLinks.map((link) => (
-            <li key={link.key}>
+            <li key={link.key} className="shrink-0">
               <Link
                 to={link.to}
                 className={cn(
-                  "inline-flex h-8 items-center rounded-md px-3 text-xs leading-none font-normal transition-colors",
+                  "inline-flex h-8 items-center whitespace-nowrap rounded-md px-2 text-xs leading-none font-normal transition-colors lg:px-2.5 xl:px-3",
                   !isHero &&
                     cn(
                       "text-[#1d1d1f]/80 hover:text-[#0066cc]",

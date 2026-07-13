@@ -2,7 +2,7 @@ import { isAxiosError } from 'axios'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, createFileRoute, notFound, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
-import { ArrowLeft, Calendar, Car, CheckCircle2, Users } from 'lucide-react'
+import { ArrowLeft, Calendar, Car, CheckCircle2, Package, Users } from 'lucide-react'
 import { AppleCard, PageHeader } from '@/components/layout/page-header'
 import {
   AlertDialog,
@@ -18,10 +18,13 @@ import { Button } from '@/components/ui/button'
 import { TablePagination } from '@/components/ui/table-pagination'
 import { usePagination } from '@/hooks/use-pagination'
 import {
+  acceptDriverDelivery,
   completeDriverTrip,
+  declineDriverDelivery,
   driverTripDetailsQueryKey,
   driverTripDetailsQueryOptions,
   driverTripsQueryKey,
+  type DriverTripDelivery,
 } from '@/lib/api/driver-trips'
 import { queryClient } from '@/lib/query-client'
 import {
@@ -150,6 +153,11 @@ function DriverTripDetailsPage() {
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false)
   const detailsQuery = useQuery(driverTripDetailsQueryOptions(tripId))
   const passengers = detailsQuery.data?.passengers ?? []
+  const deliveries = detailsQuery.data?.deliveries ?? []
+  const pendingDeliveries = deliveries.filter((d) => d.status === 'pending')
+  const activeDeliveries = deliveries.filter((d) =>
+    ['accepted', 'confirmed', 'picked_up'].includes(d.status),
+  )
   const {
     pageItems: passengerPage,
     currentPage: passengerPageNumber,
@@ -168,6 +176,30 @@ function DriverTripDetailsPage() {
       await queryClient.invalidateQueries({ queryKey: driverTripsQueryKey })
       await queryClient.invalidateQueries({ queryKey: driverTripDetailsQueryKey(tripId) })
       await navigate({ to: '/driver/trips' })
+    },
+  })
+
+  const acceptMutation = useMutation({
+    mutationFn: ({
+      deliveryId,
+      deliveryFee,
+    }: {
+      deliveryId: string
+      deliveryFee: number
+    }) => acceptDriverDelivery(tripId, deliveryId, deliveryFee),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: driverTripDetailsQueryKey(tripId),
+      })
+    },
+  })
+
+  const declineMutation = useMutation({
+    mutationFn: (deliveryId: string) => declineDriverDelivery(tripId, deliveryId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: driverTripDetailsQueryKey(tripId),
+      })
     },
   })
 
@@ -286,7 +318,7 @@ function DriverTripDetailsPage() {
       </AlertDialog>
 
       <AppleCard className="p-6">
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <DetailItem
             icon={<Calendar className="size-4 text-[#86868b]" />}
             label="Departure"
@@ -303,10 +335,69 @@ function DriverTripDetailsPage() {
             value={`${passengers.length} booked`}
           />
           <DetailItem
+            icon={<Package className="size-4 text-[#86868b]" />}
+            label="Packages"
+            value={`${pendingDeliveries.length} pending · ${activeDeliveries.length} active`}
+          />
+          <DetailItem
             label="Fare per seat"
             value={`₱${trip.price.toLocaleString()}`}
           />
         </div>
+      </AppleCard>
+
+      <AppleCard className="overflow-hidden">
+        <div className="border-b border-[#d2d2d7]/60 px-6 py-4">
+          <h2 className="text-[17px] font-semibold text-[#1d1d1f]">
+            Package requests
+          </h2>
+          <p className="mt-1 text-[13px] text-[#86868b]">
+            Accept a package to unlock payment for the sender. Decline if you
+            cannot carry it.
+          </p>
+        </div>
+        {deliveries.length === 0 ? (
+          <p className="px-6 py-12 text-center text-[15px] text-[#86868b]">
+            No package requests for this trip yet.
+          </p>
+        ) : (
+          <div className="divide-y divide-[#d2d2d7]/60">
+            {deliveries.map((delivery) => (
+              <PackageRequestRow
+                key={delivery.id}
+                delivery={delivery}
+                accepting={
+                  acceptMutation.isPending &&
+                  acceptMutation.variables?.deliveryId === delivery.id
+                }
+                declining={
+                  declineMutation.isPending &&
+                  declineMutation.variables === delivery.id
+                }
+                onAccept={(deliveryFee) =>
+                  acceptMutation.mutate({ deliveryId: delivery.id, deliveryFee })
+                }
+                onDecline={() => declineMutation.mutate(delivery.id)}
+                actionError={
+                  (acceptMutation.variables?.deliveryId === delivery.id
+                    ? (
+                        acceptMutation.error as Error & {
+                          response?: { data?: { message?: string } }
+                        }
+                      )?.response?.data?.message || acceptMutation.error?.message
+                    : undefined) ||
+                  (declineMutation.variables === delivery.id
+                    ? (
+                        declineMutation.error as Error & {
+                          response?: { data?: { message?: string } }
+                        }
+                      )?.response?.data?.message || declineMutation.error?.message
+                    : undefined)
+                }
+              />
+            ))}
+          </div>
+        )}
       </AppleCard>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_300px]">
@@ -417,6 +508,144 @@ function DriverTripDetailsPage() {
           </div>
         </AppleCard>
       </div>
+    </div>
+  )
+}
+
+function PackageRequestRow({
+  delivery,
+  onAccept,
+  onDecline,
+  accepting,
+  declining,
+  actionError,
+}: {
+  delivery: DriverTripDelivery
+  onAccept: (deliveryFee: number) => void
+  onDecline: () => void
+  accepting?: boolean
+  declining?: boolean
+  actionError?: string
+}) {
+  const [deliveryFee, setDeliveryFee] = useState(
+    String(delivery.suggestedFee ?? 80),
+  )
+  const [feeError, setFeeError] = useState<string | null>(null)
+
+  const statusLabel =
+    delivery.status === 'pending'
+      ? 'Pending'
+      : delivery.status === 'accepted'
+        ? 'Accepted — awaiting payment'
+        : delivery.status === 'confirmed'
+          ? 'Paid / confirmed'
+          : delivery.status === 'picked_up'
+            ? 'Picked up'
+            : delivery.status
+
+  const feeNumber = Number(deliveryFee)
+  const platformFee = Number.isFinite(feeNumber)
+    ? Math.round(feeNumber * 0.04)
+    : 0
+  const totalDue = Number.isFinite(feeNumber) ? feeNumber + platformFee : 0
+
+  function handleAccept() {
+    const fee = Math.floor(Number(deliveryFee))
+    if (!Number.isFinite(fee) || fee < 1) {
+      setFeeError('Enter a delivery fee of at least ₱1.')
+      return
+    }
+    setFeeError(null)
+    onAccept(fee)
+  }
+
+  return (
+    <div className="px-6 py-5">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0 space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-mono text-[13px] font-semibold text-[#0066cc]">
+              {delivery.reference}
+            </span>
+            <span className="rounded-full bg-[#f5f5f7] px-2.5 py-0.5 text-[12px] font-medium text-[#1d1d1f]">
+              {statusLabel}
+            </span>
+            {delivery.status !== 'pending' && (
+              <span className="text-[13px] font-medium text-[#1d1d1f]">
+                {delivery.price}
+              </span>
+            )}
+          </div>
+          <p className="text-[15px] font-semibold text-[#1d1d1f]">
+            {delivery.packageLabel}
+          </p>
+          <p className="text-[14px] text-[#1d1d1f]">{delivery.description}</p>
+          <p className="text-[13px] text-[#86868b]">
+            {delivery.pickupAddress} → {delivery.dropoffAddress}
+          </p>
+          <p className="text-[13px] text-[#86868b]">
+            Sender: {delivery.senderName}
+            {delivery.senderPhone ? ` · ${delivery.senderPhone}` : ''}
+          </p>
+          <p className="text-[13px] text-[#86868b]">
+            Receiver: {delivery.receiverName} · {delivery.receiverPhone}
+          </p>
+          {delivery.specialInstructions && (
+            <p className="text-[13px] text-[#86868b]">
+              Note: {delivery.specialInstructions}
+            </p>
+          )}
+        </div>
+        {delivery.status === 'pending' && (
+          <div className="w-full shrink-0 space-y-3 lg:w-56">
+            <div className="space-y-1.5">
+              <label
+                htmlFor={`fee-${delivery.id}`}
+                className="text-[12px] font-medium text-[#86868b]"
+              >
+                Your delivery fee (₱)
+              </label>
+              <input
+                id={`fee-${delivery.id}`}
+                type="number"
+                min={1}
+                step={1}
+                value={deliveryFee}
+                onChange={(e) => setDeliveryFee(e.target.value)}
+                className="h-10 w-full rounded-lg border border-[#d2d2d7] bg-white px-3 text-[15px] text-[#1d1d1f] outline-none focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/20"
+              />
+              <p className="text-[12px] text-[#86868b]">
+                Suggested ₱{delivery.suggestedFee.toLocaleString()} · Sender
+                pays ₱{totalDue.toLocaleString()} (incl. 4% fee)
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-9 flex-1 rounded-full border-[#d2d2d7] px-4 text-[13px]"
+                disabled={accepting || declining}
+                onClick={onDecline}
+              >
+                {declining ? 'Declining…' : 'Decline'}
+              </Button>
+              <Button
+                type="button"
+                className="h-9 flex-1 rounded-full bg-[#0071e3] px-4 text-[13px] hover:bg-[#0077ed]"
+                disabled={accepting || declining}
+                onClick={handleAccept}
+              >
+                {accepting ? 'Accepting…' : 'Accept'}
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+      {(feeError || actionError) && (
+        <p className="mt-2 text-[13px] text-[#bf4800]">
+          {feeError || actionError}
+        </p>
+      )}
     </div>
   )
 }

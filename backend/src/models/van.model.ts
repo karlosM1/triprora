@@ -6,14 +6,21 @@ import {
   ensureRoute,
   ensureVanClass,
 } from '../lib/reference-data.js'
-import { presentVan, vanInclude, type VanWithRelations } from '../lib/van-presenter.js'
+import { locationSearchTerms } from '../lib/place-match.js'
+import {
+  presentVan,
+  vanInclude,
+  vanListInclude,
+  type VanWithRelations,
+} from '../lib/van-presenter.js'
 import { AppError } from '../utils/app-error.js'
 import {
   generateSeatLabels,
-  resolveTargetSeatCount,
-  syncVanSeatLayout,
 } from '../lib/seat-layout.js'
+import { DeliveryModel } from './delivery.model.js'
+import type { DriverDeliveryRequest } from './delivery.types.js'
 import { postBookingSettlement } from './wallet.model.js'
+import type { ListVansQuery } from '../validators/vans.validator.js'
 
 export type { Van, VanClassType, VanClassVariant }
 
@@ -60,6 +67,7 @@ export type DriverTripDetails = {
   trip: DriverTrip
   seats: DriverTripSeat[]
   passengers: DriverTripPassenger[]
+  deliveries: DriverDeliveryRequest[]
   seatsAvailable: number
   seatsOccupied: number
 }
@@ -158,14 +166,117 @@ async function resolveDriverVehicleId(tx: Prisma.TransactionClient, driverId: st
   return vehicle.id
 }
 
+function locationContainsFilter(
+  field: 'departureLocation' | 'arrivalLocation',
+  query?: string,
+): Prisma.RouteWhereInput | undefined {
+  if (!query?.trim()) return undefined
+  const terms = locationSearchTerms(query)
+  if (terms.length === 0) return undefined
+  return {
+    OR: terms.map((term) => ({
+      [field]: { contains: term, mode: 'insensitive' as const },
+    })),
+  }
+}
+
+function departureTimeSlotFilter(
+  slots: Array<'morning' | 'afternoon' | 'evening'>,
+): Prisma.VanWhereInput | undefined {
+  if (slots.length === 0) return undefined
+
+  const ranges: Prisma.VanWhereInput[] = []
+  for (const slot of slots) {
+    if (slot === 'morning') {
+      ranges.push({
+        AND: [
+          { departureTime: { gte: '06:00' } },
+          { departureTime: { lt: '12:00' } },
+        ],
+      })
+    } else if (slot === 'afternoon') {
+      ranges.push({
+        AND: [
+          { departureTime: { gte: '12:00' } },
+          { departureTime: { lt: '18:00' } },
+        ],
+      })
+    } else {
+      ranges.push({
+        AND: [
+          { departureTime: { gte: '18:00' } },
+          { departureTime: { lt: '24:00' } },
+        ],
+      })
+    }
+  }
+
+  return { OR: ranges }
+}
+
+export type VanListResult = {
+  items: Van[]
+  total: number
+  page: number
+  pageSize: number
+}
+
 export const VanModel = {
-  async findAll(): Promise<Van[]> {
-    const vans = await prisma.van.findMany({
-      where: { status: 'published' },
-      include: vanInclude,
-      orderBy: [{ departureDate: 'asc' }, { departureTime: 'asc' }],
-    })
-    return vans.map((van) => presentVan(van))
+  async findAll(query: ListVansQuery): Promise<VanListResult> {
+    const {
+      from,
+      to,
+      departureDate,
+      passengers,
+      priceMax,
+      departureTimes,
+      sort,
+      page,
+      pageSize,
+    } = query
+
+    const departureFilter = locationContainsFilter('departureLocation', from)
+    const arrivalFilter = locationContainsFilter('arrivalLocation', to)
+    const timeFilter = departureTimeSlotFilter(departureTimes)
+
+    const where: Prisma.VanWhereInput = {
+      status: 'published',
+      ...(departureDate ? { departureDate } : {}),
+      ...(passengers ? { seatsLeft: { gte: passengers } } : {}),
+      ...(priceMax != null ? { price: { lte: priceMax } } : {}),
+      ...(timeFilter ?? {}),
+    }
+
+    if (departureFilter && arrivalFilter) {
+      where.route = { AND: [departureFilter, arrivalFilter] }
+    } else if (departureFilter) {
+      where.route = departureFilter
+    } else if (arrivalFilter) {
+      where.route = arrivalFilter
+    }
+
+    const orderBy: Prisma.VanOrderByWithRelationInput[] =
+      sort === 'price'
+        ? [{ price: 'asc' }, { departureDate: 'asc' }, { departureTime: 'asc' }]
+        : [{ departureDate: 'asc' }, { departureTime: 'asc' }, { price: 'asc' }]
+
+    const [total, vans] = await Promise.all([
+      prisma.van.count({ where }),
+      prisma.van.findMany({
+        where,
+        include: vanListInclude,
+        orderBy,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ])
+
+    return {
+      items: vans.map((van) => presentVan(van as VanWithRelations)),
+      total,
+      page,
+      pageSize,
+    }
   },
 
   async findByDriverId(driverId: string): Promise<DriverTrip[]> {
@@ -181,20 +292,6 @@ export const VanModel = {
     tripId: string,
     driverId: string,
   ): Promise<DriverTripDetails | null> {
-    const existingVan = await prisma.van.findFirst({
-      where: { id: tripId, driverId },
-      include: { seats: { orderBy: { label: 'asc' } } },
-    })
-
-    if (!existingVan) return null
-
-    const targetSeatCount = resolveTargetSeatCount(
-      existingVan.totalSeats,
-      existingVan.seats.map((seat) => seat.label),
-    )
-
-    await prisma.$transaction((tx) => syncVanSeatLayout(tx, tripId, targetSeatCount))
-
     const van = await prisma.van.findFirst({
       where: { id: tripId, driverId },
       include: {
@@ -240,10 +337,13 @@ export const VanModel = {
       bookedAt: booking.createdAt,
     }))
 
+    const deliveries = await DeliveryModel.listForDriverTrip(tripId, driverId)
+
     return {
       trip,
       seats: mappedSeats,
       passengers,
+      deliveries,
       seatsAvailable: mappedSeats.filter((seat) => seat.status === 'available').length,
       seatsOccupied: mappedSeats.filter((seat) => seat.status === 'occupied').length,
     }
@@ -263,24 +363,15 @@ export const VanModel = {
   async findSeatsByVanId(vanId: string) {
     const van = await prisma.van.findUnique({
       where: { id: vanId },
-      include: { seats: { orderBy: { label: 'asc' } } },
+      select: {
+        status: true,
+        seats: { orderBy: { label: 'asc' } },
+      },
     })
 
     if (!van || van.status !== 'published') return null
 
-    const existingLabels = van.seats.map((seat) => seat.label)
-    const targetSeatCount = resolveTargetSeatCount(van.totalSeats, existingLabels)
-    const expectedLabels = await prisma.$transaction((tx) =>
-      syncVanSeatLayout(tx, vanId, targetSeatCount),
-    )
-
-    const expectedSet = new Set(expectedLabels)
-    const seats = await prisma.seat.findMany({
-      where: { vanId, label: { in: [...expectedSet] } },
-      orderBy: { label: 'asc' },
-    })
-
-    return seats.map((seat) => ({
+    return van.seats.map((seat) => ({
       id: seat.label,
       label: seat.label,
       status: seat.status,

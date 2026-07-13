@@ -160,7 +160,7 @@ export const BookingModel = {
           throw new AppError('Payment not found', 404)
         }
 
-        if (payment.bookingId) {
+        if (payment.bookingId || payment.deliveryId) {
           throw new AppError('This payment has already been used', 409)
         }
 
@@ -227,6 +227,7 @@ export const BookingModel = {
           where: {
             id: existingPaymentId,
             bookingId: null,
+            deliveryId: null,
             status: 'succeeded',
           },
           data: { bookingId: booking.id },

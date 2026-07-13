@@ -73,6 +73,7 @@ function ArticleDetailPage() {
             <img
               src={article.image}
               alt={article.title}
+              decoding="async"
               className="size-full object-cover"
             />
           </div>

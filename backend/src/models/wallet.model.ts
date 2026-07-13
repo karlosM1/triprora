@@ -450,14 +450,16 @@ export const WalletModel = {
   },
 
   async getDriverWalletAdmin(driverId: string) {
-    const summary = await this.getSummary(driverId)
-    const history = await this.getHistory(driverId, { limit: 50 })
-    const settlements = await this.listSettlements(driverId)
-    const payouts = await this.listPayouts(driverId)
-    const driver = await prisma.profile.findUnique({
-      where: { id: driverId },
-      select: { id: true, fullName: true, email: true },
-    })
+    const [summary, history, settlements, payouts, driver] = await Promise.all([
+      this.getSummary(driverId),
+      this.getHistory(driverId, { limit: 50 }),
+      this.listSettlements(driverId),
+      this.listPayouts(driverId),
+      prisma.profile.findUnique({
+        where: { id: driverId },
+        select: { id: true, fullName: true, email: true },
+      }),
+    ])
     if (!driver) throw new AppError('Driver not found', 404)
 
     return {

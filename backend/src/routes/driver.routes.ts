@@ -11,6 +11,10 @@ import {
   updateDriverTrip,
 } from '../controllers/driver-trips.controller.js'
 import {
+  acceptDriverDelivery,
+  declineDriverDelivery,
+} from '../controllers/deliveries.controller.js'
+import {
   getDriverWallet,
   getDriverWalletHistory,
   getDriverWalletPayouts,
@@ -21,6 +25,7 @@ import { asyncHandler } from '../middleware/async-handler.middleware.js'
 import { authenticate, requireRole } from '../middleware/auth.middleware.js'
 import { validateRequest } from '../middleware/validate-request.middleware.js'
 import { submitDriverApplicationSchema } from '../validators/driver-applications.validator.js'
+import { deliveryIdParamSchema, acceptDeliverySchema } from '../validators/deliveries.validator.js'
 import {
   createDriverTripSchema,
   driverTripIdParamSchema,
@@ -87,6 +92,27 @@ driverRouter.post(
   requireRole('driver'),
   validateRequest({ params: driverTripIdParamSchema }),
   asyncHandler(completeDriverTrip),
+)
+
+driverRouter.post(
+  '/trips/:tripId/deliveries/:deliveryId/accept',
+  authenticate,
+  requireRole('driver'),
+  validateRequest({
+    params: driverTripIdParamSchema.merge(deliveryIdParamSchema),
+    body: acceptDeliverySchema,
+  }),
+  asyncHandler(acceptDriverDelivery),
+)
+
+driverRouter.post(
+  '/trips/:tripId/deliveries/:deliveryId/decline',
+  authenticate,
+  requireRole('driver'),
+  validateRequest({
+    params: driverTripIdParamSchema.merge(deliveryIdParamSchema),
+  }),
+  asyncHandler(declineDriverDelivery),
 )
 
 driverRouter.get(
