@@ -84,7 +84,7 @@ function GenderSelectField({
       <Select value={value || undefined} onValueChange={onChange}>
         <SelectTrigger
           className={cn(
-            '!h-11 min-h-11 w-full rounded-xl border-0 bg-white px-4 py-0 text-[15px] text-[#1d1d1f] shadow-none ring-1 ring-[#d2d2d7]',
+            '!h-11 min-h-11 w-full rounded-xl border-0 bg-white px-4 py-0 text-[16px] text-[#1d1d1f] shadow-none ring-1 ring-[#d2d2d7]',
             'focus-visible:border-0 focus-visible:ring-2 focus-visible:ring-[#0071e3]/40',
             !value && 'text-[#86868b]',
           )}
@@ -93,7 +93,7 @@ function GenderSelectField({
         </SelectTrigger>
         <SelectContent className="rounded-xl border-[#d2d2d7]">
           {GENDER_OPTIONS.map((option) => (
-            <SelectItem key={option.value} value={option.value} className="text-[15px]">
+            <SelectItem key={option.value} value={option.value} className="text-[16px]">
               {option.label}
             </SelectItem>
           ))}
@@ -137,7 +137,7 @@ function NumericField({
         maxLength={maxLength}
         onChange={(event) => onChange(event.target.value.replace(/\D/g, ''))}
         className={cn(
-          'h-11 w-full rounded-xl bg-white px-4 text-[15px] text-[#1d1d1f] placeholder:text-[#86868b]/70 ring-1 ring-[#d2d2d7] transition-all outline-none',
+          'h-11 w-full rounded-xl bg-white px-4 text-base text-[#1d1d1f] placeholder:text-[#86868b]/70 ring-1 ring-[#d2d2d7] transition-all outline-none',
           'focus:ring-2 focus:ring-[#0071e3]/40 focus:ring-offset-0',
           '[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
         )}

@@ -4,7 +4,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { PlaceInput } from '@/components/ui/place-input'
-import { fadeInUp, staggerContainer } from '@/lib/motion'
+import { fadeIn, fadeInUp, staggerContainer } from '@/lib/motion'
 import { DEFAULT_TRIP_SEARCH } from '@/lib/trip-search'
 
 export function ScheduleHero() {
@@ -57,7 +57,7 @@ export function ScheduleHero() {
       </motion.div>
 
       <motion.div
-        variants={fadeInUp}
+        variants={fadeIn}
         initial="hidden"
         animate="visible"
         className="mx-auto mt-8 max-w-[980px] px-4 sm:mt-10 sm:px-6 lg:px-8"
@@ -77,7 +77,7 @@ export function ScheduleHero() {
               placeholder="From"
               region="aurora"
               fieldClassName="gap-3 bg-white px-4"
-              inputClassName="text-[15px] placeholder:text-[#86868b]"
+              inputClassName="placeholder:text-[#86868b]"
             />
 
             <button
@@ -97,7 +97,7 @@ export function ScheduleHero() {
               region="metro-manila"
               icon={<Navigation className="size-4 shrink-0 text-[#86868b]" />}
               fieldClassName="gap-3 bg-white px-4"
-              inputClassName="text-[15px] placeholder:text-[#86868b]"
+              inputClassName="placeholder:text-[#86868b]"
             />
           </div>
 

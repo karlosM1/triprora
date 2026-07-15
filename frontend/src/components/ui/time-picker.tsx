@@ -107,7 +107,7 @@ export function TimePicker({
               value={String(parsed.hour12)}
               onValueChange={(next) => updateTime({ hour12: Number(next) })}
             >
-              <SelectTrigger className="h-10 flex-1 rounded-lg border-[#d2d2d7] text-[15px]">
+              <SelectTrigger className="h-10 flex-1 rounded-lg border-[#d2d2d7] text-[16px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
@@ -123,7 +123,7 @@ export function TimePicker({
               value={String(parsed.minute).padStart(2, '0')}
               onValueChange={(next) => updateTime({ minute: Number(next) })}
             >
-              <SelectTrigger className="h-10 flex-1 rounded-lg border-[#d2d2d7] text-[15px]">
+              <SelectTrigger className="h-10 flex-1 rounded-lg border-[#d2d2d7] text-[16px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="rounded-xl">

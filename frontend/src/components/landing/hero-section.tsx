@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/ui/date-picker'
 import { PlaceInput } from '@/components/ui/place-input'
 import {
+  fadeIn,
   fadeInUp,
-  scaleIn,
   staggerContainer,
 } from '@/lib/motion'
 import {
@@ -96,7 +96,7 @@ export function HeroSection() {
         </motion.div>
 
         <motion.form
-          variants={scaleIn}
+          variants={fadeIn}
           initial="hidden"
           animate="visible"
           transition={{ delay: 0.35, duration: 0.9, ease: [0.25, 0.1, 0.25, 1] }}

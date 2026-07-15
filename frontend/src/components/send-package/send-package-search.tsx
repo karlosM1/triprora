@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/ui/date-picker'
 import { PlaceInput } from '@/components/ui/place-input'
 import { vansQueryOptions } from '@/lib/api/vans'
-import { fadeInUp, staggerContainer } from '@/lib/motion'
+import { fadeIn, fadeInUp, staggerContainer } from '@/lib/motion'
 import { TRIP_DESTINATION_PLACES } from '@/lib/places'
 import {
   formatTripSearchDate,
@@ -111,7 +111,7 @@ export function SendPackageSearch() {
       </motion.div>
 
       <motion.form
-        variants={fadeInUp}
+        variants={fadeIn}
         className="rounded-2xl bg-[#e8e8ed] p-4 ring-1 ring-black/5 sm:p-6"
         onSubmit={(event) => {
           event.preventDefault()

@@ -219,7 +219,7 @@ export function AdminWalletPage() {
               type="date"
               value={settlementDate}
               onChange={(e) => setSettlementDate(e.target.value)}
-              className="mt-1.5 block h-11 rounded-xl border border-[#d2d2d7] bg-white px-3 text-[15px] text-[#1d1d1f]"
+              className="mt-1.5 block h-11 rounded-xl border border-[#d2d2d7] bg-white px-3 text-base text-[#1d1d1f]"
             />
           </label>
           <Button

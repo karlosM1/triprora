@@ -740,7 +740,7 @@ function PackageRequestRow({
                 step={1}
                 value={deliveryFee}
                 onChange={(e) => setDeliveryFee(e.target.value)}
-                className="h-10 w-full rounded-lg border border-[#d2d2d7] bg-white px-3 text-[15px] text-[#1d1d1f] outline-none focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/20"
+                className="h-10 w-full rounded-lg border border-[#d2d2d7] bg-white px-3 text-base text-[#1d1d1f] outline-none focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/20"
               />
               <p className="text-[12px] text-[#86868b]">
                 Suggested ₱{delivery.suggestedFee.toLocaleString()} · Sender

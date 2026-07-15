@@ -297,7 +297,7 @@ export function ProfilePage() {
                         >
                           <SelectTrigger
                             className={cn(
-                              '!h-11 min-h-11 w-full rounded-xl border-0 bg-white px-4 py-0 text-[15px] text-[#1d1d1f] shadow-none ring-1 ring-[#d2d2d7]',
+                              '!h-11 min-h-11 w-full rounded-xl border-0 bg-white px-4 py-0 text-[16px] text-[#1d1d1f] shadow-none ring-1 ring-[#d2d2d7]',
                               'focus-visible:border-0 focus-visible:ring-2 focus-visible:ring-[#0071e3]/40',
                               !form.gender && 'text-[#86868b]',
                             )}
@@ -309,7 +309,7 @@ export function ProfilePage() {
                               <SelectItem
                                 key={option.value}
                                 value={option.value}
-                                className="text-[15px]"
+                                className="text-[16px]"
                               >
                                 {option.label}
                               </SelectItem>

@@ -129,6 +129,37 @@
   }
 }
 
+/*
+ * iOS Safari auto-zooms focused form fields when font-size is under 16px,
+ * or when a focused field sits under a CSS transform ancestor.
+ * Force 16px on touch / iOS so rem/utilities cannot slip under the threshold.
+ */
+@supports (-webkit-touch-callout: none) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not(
+      [type='file']
+    ):not([type='button']):not([type='submit']):not([type='reset']):not(
+      [type='hidden']
+    ):not([type='image']),
+  select,
+  textarea,
+  [role='combobox'] {
+    font-size: 16px !important;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not(
+      [type='file']
+    ):not([type='button']):not([type='submit']):not([type='reset']):not(
+      [type='hidden']
+    ):not([type='image']),
+  select,
+  textarea,
+  [role='combobox'] {
+    font-size: 16px !important;
+  }
+}
+
 .landing-page {
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
     'Helvetica Neue', Helvetica, Arial, sans-serif;

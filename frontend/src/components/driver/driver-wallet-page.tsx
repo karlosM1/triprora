@@ -158,7 +158,7 @@ export function DriverWalletPage() {
                 value={payoutAmount}
                 disabled={maxPayout <= 0 || payoutMutation.isPending}
                 onChange={(e) => setPayoutAmount(e.target.value)}
-                className="mt-1.5 h-11 w-full rounded-xl border border-[#d2d2d7] bg-white px-3 text-[15px] text-[#1d1d1f] outline-none focus:border-[#0071e3]"
+                className="mt-1.5 h-11 w-full rounded-xl border border-[#d2d2d7] bg-white px-3 text-base text-[#1d1d1f] outline-none focus:border-[#0071e3]"
               />
             </label>
             <Button

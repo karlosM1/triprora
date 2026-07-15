@@ -182,8 +182,10 @@ export function PlaceInput({
           }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
+          style={{ fontSize: 16 }}
           className={cn(
-            'min-w-0 flex-1 bg-transparent text-[13px] font-normal text-[#1d1d1f] placeholder:text-[#1d1d1f]/50 focus:outline-none',
+            // Explicit 16px prevents iOS Safari focus zoom on this combobox
+            'min-w-0 flex-1 bg-transparent text-[16px] font-normal text-[#1d1d1f] placeholder:text-[#1d1d1f]/50 focus:outline-none',
             inputClassName,
           )}
         />

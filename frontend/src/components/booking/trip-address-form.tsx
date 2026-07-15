@@ -152,7 +152,8 @@ function AddressField({
         rows={2}
         onChange={(e) => onChange(e.target.value)}
         className={cn(
-          'mt-2 w-full resize-none rounded-xl bg-white px-4 py-3 text-[15px] text-[#1d1d1f] placeholder:text-[#86868b]/70 ring-1 ring-[#d2d2d7] transition-all outline-none',
+          // text-base (16px) prevents iOS Safari auto-zoom on focus
+          'mt-2 w-full resize-none rounded-xl bg-white px-4 py-3 text-base text-[#1d1d1f] placeholder:text-[#86868b]/70 ring-1 ring-[#d2d2d7] transition-all outline-none',
           'focus:ring-2 focus:ring-[#0071e3]/40',
         )}
       />

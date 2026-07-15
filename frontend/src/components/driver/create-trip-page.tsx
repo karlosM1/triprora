@@ -57,7 +57,8 @@ const initialForm: FormState = {
 }
 
 const appleInputClass =
-  'h-11 rounded-xl border-[#d2d2d7] bg-white text-[15px] focus-visible:ring-[#0071e3]/40'
+  // text-base (16px) prevents iOS Safari auto-zoom on focus
+  'h-11 rounded-xl border-[#d2d2d7] bg-white text-base focus-visible:ring-[#0071e3]/40'
 
 const placeFieldClass =
   'h-11 gap-2 rounded-xl bg-white px-3 ring-1 ring-[#d2d2d7] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#0071e3]/40'
@@ -360,7 +361,7 @@ export function DriverCreateTripPage({ draftTripId }: DriverCreateTripPageProps 
                   places={TRIP_DESTINATION_PLACES}
                   placeholder="Aurora or Metro Manila"
                   fieldClassName={placeFieldClass}
-                  inputClassName="text-[15px] placeholder:text-[#86868b]"
+                  inputClassName="placeholder:text-[#86868b]"
                 />
                 <p className="text-[13px] text-[#86868b]">
                   Passengers enter their exact home address when booking.
@@ -377,7 +378,7 @@ export function DriverCreateTripPage({ draftTripId }: DriverCreateTripPageProps 
                   places={TRIP_DESTINATION_PLACES}
                   placeholder="Metro Manila or Aurora"
                   fieldClassName={placeFieldClass}
-                  inputClassName="text-[15px] placeholder:text-[#86868b]"
+                  inputClassName="placeholder:text-[#86868b]"
                 />
               </div>
             </div>
@@ -449,7 +450,7 @@ export function DriverCreateTripPage({ draftTripId }: DriverCreateTripPageProps 
                     >
                       <SelectTrigger
                         className={cn(
-                          '!h-11 min-h-11 w-full rounded-xl border-[#d2d2d7] bg-white pr-14 text-[15px] shadow-none focus-visible:ring-[#0071e3]/40',
+                          '!h-11 min-h-11 w-full rounded-xl border-[#d2d2d7] bg-white pr-14 text-base shadow-none focus-visible:ring-[#0071e3]/40',
                           '[&_svg]:hidden',
                         )}
                       >

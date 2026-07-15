@@ -502,7 +502,7 @@ export function AdminDriversPage() {
                   }
                   placeholder="Notes for the applicant..."
                   rows={2}
-                  className="mt-1.5 w-full rounded-xl border border-[#d2d2d7] bg-white px-3 py-2.5 text-[14px] text-[#1d1d1f] placeholder:text-[#86868b]/60 focus:border-[#0066cc] focus:outline-none focus:ring-2 focus:ring-[#0066cc]/20"
+                  className="mt-1.5 w-full rounded-xl border border-[#d2d2d7] bg-white px-3 py-2.5 text-base text-[#1d1d1f] placeholder:text-[#86868b]/60 focus:border-[#0066cc] focus:outline-none focus:ring-2 focus:ring-[#0066cc]/20"
                 />
               </label>
 
