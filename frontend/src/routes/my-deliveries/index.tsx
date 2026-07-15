@@ -4,6 +4,8 @@ import { PageHeader } from '@/components/layout/page-header'
 import { Footer } from '@/components/landing/footer'
 import { Header } from '@/components/landing/header'
 import { Button } from '@/components/ui/button'
+import { TablePagination } from '@/components/ui/table-pagination'
+import { usePagination } from '@/hooks/use-pagination'
 import {
   cancelDelivery,
   fetchDeliveries,
@@ -16,13 +18,15 @@ export const Route = createFileRoute('/my-deliveries/')({
   component: MyDeliveriesPage,
 })
 
-function statusLabel(status: DeliveryListItem['status']) {
-  switch (status) {
+function statusLabel(delivery: DeliveryListItem) {
+  switch (delivery.status) {
     case 'pending':
       return 'Awaiting driver'
     case 'accepted':
       return 'Accepted — pay now'
     case 'confirmed':
+      if (delivery.isPaid) return 'Paid'
+      if (delivery.paymentMethod === 'cash') return 'Confirmed — cash due'
       return 'Confirmed'
     case 'picked_up':
       return 'Picked up'
@@ -33,8 +37,18 @@ function statusLabel(status: DeliveryListItem['status']) {
     case 'cancelled':
       return 'Cancelled'
     default:
-      return status
+      return delivery.status
   }
+}
+
+function paymentMethodLabel(delivery: DeliveryListItem) {
+  if (delivery.paymentMethod === 'cash') {
+    return delivery.isPaid ? 'Cash (collected)' : 'Cash on trip'
+  }
+  if (delivery.paymentMethod === 'qrph') {
+    return delivery.isPaid ? 'QR Ph (paid)' : 'QR Ph'
+  }
+  return null
 }
 
 function MyDeliveriesPage() {
@@ -59,6 +73,16 @@ function MyDeliveriesPage() {
   const isLoading = upcomingQuery.isLoading || historyQuery.isLoading
   const upcoming = upcomingQuery.data ?? []
   const history = historyQuery.data ?? []
+  const {
+    pageItems: historyPage,
+    currentPage: historyPageNumber,
+    totalPages: historyTotalPages,
+    rangeStart: historyRangeStart,
+    rangeEnd: historyRangeEnd,
+    totalItems: historyTotalItems,
+    goToPage: goToHistoryPage,
+    showPagination: showHistoryPagination,
+  } = usePagination(history, 5)
 
   return (
     <div className="app-page min-h-svh bg-[#f5f5f7]">
@@ -136,13 +160,16 @@ function MyDeliveriesPage() {
                           </th>
                           <th className="px-4 py-3 font-medium">Route</th>
                           <th className="px-4 py-3 font-medium">Status</th>
+                          <th className="hidden px-4 py-3 font-medium md:table-cell">
+                            Payment
+                          </th>
                           <th className="px-4 py-3 font-medium text-right">
                             Price
                           </th>
                         </tr>
                       </thead>
                       <tbody>
-                        {history.map((delivery) => (
+                        {historyPage.map((delivery) => (
                           <tr
                             key={delivery.id}
                             className="border-b border-black/5 last:border-0"
@@ -157,7 +184,10 @@ function MyDeliveriesPage() {
                               {delivery.route}
                             </td>
                             <td className="px-4 py-3 text-[#86868b]">
-                              {statusLabel(delivery.status)}
+                              {statusLabel(delivery)}
+                            </td>
+                            <td className="hidden px-4 py-3 text-[#86868b] md:table-cell">
+                              {paymentMethodLabel(delivery) ?? '—'}
                             </td>
                             <td className="px-4 py-3 text-right font-medium text-[#1d1d1f]">
                               {delivery.price}
@@ -166,6 +196,17 @@ function MyDeliveriesPage() {
                         ))}
                       </tbody>
                     </table>
+                    {showHistoryPagination && (
+                      <TablePagination
+                        currentPage={historyPageNumber}
+                        totalPages={historyTotalPages}
+                        rangeStart={historyRangeStart}
+                        rangeEnd={historyRangeEnd}
+                        totalItems={historyTotalItems}
+                        itemLabel="deliveries"
+                        onPageChange={goToHistoryPage}
+                      />
+                    )}
                   </div>
                 )}
               </section>
@@ -205,6 +246,9 @@ function DeliveryCard({
   cancelling?: boolean
   cancelError?: string
 }) {
+  const isAccepted = delivery.status === 'accepted'
+  const paymentLabel = paymentMethodLabel(delivery)
+
   return (
     <article className="rounded-2xl bg-white p-5 ring-1 ring-black/5 sm:p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -214,7 +258,7 @@ function DeliveryCard({
               {delivery.reference}
             </span>
             <span className="rounded-full bg-[#f5f5f7] px-2.5 py-0.5 text-[12px] font-medium text-[#1d1d1f]">
-              {statusLabel(delivery.status)}
+              {statusLabel(delivery)}
             </span>
           </div>
           <h3 className="text-[17px] font-semibold text-[#1d1d1f]">
@@ -229,13 +273,29 @@ function DeliveryCard({
           <p className="text-[13px] text-[#86868b]">
             Receiver: {delivery.receiverName} · {delivery.receiverPhone}
           </p>
+          {paymentLabel && (
+            <p className="text-[13px] text-[#86868b]">Payment: {paymentLabel}</p>
+          )}
           {delivery.status === 'pending' && (
             <p className="text-[13px] text-[#bf4800]">
               Waiting for the driver to accept before you can pay.
             </p>
           )}
+          {isAccepted && (
+            <p className="text-[13px] text-[#86868b]">
+              Driver set this fee. Pay to confirm, or cancel if it&apos;s too
+              expensive.
+            </p>
+          )}
+          {delivery.status === 'confirmed' &&
+            delivery.paymentMethod === 'cash' &&
+            !delivery.isPaid && (
+              <p className="text-[13px] text-[#bf4800]">
+                Pay cash to the driver on trip day — not marked as paid online.
+              </p>
+            )}
         </div>
-        <div className="flex shrink-0 flex-col items-start gap-3 sm:items-end">
+        <div className="flex shrink-0 flex-col items-stretch gap-2 sm:items-end">
           <p className="text-[20px] font-semibold text-[#1d1d1f]">
             {delivery.price}
           </p>
@@ -256,11 +316,11 @@ function DeliveryCard({
             <Button
               type="button"
               variant="outline"
-              className="h-9 rounded-full border-[#d2d2d7] px-4 text-[13px]"
+              className="h-9 rounded-full border-[#d2d2d7] px-4 text-[13px] text-[#bf4800] hover:bg-[#fff5f0] hover:text-[#bf4800]"
               disabled={cancelling}
               onClick={onCancel}
             >
-              {cancelling ? 'Cancelling…' : 'Cancel request'}
+              {cancelling ? 'Cancelling…' : 'Cancel'}
             </Button>
           )}
         </div>

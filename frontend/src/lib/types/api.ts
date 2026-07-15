@@ -87,6 +87,8 @@ export type CreatedDelivery = {
   price: string
   status: DeliveryStatus
   canPay: boolean
+  paymentMethod: 'qrph' | 'cash' | null
+  isPaid: boolean
 }
 
 export type DeliveryListItem = {
@@ -105,6 +107,8 @@ export type DeliveryListItem = {
   status: DeliveryStatus
   canCancel: boolean
   canPay: boolean
+  paymentMethod: 'qrph' | 'cash' | null
+  isPaid: boolean
 }
 
 export type DeliveryDetail = DeliveryListItem & {

@@ -61,6 +61,8 @@ export type CreatedDelivery = {
   price: string
   status: DeliveryStatus
   canPay: boolean
+  paymentMethod: PaymentMethod | null
+  isPaid: boolean
 }
 
 export type DeliveryListItem = {
@@ -79,6 +81,8 @@ export type DeliveryListItem = {
   status: DeliveryStatus
   canCancel: boolean
   canPay: boolean
+  paymentMethod: PaymentMethod | null
+  isPaid: boolean
 }
 
 export type DeliveryDetail = DeliveryListItem & {
@@ -114,4 +118,6 @@ export type DriverDeliveryRequest = {
   senderName: string
   senderPhone: string | null
   createdAt: string
+  paymentMethod: PaymentMethod | null
+  isPaid: boolean
 }

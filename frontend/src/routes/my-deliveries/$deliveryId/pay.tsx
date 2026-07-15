@@ -11,6 +11,7 @@ import { Header } from '@/components/landing/header'
 import { AppleCard, PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import {
+  cancelDelivery,
   deliveryQueryKey,
   fetchDelivery,
   historyDeliveriesQueryKey,
@@ -83,6 +84,21 @@ function PayDeliveryPage() {
     onError: (err: Error & { response?: { data?: { message?: string } } }) => {
       setError(
         err.response?.data?.message ?? 'Payment failed. Please try again.',
+      )
+    },
+  })
+
+  const cancelMutation = useMutation({
+    mutationFn: () => cancelDelivery(deliveryId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: upcomingDeliveriesQueryKey })
+      queryClient.invalidateQueries({ queryKey: historyDeliveriesQueryKey })
+      queryClient.invalidateQueries({ queryKey: deliveryQueryKey(deliveryId) })
+      void navigate({ to: '/my-deliveries' })
+    },
+    onError: (err: Error & { response?: { data?: { message?: string } } }) => {
+      setError(
+        err.response?.data?.message ?? 'Failed to cancel. Please try again.',
       )
     },
   })
@@ -206,17 +222,40 @@ function PayDeliveryPage() {
             </p>
           )}
 
-          <motion.div variants={fadeInUp}>
+          <motion.div
+            variants={fadeInUp}
+            className="flex flex-col gap-3 sm:flex-row sm:items-center"
+          >
             <Button
               className="h-11 w-full rounded-full bg-[#0071e3] text-[15px] hover:bg-[#0077ed] sm:w-auto sm:px-8"
-              disabled={payMutation.isPending || !paymentReady}
+              disabled={payMutation.isPending || cancelMutation.isPending || !paymentReady}
               onClick={() => {
                 setError(null)
                 payMutation.mutate()
               }}
             >
-              {payMutation.isPending ? 'Confirming…' : 'Confirm payment'}
+              {payMutation.isPending
+                ? 'Confirming…'
+                : paymentMethod === 'cash'
+                  ? 'Confirm with cash'
+                  : 'Confirm payment'}
             </Button>
+            {delivery.canCancel && (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 w-full rounded-full border-[#d2d2d7] px-6 text-[14px] text-[#bf4800] hover:bg-[#fff5f0] hover:text-[#bf4800] sm:w-auto"
+                disabled={payMutation.isPending || cancelMutation.isPending}
+                onClick={() => {
+                  setError(null)
+                  cancelMutation.mutate()
+                }}
+              >
+                {cancelMutation.isPending
+                  ? 'Cancelling…'
+                  : 'Cancel'}
+              </Button>
+            )}
           </motion.div>
         </motion.div>
       </main>

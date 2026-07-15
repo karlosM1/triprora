@@ -58,6 +58,8 @@ export type DriverTripDelivery = {
   senderName: string
   senderPhone: string | null
   createdAt: string
+  paymentMethod: 'qrph' | 'cash' | null
+  isPaid: boolean
 }
 
 export type DriverTripDetails = {

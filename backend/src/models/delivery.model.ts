@@ -9,6 +9,7 @@ import type {
   PackageType,
   PackageWeightBand,
   PayDeliveryInput,
+  PaymentMethod,
 } from './delivery.types.js'
 import {
   canCancelBeforePickup,
@@ -85,8 +86,22 @@ function packageLabel(
   return `${PACKAGE_TYPE_LABELS[packageType]} · ${SIZE_LABELS[size]} · ${WEIGHT_BAND_LABELS[weightBand]}`
 }
 
-function canCancelStatus(status: DeliveryStatus) {
-  return status === 'pending' || status === 'accepted' || status === 'confirmed'
+function paymentFields(payment: { provider: string; status: string } | null | undefined): {
+  paymentMethod: PaymentMethod | null
+  isPaid: boolean
+} {
+  if (!payment) {
+    return { paymentMethod: null, isPaid: false }
+  }
+
+  const paymentMethod: PaymentMethod =
+    payment.provider === 'cash' ? 'cash' : 'qrph'
+
+  return {
+    paymentMethod,
+    // Cash stays unpaid until collected on the trip; only succeeded QR counts as paid.
+    isPaid: payment.status === 'succeeded',
+  }
 }
 
 function toListItem(delivery: {
@@ -106,18 +121,24 @@ function toListItem(delivery: {
     priceDisplay: string
   } | null
   van: { departureDate: string; departureTime: string } | null
+  payment?: { provider: string; status: string } | null
 }): DeliveryListItem | null {
   if (!delivery.reference || !delivery.snapshot || !delivery.snapshot.departureTime) {
     return null
   }
 
-  const withinWindow =
-    delivery.van != null
-      ? canCancelBeforePickup(
-          delivery.van.departureDate,
-          delivery.van.departureTime,
-        )
-      : false
+  // Unpaid requests (pending / accepted) can always be cancelled — e.g. if the
+  // driver's fee is too high. Paid (confirmed) still needs the 24h window.
+  const canCancelUnpaid =
+    delivery.status === 'pending' || delivery.status === 'accepted'
+  const canCancelPaid =
+    delivery.status === 'confirmed' &&
+    delivery.van != null &&
+    canCancelBeforePickup(
+      delivery.van.departureDate,
+      delivery.van.departureTime,
+    )
+  const { paymentMethod, isPaid } = paymentFields(delivery.payment)
 
   return {
     id: delivery.id,
@@ -133,8 +154,10 @@ function toListItem(delivery: {
     description: delivery.description,
     price: delivery.snapshot.priceDisplay,
     status: delivery.status,
-    canCancel: canCancelStatus(delivery.status) && withinWindow,
+    canCancel: canCancelUnpaid || canCancelPaid,
     canPay: delivery.status === 'accepted',
+    paymentMethod,
+    isPaid,
   }
 }
 
@@ -158,8 +181,11 @@ function toDriverRequest(delivery: {
     baseFareCents: number
   } | null
   user: { fullName: string | null; email: string; phone: string | null } | null
+  payment?: { provider: string; status: string } | null
 }): DriverDeliveryRequest | null {
   if (!delivery.reference || !delivery.snapshot) return null
+
+  const { paymentMethod, isPaid } = paymentFields(delivery.payment)
 
   return {
     id: delivery.id,
@@ -181,6 +207,8 @@ function toDriverRequest(delivery: {
       delivery.user?.fullName?.trim() || delivery.user?.email || 'Sender',
     senderPhone: delivery.user?.phone ?? null,
     createdAt: delivery.createdAt.toISOString(),
+    paymentMethod,
+    isPaid,
   }
 }
 
@@ -266,6 +294,8 @@ export const DeliveryModel = {
       price: formatPrice(fare.total),
       status: 'pending',
       canPay: false,
+      paymentMethod: null,
+      isPaid: false,
     }
   },
 
@@ -294,7 +324,7 @@ export const DeliveryModel = {
       }
 
       if (delivery.payment) {
-        throw new AppError('This delivery has already been paid', 409)
+        throw new AppError('This delivery already has a payment recorded', 409)
       }
 
       const fareTotal = Math.round(delivery.snapshot.totalCents / 100)
@@ -366,6 +396,10 @@ export const DeliveryModel = {
       })
 
       const presented = presentVan(updated.van!)
+      const { paymentMethod, isPaid } = paymentFields({
+        provider: input.paymentMethod === 'cash' ? 'cash' : 'qrph',
+        status: input.paymentMethod === 'cash' ? 'pending' : 'succeeded',
+      })
 
       return {
         id: updated.id,
@@ -387,6 +421,8 @@ export const DeliveryModel = {
         price: updated.snapshot!.priceDisplay,
         status: 'confirmed',
         canPay: false,
+        paymentMethod,
+        isPaid,
       }
     })
   },
@@ -407,7 +443,7 @@ export const DeliveryModel = {
         userId,
         ...(statusFilter ? { status: { in: statusFilter } } : {}),
       },
-      include: { snapshot: true, van: true },
+      include: { snapshot: true, van: true, payment: true },
       orderBy: { createdAt: 'desc' },
     })
 
@@ -429,6 +465,7 @@ export const DeliveryModel = {
                 departureTime: delivery.van.departureTime,
               }
             : null,
+          payment: delivery.payment,
         }),
       )
       .filter((item): item is DeliveryListItem => item != null)
@@ -437,7 +474,7 @@ export const DeliveryModel = {
   async getById(userId: string, deliveryId: string): Promise<DeliveryDetail> {
     const delivery = await prisma.delivery.findFirst({
       where: { id: deliveryId, userId },
-      include: { snapshot: true, van: true },
+      include: { snapshot: true, van: true, payment: true },
     })
 
     if (!delivery || !delivery.snapshot) {
@@ -460,6 +497,7 @@ export const DeliveryModel = {
             departureTime: delivery.van.departureTime,
           }
         : null,
+      payment: delivery.payment,
     })
 
     if (!listItem) {
@@ -490,7 +528,7 @@ export const DeliveryModel = {
           userId,
           status: { in: ['pending', 'accepted', 'confirmed'] },
         },
-        include: { snapshot: true, van: true },
+        include: { snapshot: true, van: true, payment: true },
       })
 
       if (!delivery || !delivery.snapshot) {
@@ -501,7 +539,10 @@ export const DeliveryModel = {
         throw new AppError('Unable to cancel this delivery', 400)
       }
 
+      const isUnpaid =
+        delivery.status === 'pending' || delivery.status === 'accepted'
       if (
+        !isUnpaid &&
         !canCancelBeforePickup(
           delivery.van.departureDate,
           delivery.van.departureTime,
@@ -513,7 +554,7 @@ export const DeliveryModel = {
       const updated = await tx.delivery.update({
         where: { id: deliveryId },
         data: { status: 'cancelled' },
-        include: { snapshot: true, van: true },
+        include: { snapshot: true, van: true, payment: true },
       })
 
       const listItem = toListItem({
@@ -532,6 +573,7 @@ export const DeliveryModel = {
               departureTime: updated.van.departureTime,
             }
           : null,
+        payment: updated.payment,
       })
 
       if (!listItem) {
@@ -557,10 +599,20 @@ export const DeliveryModel = {
     const deliveries = await prisma.delivery.findMany({
       where: {
         vanId: tripId,
-        status: { in: ['pending', 'accepted', 'confirmed', 'picked_up'] },
+        status: {
+          in: [
+            'pending',
+            'accepted',
+            'confirmed',
+            'picked_up',
+            'cancelled',
+            'declined',
+          ],
+        },
       },
       include: {
         snapshot: true,
+        payment: true,
         user: { select: { fullName: true, email: true, phone: true } },
       },
       orderBy: { createdAt: 'asc' },
@@ -601,6 +653,7 @@ export const DeliveryModel = {
       where: { id: deliveryId, vanId: tripId, status: 'pending' },
       include: {
         snapshot: true,
+        payment: true,
         user: { select: { fullName: true, email: true, phone: true } },
       },
     })
@@ -627,6 +680,7 @@ export const DeliveryModel = {
       },
       include: {
         snapshot: true,
+        payment: true,
         user: { select: { fullName: true, email: true, phone: true } },
       },
     })
@@ -661,6 +715,7 @@ export const DeliveryModel = {
       where: { id: deliveryId, vanId: tripId, status: 'pending' },
       include: {
         snapshot: true,
+        payment: true,
         user: { select: { fullName: true, email: true, phone: true } },
       },
     })
@@ -674,6 +729,7 @@ export const DeliveryModel = {
       data: { status: 'declined' },
       include: {
         snapshot: true,
+        payment: true,
         user: { select: { fullName: true, email: true, phone: true } },
       },
     })

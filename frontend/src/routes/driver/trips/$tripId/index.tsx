@@ -151,6 +151,9 @@ function DriverTripDetailsPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false)
+  const [packageTab, setPackageTab] = useState<'requests' | 'closed'>(
+    'requests',
+  )
   const detailsQuery = useQuery(driverTripDetailsQueryOptions(tripId))
   const passengers = detailsQuery.data?.passengers ?? []
   const deliveries = detailsQuery.data?.deliveries ?? []
@@ -158,6 +161,33 @@ function DriverTripDetailsPage() {
   const activeDeliveries = deliveries.filter((d) =>
     ['accepted', 'confirmed', 'picked_up'].includes(d.status),
   )
+  const openDeliveries = deliveries.filter((d) =>
+    ['pending', 'accepted', 'confirmed', 'picked_up'].includes(d.status),
+  )
+  const closedDeliveries = deliveries.filter((d) =>
+    ['cancelled', 'declined'].includes(d.status),
+  )
+  const PACKAGE_PAGE_SIZE = 5
+  const {
+    pageItems: openDeliveryPage,
+    currentPage: openDeliveryPageNumber,
+    totalPages: openDeliveryTotalPages,
+    rangeStart: openDeliveryRangeStart,
+    rangeEnd: openDeliveryRangeEnd,
+    totalItems: openDeliveryTotalItems,
+    goToPage: goToOpenDeliveryPage,
+    showPagination: showOpenDeliveryPagination,
+  } = usePagination(openDeliveries, PACKAGE_PAGE_SIZE)
+  const {
+    pageItems: closedDeliveryPage,
+    currentPage: closedDeliveryPageNumber,
+    totalPages: closedDeliveryTotalPages,
+    rangeStart: closedDeliveryRangeStart,
+    rangeEnd: closedDeliveryRangeEnd,
+    totalItems: closedDeliveryTotalItems,
+    goToPage: goToClosedDeliveryPage,
+    showPagination: showClosedDeliveryPagination,
+  } = usePagination(closedDeliveries, PACKAGE_PAGE_SIZE)
   const {
     pageItems: passengerPage,
     currentPage: passengerPageNumber,
@@ -347,56 +377,133 @@ function DriverTripDetailsPage() {
       </AppleCard>
 
       <AppleCard className="overflow-hidden">
-        <div className="border-b border-[#d2d2d7]/60 px-6 py-4">
-          <h2 className="text-[17px] font-semibold text-[#1d1d1f]">
-            Package requests
-          </h2>
-          <p className="mt-1 text-[13px] text-[#86868b]">
-            Accept a package to unlock payment for the sender. Decline if you
-            cannot carry it.
-          </p>
-        </div>
-        {deliveries.length === 0 ? (
-          <p className="px-6 py-12 text-center text-[15px] text-[#86868b]">
-            No package requests for this trip yet.
-          </p>
-        ) : (
-          <div className="divide-y divide-[#d2d2d7]/60">
-            {deliveries.map((delivery) => (
-              <PackageRequestRow
-                key={delivery.id}
-                delivery={delivery}
-                accepting={
-                  acceptMutation.isPending &&
-                  acceptMutation.variables?.deliveryId === delivery.id
-                }
-                declining={
-                  declineMutation.isPending &&
-                  declineMutation.variables === delivery.id
-                }
-                onAccept={(deliveryFee) =>
-                  acceptMutation.mutate({ deliveryId: delivery.id, deliveryFee })
-                }
-                onDecline={() => declineMutation.mutate(delivery.id)}
-                actionError={
-                  (acceptMutation.variables?.deliveryId === delivery.id
-                    ? (
-                        acceptMutation.error as Error & {
-                          response?: { data?: { message?: string } }
-                        }
-                      )?.response?.data?.message || acceptMutation.error?.message
-                    : undefined) ||
-                  (declineMutation.variables === delivery.id
-                    ? (
-                        declineMutation.error as Error & {
-                          response?: { data?: { message?: string } }
-                        }
-                      )?.response?.data?.message || declineMutation.error?.message
-                    : undefined)
-                }
-              />
+        <div className="space-y-4 border-b border-[#d2d2d7]/60 px-6 py-4">
+          <div>
+            <h2 className="text-[17px] font-semibold text-[#1d1d1f]">
+              Packages
+            </h2>
+            <p className="mt-1 text-[13px] text-[#86868b]">
+              {packageTab === 'requests'
+                ? 'Accept a package to unlock payment for the sender. Decline if you cannot carry it.'
+                : 'Packages that were cancelled by the sender or declined by you.'}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                ['requests', `Package requests (${openDeliveries.length})`],
+                [
+                  'closed',
+                  `Cancelled / declined (${closedDeliveries.length})`,
+                ],
+              ] as const
+            ).map(([tab, label]) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setPackageTab(tab)}
+                className={cn(
+                  'inline-flex h-9 items-center rounded-full px-4 text-[13px] font-medium transition-colors',
+                  packageTab === tab
+                    ? 'bg-[#1d1d1f] text-white'
+                    : 'bg-[#e8e8ed] text-[#86868b] hover:text-[#1d1d1f]',
+                )}
+              >
+                {label}
+              </button>
             ))}
           </div>
+        </div>
+
+        {packageTab === 'requests' ? (
+          openDeliveries.length === 0 ? (
+            <p className="px-6 py-12 text-center text-[15px] text-[#86868b]">
+              No package requests for this trip yet.
+            </p>
+          ) : (
+            <>
+              <div className="divide-y divide-[#d2d2d7]/60">
+                {openDeliveryPage.map((delivery) => (
+                  <PackageRequestRow
+                    key={delivery.id}
+                    delivery={delivery}
+                    accepting={
+                      acceptMutation.isPending &&
+                      acceptMutation.variables?.deliveryId === delivery.id
+                    }
+                    declining={
+                      declineMutation.isPending &&
+                      declineMutation.variables === delivery.id
+                    }
+                    onAccept={(deliveryFee) =>
+                      acceptMutation.mutate({
+                        deliveryId: delivery.id,
+                        deliveryFee,
+                      })
+                    }
+                    onDecline={() => declineMutation.mutate(delivery.id)}
+                    actionError={
+                      (acceptMutation.variables?.deliveryId === delivery.id
+                        ? (
+                            acceptMutation.error as Error & {
+                              response?: { data?: { message?: string } }
+                            }
+                          )?.response?.data?.message ||
+                          acceptMutation.error?.message
+                        : undefined) ||
+                      (declineMutation.variables === delivery.id
+                        ? (
+                            declineMutation.error as Error & {
+                              response?: { data?: { message?: string } }
+                            }
+                          )?.response?.data?.message ||
+                          declineMutation.error?.message
+                        : undefined)
+                    }
+                  />
+                ))}
+              </div>
+              {showOpenDeliveryPagination && (
+                <TablePagination
+                  currentPage={openDeliveryPageNumber}
+                  totalPages={openDeliveryTotalPages}
+                  rangeStart={openDeliveryRangeStart}
+                  rangeEnd={openDeliveryRangeEnd}
+                  totalItems={openDeliveryTotalItems}
+                  itemLabel="packages"
+                  onPageChange={goToOpenDeliveryPage}
+                />
+              )}
+            </>
+          )
+        ) : closedDeliveries.length === 0 ? (
+          <p className="px-6 py-12 text-center text-[15px] text-[#86868b]">
+            No cancelled or declined packages.
+          </p>
+        ) : (
+          <>
+            <div className="divide-y divide-[#d2d2d7]/60">
+              {closedDeliveryPage.map((delivery) => (
+                <PackageRequestRow
+                  key={delivery.id}
+                  delivery={delivery}
+                  onAccept={() => undefined}
+                  onDecline={() => undefined}
+                />
+              ))}
+            </div>
+            {showClosedDeliveryPagination && (
+              <TablePagination
+                currentPage={closedDeliveryPageNumber}
+                totalPages={closedDeliveryTotalPages}
+                rangeStart={closedDeliveryRangeStart}
+                rangeEnd={closedDeliveryRangeEnd}
+                totalItems={closedDeliveryTotalItems}
+                itemLabel="packages"
+                onPageChange={goToClosedDeliveryPage}
+              />
+            )}
+          </>
         )}
       </AppleCard>
 
@@ -538,10 +645,29 @@ function PackageRequestRow({
       : delivery.status === 'accepted'
         ? 'Accepted — awaiting payment'
         : delivery.status === 'confirmed'
-          ? 'Paid / confirmed'
+          ? delivery.isPaid
+            ? 'Paid'
+            : delivery.paymentMethod === 'cash'
+              ? 'Confirmed — cash due'
+              : 'Confirmed'
           : delivery.status === 'picked_up'
             ? 'Picked up'
-            : delivery.status
+            : delivery.status === 'cancelled'
+              ? 'Cancelled'
+              : delivery.status === 'declined'
+                ? 'Declined'
+                : delivery.status
+
+  const paymentLabel =
+    delivery.paymentMethod === 'cash'
+      ? delivery.isPaid
+        ? 'Cash (collected)'
+        : 'Cash on trip'
+      : delivery.paymentMethod === 'qrph'
+        ? delivery.isPaid
+          ? 'QR Ph (paid)'
+          : 'QR Ph'
+        : null
 
   const feeNumber = Number(deliveryFee)
   const platformFee = Number.isFinite(feeNumber)
@@ -590,6 +716,11 @@ function PackageRequestRow({
           <p className="text-[13px] text-[#86868b]">
             Receiver: {delivery.receiverName} · {delivery.receiverPhone}
           </p>
+          {paymentLabel && (
+            <p className="text-[13px] text-[#86868b]">
+              Payment: {paymentLabel}
+            </p>
+          )}
           {delivery.specialInstructions && (
             <p className="text-[13px] text-[#86868b]">
               Note: {delivery.specialInstructions}

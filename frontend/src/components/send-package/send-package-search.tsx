@@ -112,7 +112,7 @@ export function SendPackageSearch() {
 
       <motion.form
         variants={fadeInUp}
-        className="rounded-2xl bg-white p-4 ring-1 ring-black/5 sm:p-6"
+        className="rounded-2xl bg-[#e8e8ed] p-4 ring-1 ring-black/5 sm:p-6"
         onSubmit={(event) => {
           event.preventDefault()
           handleSearch()
@@ -122,6 +122,7 @@ export function SendPackageSearch() {
           <div className="relative flex min-w-0 flex-1 flex-col gap-3 sm:flex-row">
             <PlaceInput
               className="min-w-0 flex-1"
+              fieldClassName="bg-white hover:bg-white focus-within:bg-white"
               value={from}
               onChange={setFrom}
               placeholder="Pickup area"
@@ -137,6 +138,7 @@ export function SendPackageSearch() {
             </button>
             <PlaceInput
               className="min-w-0 flex-1"
+              fieldClassName="bg-white hover:bg-white focus-within:bg-white"
               value={to}
               onChange={setTo}
               placeholder="Drop-off area"
@@ -144,7 +146,7 @@ export function SendPackageSearch() {
             />
           </div>
           <DatePicker
-            className="w-full lg:w-48"
+            className="w-full bg-white hover:bg-white lg:w-48"
             value={departureDate || todayDateInputValue()}
             onChange={setDepartureDate}
           />

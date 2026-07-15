@@ -6,7 +6,9 @@ import { fadeInUp, staggerContainer, viewportOnce } from '@/lib/motion'
 
 const productLinks = [
   { label: 'Find Vans', to: '/find-vans' as const },
+  { label: 'Send Package', to: '/send-package' as const },
   { label: 'My Bookings', to: '/my-bookings' as const },
+  { label: 'My Deliveries', to: '/my-deliveries' as const },
   { label: 'Schedules', to: '/schedules' as const },
 ] as const
 
@@ -50,8 +52,8 @@ export function Footer() {
               Crabr
             </Link>
             <p className="mt-3 max-w-xs text-[12px] leading-relaxed text-[#86868b]">
-              Door-to-door van service between Aurora and Metro Manila, both
-              ways. Safe, comfortable, and convenient travel with no terminal
+              Door-to-door van seats and package delivery between Aurora and
+              Metro Manila. Safe, comfortable travel with no terminal
               transfers.
             </p>
           </motion.div>
