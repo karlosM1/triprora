@@ -1,11 +1,11 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { PageHeader } from '@/components/layout/page-header'
-import { Footer } from '@/components/landing/footer'
-import { Header } from '@/components/landing/header'
-import { Button } from '@/components/ui/button'
-import { TablePagination } from '@/components/ui/table-pagination'
-import { usePagination } from '@/hooks/use-pagination'
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { PageHeader } from "@/components/layout/page-header";
+import { Footer } from "@/components/landing/footer";
+import { Header } from "@/components/landing/header";
+import { Button } from "@/components/ui/button";
+import { TablePagination } from "@/components/ui/table-pagination";
+import { usePagination } from "@/hooks/use-pagination";
 import {
   cancelDelivery,
   deliveryQueryOptions,
@@ -13,67 +13,67 @@ import {
   historyDeliveriesQueryOptions,
   upcomingDeliveriesQueryKey,
   upcomingDeliveriesQueryOptions,
-} from '@/lib/api/deliveries'
-import { queryClient } from '@/lib/query-client'
-import type { DeliveryListItem } from '@/lib/types/api'
+} from "@/lib/api/deliveries";
+import { queryClient } from "@/lib/query-client";
+import type { DeliveryListItem } from "@/lib/types/api";
 
-export const Route = createFileRoute('/my-deliveries/')({
+export const Route = createFileRoute("/my-deliveries/")({
   loader: () => {
     // Warm the cache without blocking the route — sections render independently.
-    void queryClient.prefetchQuery(upcomingDeliveriesQueryOptions())
-    void queryClient.prefetchQuery(historyDeliveriesQueryOptions())
+    void queryClient.prefetchQuery(upcomingDeliveriesQueryOptions());
+    void queryClient.prefetchQuery(historyDeliveriesQueryOptions());
   },
   component: MyDeliveriesPage,
-})
+});
 
 function statusLabel(delivery: DeliveryListItem) {
   switch (delivery.status) {
-    case 'pending':
-      return 'Awaiting driver'
-    case 'accepted':
-      return 'Accepted — pay now'
-    case 'confirmed':
-      if (delivery.isPaid) return 'Paid'
-      if (delivery.paymentMethod === 'cash') return 'Confirmed — cash due'
-      return 'Confirmed'
-    case 'picked_up':
-      return 'Picked up'
-    case 'delivered':
-      return 'Delivered'
-    case 'declined':
-      return 'Declined by driver'
-    case 'cancelled':
-      return 'Cancelled'
+    case "pending":
+      return "Awaiting driver";
+    case "accepted":
+      return "Accepted — pay now";
+    case "confirmed":
+      if (delivery.isPaid) return "Paid";
+      if (delivery.paymentMethod === "cash") return "Confirmed — cash due";
+      return "Confirmed";
+    case "picked_up":
+      return "Picked up";
+    case "delivered":
+      return "Delivered";
+    case "declined":
+      return "Declined by driver";
+    case "cancelled":
+      return "Cancelled";
     default:
-      return delivery.status
+      return delivery.status;
   }
 }
 
 function paymentMethodLabel(delivery: DeliveryListItem) {
-  if (delivery.paymentMethod === 'cash') {
-    return delivery.isPaid ? 'Cash (collected)' : 'Cash on trip'
+  if (delivery.paymentMethod === "cash") {
+    return delivery.isPaid ? "Cash (collected)" : "Cash on trip";
   }
-  if (delivery.paymentMethod === 'qrph') {
-    return delivery.isPaid ? 'QR Ph (paid)' : 'QR Ph'
+  if (delivery.paymentMethod === "qrph") {
+    return delivery.isPaid ? "QR Ph (paid)" : "QR Ph";
   }
-  return null
+  return null;
 }
 
 function MyDeliveriesPage() {
-  const client = useQueryClient()
-  const upcomingQuery = useQuery(upcomingDeliveriesQueryOptions())
-  const historyQuery = useQuery(historyDeliveriesQueryOptions())
+  const client = useQueryClient();
+  const upcomingQuery = useQuery(upcomingDeliveriesQueryOptions());
+  const historyQuery = useQuery(historyDeliveriesQueryOptions());
 
   const cancelMutation = useMutation({
     mutationFn: cancelDelivery,
     onSuccess: () => {
-      void client.invalidateQueries({ queryKey: upcomingDeliveriesQueryKey })
-      void client.invalidateQueries({ queryKey: historyDeliveriesQueryKey })
+      void client.invalidateQueries({ queryKey: upcomingDeliveriesQueryKey });
+      void client.invalidateQueries({ queryKey: historyDeliveriesQueryKey });
     },
-  })
+  });
 
-  const upcoming = upcomingQuery.data ?? []
-  const history = historyQuery.data ?? []
+  const upcoming = upcomingQuery.data ?? [];
+  const history = historyQuery.data ?? [];
   const {
     pageItems: historyPage,
     currentPage: historyPageNumber,
@@ -83,16 +83,16 @@ function MyDeliveriesPage() {
     totalItems: historyTotalItems,
     goToPage: goToHistoryPage,
     showPagination: showHistoryPagination,
-  } = usePagination(history, 5)
+  } = usePagination(history, 5);
 
   function prefetchDelivery(deliveryId: string) {
-    void client.prefetchQuery(deliveryQueryOptions(deliveryId))
+    void client.prefetchQuery(deliveryQueryOptions(deliveryId));
   }
 
   return (
     <div className="app-page min-h-svh bg-[#f5f5f7]">
       <Header activeLink="my-deliveries" />
-      <main className="mx-auto max-w-[980px] px-6 py-10 lg:px-8 lg:py-14">
+      <main className="mx-auto max-w-245 px-6 py-10 lg:px-8 lg:py-14">
         <PageHeader
           eyebrow="Your packages"
           title="My Deliveries"
@@ -108,7 +108,7 @@ function MyDeliveriesPage() {
               <p className="text-[15px] text-[#86868b]">Loading upcoming…</p>
             ) : upcoming.length === 0 ? (
               <p className="rounded-2xl bg-white p-6 text-[15px] text-[#86868b] ring-1 ring-black/5">
-                No upcoming deliveries.{' '}
+                No upcoming deliveries.{" "}
                 <Link
                   to="/send-package"
                   className="font-medium text-[#0066cc] hover:underline"
@@ -140,7 +140,7 @@ function MyDeliveriesPage() {
                       cancelMutation.variables === delivery.id
                         ? (
                             cancelMutation.error as Error & {
-                              response?: { data?: { message?: string } }
+                              response?: { data?: { message?: string } };
                             }
                           )?.response?.data?.message
                         : undefined
@@ -158,7 +158,9 @@ function MyDeliveriesPage() {
             {historyQuery.isLoading ? (
               <p className="text-[15px] text-[#86868b]">Loading history…</p>
             ) : history.length === 0 ? (
-              <p className="text-[15px] text-[#86868b]">No past deliveries yet.</p>
+              <p className="text-[15px] text-[#86868b]">
+                No past deliveries yet.
+              </p>
             ) : (
               <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-black/5">
                 <table className="w-full text-left text-[14px]">
@@ -197,7 +199,7 @@ function MyDeliveriesPage() {
                           {statusLabel(delivery)}
                         </td>
                         <td className="hidden px-4 py-3 text-[#86868b] md:table-cell">
-                          {paymentMethodLabel(delivery) ?? '—'}
+                          {paymentMethodLabel(delivery) ?? "—"}
                         </td>
                         <td className="px-4 py-3 text-right font-medium text-[#1d1d1f]">
                           {delivery.price}
@@ -240,7 +242,7 @@ function MyDeliveriesPage() {
       </main>
       <Footer />
     </div>
-  )
+  );
 }
 
 function DeliveryCard({
@@ -250,14 +252,14 @@ function DeliveryCard({
   cancelling,
   cancelError,
 }: {
-  delivery: DeliveryListItem
-  onCancel?: () => void
-  onPrefetchPay?: () => void
-  cancelling?: boolean
-  cancelError?: string
+  delivery: DeliveryListItem;
+  onCancel?: () => void;
+  onPrefetchPay?: () => void;
+  cancelling?: boolean;
+  cancelError?: string;
 }) {
-  const isAccepted = delivery.status === 'accepted'
-  const paymentLabel = paymentMethodLabel(delivery)
+  const isAccepted = delivery.status === "accepted";
+  const paymentLabel = paymentMethodLabel(delivery);
 
   return (
     <article className="rounded-2xl bg-white p-5 ring-1 ring-black/5 sm:p-6">
@@ -284,9 +286,11 @@ function DeliveryCard({
             Receiver: {delivery.receiverName} · {delivery.receiverPhone}
           </p>
           {paymentLabel && (
-            <p className="text-[13px] text-[#86868b]">Payment: {paymentLabel}</p>
+            <p className="text-[13px] text-[#86868b]">
+              Payment: {paymentLabel}
+            </p>
           )}
-          {delivery.status === 'pending' && (
+          {delivery.status === "pending" && (
             <p className="text-[13px] text-[#bf4800]">
               Waiting for the driver to accept before you can pay.
             </p>
@@ -297,8 +301,8 @@ function DeliveryCard({
               expensive.
             </p>
           )}
-          {delivery.status === 'confirmed' &&
-            delivery.paymentMethod === 'cash' &&
+          {delivery.status === "confirmed" &&
+            delivery.paymentMethod === "cash" &&
             !delivery.isPaid && (
               <p className="text-[13px] text-[#bf4800]">
                 Pay cash to the driver on trip day — not marked as paid online.
@@ -333,7 +337,7 @@ function DeliveryCard({
               disabled={cancelling}
               onClick={onCancel}
             >
-              {cancelling ? 'Cancelling…' : 'Cancel'}
+              {cancelling ? "Cancelling…" : "Cancel"}
             </Button>
           )}
         </div>
@@ -342,5 +346,5 @@ function DeliveryCard({
         <p className="mt-3 text-[13px] text-[#bf4800]">{cancelError}</p>
       )}
     </article>
-  )
+  );
 }

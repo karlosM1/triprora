@@ -1,7 +1,7 @@
-import { Link } from '@tanstack/react-router'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
+import { Link } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import {
   Calendar,
   Car,
@@ -11,18 +11,22 @@ import {
   Headphones,
   Lightbulb,
   Wallet,
-} from 'lucide-react'
-import { AppleCard, PageHeader, SectionTitle } from '@/components/layout/page-header'
-import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
-import { TablePagination } from '@/components/ui/table-pagination'
-import { usePagination } from '@/hooks/use-pagination'
+} from "lucide-react";
+import {
+  AppleCard,
+  PageHeader,
+  SectionTitle,
+} from "@/components/layout/page-header";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { TablePagination } from "@/components/ui/table-pagination";
+import { usePagination } from "@/hooks/use-pagination";
 import {
   driverTripDetailsQueryOptions,
   driverTripsQueryOptions,
-} from '@/lib/api/driver-trips'
-import { driverWalletQueryKey, fetchDriverWallet } from '@/lib/api/wallet'
-import { useAuth } from '@/lib/auth-context'
+} from "@/lib/api/driver-trips";
+import { driverWalletQueryKey, fetchDriverWallet } from "@/lib/api/wallet";
+import { useAuth } from "@/lib/auth-context";
 import {
   countTodayTrips,
   formatTripDateTime,
@@ -30,15 +34,15 @@ import {
   getTripStatusLabel,
   isPastTrip,
   isUpcomingTrip,
-} from '@/lib/driver-trips'
-import { fadeInUp, staggerContainer } from '@/lib/motion'
-import { cn } from '@/lib/utils'
+} from "@/lib/driver-trips";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
+import { cn } from "@/lib/utils";
 
 type StatCardProps = {
-  title: string
-  value: string
-  footer: string
-}
+  title: string;
+  value: string;
+  footer: string;
+};
 
 function StatCard({ title, value, footer }: StatCardProps) {
   return (
@@ -49,70 +53,84 @@ function StatCard({ title, value, footer }: StatCardProps) {
       </p>
       <p className="mt-1 text-[13px] text-[#86868b]">{footer}</p>
     </AppleCard>
-  )
+  );
 }
 
-function EmptyState({ title, description }: { title: string; description: string }) {
+function EmptyState({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
   return (
     <AppleCard className="border border-dashed border-[#d2d2d7] bg-transparent px-6 py-14 text-center">
       <p className="text-[17px] font-semibold text-[#1d1d1f]">{title}</p>
-      <p className="mx-auto mt-2 max-w-sm text-[15px] text-[#86868b]">{description}</p>
+      <p className="mx-auto mt-2 max-w-sm text-[15px] text-[#86868b]">
+        {description}
+      </p>
     </AppleCard>
-  )
+  );
 }
 
 function useDriverTrips() {
-  return useQuery(driverTripsQueryOptions())
+  return useQuery(driverTripsQueryOptions());
 }
 
 function usePrefetchTripDetails() {
-  const client = useQueryClient()
+  const client = useQueryClient();
   return (tripId: string) => {
-    void client.prefetchQuery(driverTripDetailsQueryOptions(tripId))
-  }
+    void client.prefetchQuery(driverTripDetailsQueryOptions(tripId));
+  };
 }
 
 function publishedTripsCount(trips: { status: string }[]) {
-  return trips.filter((trip) => trip.status === 'published').length
+  return trips.filter((trip) => trip.status === "published").length;
 }
 
-function StatusPill({ label, variant }: { label: string; variant: 'success' | 'draft' | 'default' }) {
+function StatusPill({
+  label,
+  variant,
+}: {
+  label: string;
+  variant: "success" | "draft" | "default";
+}) {
   return (
     <span
       className={cn(
-        'inline-flex rounded-full px-3 py-1 text-[12px] font-medium',
-        variant === 'success' && 'bg-[#f0fdf4] text-[#248a3d]',
-        variant === 'draft' && 'bg-[#fff8eb] text-[#bf4800]',
-        variant === 'default' && 'bg-[#f0f7ff] text-[#0066cc]',
+        "inline-flex rounded-full px-3 py-1 text-[12px] font-medium",
+        variant === "success" && "bg-[#f0fdf4] text-[#248a3d]",
+        variant === "draft" && "bg-[#fff8eb] text-[#bf4800]",
+        variant === "default" && "bg-[#f0f7ff] text-[#0066cc]",
       )}
     >
       {label}
     </span>
-  )
+  );
 }
 
 export function DriverDashboardPage() {
-  const { profile } = useAuth()
-  const tripsQuery = useDriverTrips()
-  const prefetchTrip = usePrefetchTripDetails()
-  const trips = tripsQuery.data ?? []
-  const firstName = profile?.fullName?.split(' ')[0] ?? 'Driver'
+  const { profile } = useAuth();
+  const tripsQuery = useDriverTrips();
+  const prefetchTrip = usePrefetchTripDetails();
+  const trips = tripsQuery.data ?? [];
+  const firstName = profile?.fullName?.split(" ")[0] ?? "Driver";
 
-  const publishedTrips = trips.filter((trip) => trip.status === 'published')
+  const publishedTrips = trips.filter((trip) => trip.status === "published");
   const upcomingTrips = publishedTrips
     .filter((trip) => isUpcomingTrip(trip))
     .sort((a, b) =>
       `${a.departureDate}T${a.departureTime}`.localeCompare(
         `${b.departureDate}T${b.departureTime}`,
       ),
-    )
-  const pastTrips = publishedTrips.filter((trip) => isPastTrip(trip))
-  const nextTrip = upcomingTrips[0]
+    );
+  const pastTrips = publishedTrips.filter((trip) => isPastTrip(trip));
+  const nextTrip = upcomingTrips[0];
   const recentTrips = [...pastTrips].sort((a, b) =>
     `${b.departureDate}T${b.departureTime}`.localeCompare(
       `${a.departureDate}T${a.departureTime}`,
     ),
-  )
+  );
   const {
     pageItems: recentTripPage,
     currentPage: recentPage,
@@ -122,19 +140,19 @@ export function DriverDashboardPage() {
     totalItems: recentTotalItems,
     goToPage: goToRecentPage,
     showPagination: showRecentPagination,
-  } = usePagination(recentTrips)
-  const todayCount = countTodayTrips(trips)
+  } = usePagination(recentTrips);
+  const todayCount = countTodayTrips(trips);
   const walletQuery = useQuery({
     queryKey: driverWalletQueryKey,
     queryFn: fetchDriverWallet,
-  })
-  const walletBalance = walletQuery.data?.balancePesos ?? 0
+  });
+  const walletBalance = walletQuery.data?.balancePesos ?? 0;
   const walletFooter =
-    walletQuery.data?.meaning === 'platform_owes_driver'
-      ? 'Platform owes you'
-      : walletQuery.data?.meaning === 'driver_owes_platform'
-        ? 'You owe the platform'
-        : 'Settled after completed trips'
+    walletQuery.data?.meaning === "platform_owes_driver"
+      ? "Platform owes you"
+      : walletQuery.data?.meaning === "driver_owes_platform"
+        ? "You owe the platform"
+        : "Settled after completed trips";
 
   return (
     <motion.div
@@ -149,8 +167,8 @@ export function DriverDashboardPage() {
           title={`Welcome back, ${firstName}.`}
           subtitle={
             todayCount > 0
-              ? `You have ${todayCount} trip${todayCount === 1 ? '' : 's'} scheduled for today.`
-              : 'No trips scheduled for today.'
+              ? `You have ${todayCount} trip${todayCount === 1 ? "" : "s"} scheduled for today.`
+              : "No trips scheduled for today."
           }
         />
       </motion.div>
@@ -163,7 +181,9 @@ export function DriverDashboardPage() {
         />
         <StatCard
           title="Wallet balance"
-          value={walletQuery.isLoading ? '…' : `₱${walletBalance.toLocaleString()}`}
+          value={
+            walletQuery.isLoading ? "…" : `₱${walletBalance.toLocaleString()}`
+          }
           footer={walletFooter}
         />
         <StatCard
@@ -183,11 +203,16 @@ export function DriverDashboardPage() {
                 <h2 className="text-[17px] font-semibold text-[#1d1d1f]">
                   Next scheduled trip
                 </h2>
-                <StatusPill label={getTripStatusLabel(nextTrip)} variant="success" />
+                <StatusPill
+                  label={getTripStatusLabel(nextTrip)}
+                  variant="success"
+                />
               </div>
               <div className="space-y-5 p-6">
                 <div>
-                  <p className="text-[13px] font-medium text-[#0066cc]">{nextTrip.id}</p>
+                  <p className="text-[13px] font-medium text-[#0066cc]">
+                    {nextTrip.id}
+                  </p>
                   <p className="mt-1 text-[19px] font-semibold text-[#1d1d1f]">
                     {getTripRouteLabel(nextTrip)}
                   </p>
@@ -198,13 +223,17 @@ export function DriverDashboardPage() {
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <p className="text-[12px] font-medium text-[#86868b] uppercase">Pickup</p>
+                    <p className="text-[12px] font-medium text-[#86868b] uppercase">
+                      Pickup
+                    </p>
                     <p className="mt-1 text-[15px] text-[#1d1d1f]">
                       {nextTrip.departureLocation}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[12px] font-medium text-[#86868b] uppercase">Drop-off</p>
+                    <p className="text-[12px] font-medium text-[#86868b] uppercase">
+                      Drop-off
+                    </p>
                     <p className="mt-1 text-[15px] text-[#1d1d1f]">
                       {nextTrip.arrivalLocation}
                     </p>
@@ -213,20 +242,20 @@ export function DriverDashboardPage() {
 
                 <div className="rounded-xl bg-[#f5f5f7] px-4 py-4 text-[14px] text-[#86868b]">
                   <p>
-                    Vehicle:{' '}
+                    Vehicle:{" "}
                     <span className="font-medium text-[#1d1d1f]">
-                      {nextTrip.vehicleName ?? 'Not set'}
+                      {nextTrip.vehicleName ?? "Not set"}
                     </span>
                   </p>
                   <p className="mt-1">
-                    Seats:{' '}
+                    Seats:{" "}
                     <span className="font-medium text-[#1d1d1f]">
-                      {nextTrip.seatsLeft} of{' '}
+                      {nextTrip.seatsLeft} of{" "}
                       {nextTrip.totalSeats ?? nextTrip.seatsLeft} available
                     </span>
                   </p>
                   <p className="mt-1">
-                    Fare:{' '}
+                    Fare:{" "}
                     <span className="font-semibold text-[#1d1d1f]">
                       ₱{nextTrip.price.toLocaleString()}
                     </span>
@@ -277,17 +306,19 @@ export function DriverDashboardPage() {
             ) : (
               <AppleCard className="overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[560px] text-left">
+                  <table className="w-full min-w-140 text-left">
                     <thead>
                       <tr className="border-b border-[#d2d2d7]/60 bg-[#f5f5f7]/50">
-                        {['Trip ID', 'Date', 'Route', 'Fare', 'Status'].map((head) => (
-                          <th
-                            key={head}
-                            className="px-6 py-3 text-[12px] font-medium text-[#86868b] uppercase"
-                          >
-                            {head}
-                          </th>
-                        ))}
+                        {["Trip ID", "Date", "Route", "Fare", "Status"].map(
+                          (head) => (
+                            <th
+                              key={head}
+                              className="px-6 py-3 text-[12px] font-medium text-[#86868b] uppercase"
+                            >
+                              {head}
+                            </th>
+                          ),
+                        )}
                       </tr>
                     </thead>
                     <tbody>
@@ -337,7 +368,9 @@ export function DriverDashboardPage() {
 
         <motion.div variants={fadeInUp} className="space-y-4">
           <AppleCard className="p-5">
-            <p className="text-[13px] font-semibold text-[#1d1d1f]">Quick actions</p>
+            <p className="text-[13px] font-semibold text-[#1d1d1f]">
+              Quick actions
+            </p>
             <div className="mt-4 space-y-1">
               <Button
                 variant="ghost"
@@ -370,7 +403,9 @@ export function DriverDashboardPage() {
           </AppleCard>
 
           <AppleCard className="p-5">
-            <p className="text-[13px] font-medium text-[#86868b]">Live status</p>
+            <p className="text-[13px] font-medium text-[#86868b]">
+              Live status
+            </p>
             <div className="mt-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="size-2 rounded-full bg-[#34c759]" />
@@ -385,11 +420,14 @@ export function DriverDashboardPage() {
           <AppleCard className="bg-[#1d1d1f] p-5 text-white">
             <div className="flex items-center gap-2 text-[#2997ff]">
               <Lightbulb className="size-4" />
-              <p className="text-[12px] font-medium tracking-wide uppercase">Pro tip</p>
+              <p className="text-[12px] font-medium tracking-wide uppercase">
+                Pro tip
+              </p>
             </div>
             <p className="mt-3 text-[17px] font-semibold">Publish early</p>
             <p className="mt-1 text-[14px] leading-relaxed text-[#a1a1a6]">
-              Trips published ahead of time appear on Find Vans for passengers to book.
+              Trips published ahead of time appear on Find Vans for passengers
+              to book.
             </p>
             <Link
               to="/driver/create"
@@ -401,59 +439,65 @@ export function DriverDashboardPage() {
         </motion.div>
       </div>
     </motion.div>
-  )
+  );
 }
 
-type TripTab = 'upcoming' | 'completed' | 'cancelled'
+type TripTab = "upcoming" | "completed" | "cancelled";
 
-const TRIPS_PAGE_SIZE = 6
+const TRIPS_PAGE_SIZE = 6;
 
 export function DriverMyTripsPage() {
-  const tripsQuery = useDriverTrips()
-  const prefetchTrip = usePrefetchTripDetails()
-  const trips = tripsQuery.data ?? []
-  const [activeTab, setActiveTab] = useState<TripTab>('upcoming')
-  const [page, setPage] = useState(1)
-  const tripsTopRef = useRef<HTMLDivElement>(null)
+  const tripsQuery = useDriverTrips();
+  const prefetchTrip = usePrefetchTripDetails();
+  const trips = tripsQuery.data ?? [];
+  const [activeTab, setActiveTab] = useState<TripTab>("upcoming");
+  const [page, setPage] = useState(1);
+  const tripsTopRef = useRef<HTMLDivElement>(null);
 
-  const upcomingTrips = trips.filter((trip) => isUpcomingTrip(trip))
-  const completedTrips = trips.filter((trip) => isPastTrip(trip))
-  const cancelledTrips = trips.filter((trip) => trip.status === 'cancelled')
-  const draftTrips = trips.filter((trip) => trip.status === 'draft')
+  const upcomingTrips = trips.filter((trip) => isUpcomingTrip(trip));
+  const completedTrips = trips.filter((trip) => isPastTrip(trip));
+  const cancelledTrips = trips.filter((trip) => trip.status === "cancelled");
+  const draftTrips = trips.filter((trip) => trip.status === "draft");
 
   const visibleTrips =
-    activeTab === 'upcoming'
+    activeTab === "upcoming"
       ? [...upcomingTrips, ...draftTrips]
-      : activeTab === 'completed'
+      : activeTab === "completed"
         ? completedTrips
-        : cancelledTrips
+        : cancelledTrips;
 
-  const totalPages = Math.max(1, Math.ceil(visibleTrips.length / TRIPS_PAGE_SIZE))
-  const currentPage = Math.min(page, totalPages)
+  const totalPages = Math.max(
+    1,
+    Math.ceil(visibleTrips.length / TRIPS_PAGE_SIZE),
+  );
+  const currentPage = Math.min(page, totalPages);
 
   const paginatedTrips = useMemo(() => {
-    const start = (currentPage - 1) * TRIPS_PAGE_SIZE
-    return visibleTrips.slice(start, start + TRIPS_PAGE_SIZE)
-  }, [currentPage, visibleTrips])
+    const start = (currentPage - 1) * TRIPS_PAGE_SIZE;
+    return visibleTrips.slice(start, start + TRIPS_PAGE_SIZE);
+  }, [currentPage, visibleTrips]);
 
   const tripRangeStart =
-    visibleTrips.length === 0 ? 0 : (currentPage - 1) * TRIPS_PAGE_SIZE + 1
-  const tripRangeEnd = Math.min(currentPage * TRIPS_PAGE_SIZE, visibleTrips.length)
+    visibleTrips.length === 0 ? 0 : (currentPage - 1) * TRIPS_PAGE_SIZE + 1;
+  const tripRangeEnd = Math.min(
+    currentPage * TRIPS_PAGE_SIZE,
+    visibleTrips.length,
+  );
 
   useEffect(() => {
-    setPage(1)
-  }, [activeTab, visibleTrips.length])
+    setPage(1);
+  }, [activeTab, visibleTrips.length]);
 
   function goToPage(nextPage: number) {
-    setPage(nextPage)
-    tripsTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setPage(nextPage);
+    tripsTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   const earningsQuery = useQuery({
     queryKey: driverWalletQueryKey,
     queryFn: fetchDriverWallet,
-  })
-  const walletBalance = earningsQuery.data?.balancePesos ?? 0
+  });
+  const walletBalance = earningsQuery.data?.balancePesos ?? 0;
 
   return (
     <div className="space-y-10">
@@ -476,7 +520,9 @@ export function DriverMyTripsPage() {
         />
         <StatCard
           title="Wallet balance"
-          value={earningsQuery.isLoading ? '…' : `₱${walletBalance.toLocaleString()}`}
+          value={
+            earningsQuery.isLoading ? "…" : `₱${walletBalance.toLocaleString()}`
+          }
           footer="From completed trip settlements"
         />
       </div>
@@ -485,9 +531,12 @@ export function DriverMyTripsPage() {
         <div className="mb-6 flex flex-wrap gap-2">
           {(
             [
-              ['upcoming', `Upcoming (${upcomingTrips.length + draftTrips.length})`],
-              ['completed', 'Completed'],
-              ['cancelled', 'Cancelled'],
+              [
+                "upcoming",
+                `Upcoming (${upcomingTrips.length + draftTrips.length})`,
+              ],
+              ["completed", "Completed"],
+              ["cancelled", "Cancelled"],
             ] as const
           ).map(([tab, label]) => (
             <button
@@ -495,10 +544,10 @@ export function DriverMyTripsPage() {
               type="button"
               onClick={() => setActiveTab(tab)}
               className={cn(
-                'inline-flex h-9 items-center rounded-full px-4 text-[13px] font-medium transition-colors',
+                "inline-flex h-9 items-center rounded-full px-4 text-[13px] font-medium transition-colors",
                 activeTab === tab
-                  ? 'bg-[#1d1d1f] text-white'
-                  : 'bg-[#e8e8ed] text-[#86868b] hover:text-[#1d1d1f]',
+                  ? "bg-[#1d1d1f] text-white"
+                  : "bg-[#e8e8ed] text-[#86868b] hover:text-[#1d1d1f]",
               )}
             >
               {label}
@@ -523,14 +572,16 @@ export function DriverMyTripsPage() {
                       <StatusPill
                         label={getTripStatusLabel(trip)}
                         variant={
-                          trip.status === 'draft'
-                            ? 'draft'
-                            : trip.status === 'completed'
-                              ? 'success'
-                              : 'default'
+                          trip.status === "draft"
+                            ? "draft"
+                            : trip.status === "completed"
+                              ? "success"
+                              : "default"
                         }
                       />
-                      <span className="text-[13px] text-[#86868b]">{trip.id}</span>
+                      <span className="text-[13px] text-[#86868b]">
+                        {trip.id}
+                      </span>
                     </div>
                     <p className="mt-2 text-[17px] font-semibold text-[#1d1d1f]">
                       {getTripRouteLabel(trip)}
@@ -542,7 +593,7 @@ export function DriverMyTripsPage() {
                       </span>
                       <span className="flex items-center gap-1">
                         <Car className="size-3.5" />
-                        {trip.vehicleName ?? 'Vehicle not set'}
+                        {trip.vehicleName ?? "Vehicle not set"}
                       </span>
                       <span>₱{trip.price.toLocaleString()} per seat</span>
                     </div>
@@ -551,10 +602,10 @@ export function DriverMyTripsPage() {
                     <p className="text-[14px] text-[#86868b]">
                       <span className="font-semibold text-[#1d1d1f]">
                         {trip.seatsLeft}
-                      </span>{' '}
+                      </span>{" "}
                       seats left
                     </p>
-                    {trip.status === 'draft' ? (
+                    {trip.status === "draft" ? (
                       <Button
                         className="h-9 rounded-full bg-[#0071e3] px-5 text-[13px] font-normal hover:bg-[#0077ed]"
                         asChild
@@ -582,7 +633,7 @@ export function DriverMyTripsPage() {
                         </Link>
                       </Button>
                     )}
-                    {trip.status === 'published' && (
+                    {trip.status === "published" && (
                       <Link
                         to="/find-vans"
                         className="text-[13px] text-[#0066cc] hover:underline"
@@ -598,14 +649,14 @@ export function DriverMyTripsPage() {
             {visibleTrips.length > TRIPS_PAGE_SIZE && (
               <div className="flex flex-col items-center justify-between gap-4 rounded-2xl bg-white px-4 py-4 ring-1 ring-black/5 sm:flex-row sm:px-6">
                 <p className="text-[13px] text-[#86868b]">
-                  Showing{' '}
+                  Showing{" "}
                   <span className="font-medium text-[#1d1d1f]">
                     {tripRangeStart}–{tripRangeEnd}
-                  </span>{' '}
-                  of{' '}
+                  </span>{" "}
+                  of{" "}
                   <span className="font-medium text-[#1d1d1f]">
                     {visibleTrips.length}
-                  </span>{' '}
+                  </span>{" "}
                   trips
                 </p>
                 <div className="flex items-center gap-2">
@@ -639,5 +690,5 @@ export function DriverMyTripsPage() {
         )}
       </div>
     </div>
-  )
+  );
 }
