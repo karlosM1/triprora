@@ -35,7 +35,7 @@ export type {
 } from './delivery.types.js'
 
 const DEFAULT_IMAGE =
-  'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&h=500&fit=crop'
+  'https://images.unsplash.com/photo-1603292444039-af0812cb5226?w=800&h=500&fit=crop&q=80'
 
 const PACKAGE_TYPE_LABELS: Record<PackageType, string> = {
   documents: 'Documents',

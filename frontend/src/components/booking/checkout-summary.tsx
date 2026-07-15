@@ -6,7 +6,7 @@ import type { TripAddresses } from '@/lib/booking'
 import type { VanResult } from '@/lib/vans'
 
 const VAN_IMAGE =
-  'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=600&q=80&auto=format&fit=crop'
+  'https://images.unsplash.com/photo-1603292444039-af0812cb5226?w=800&h=500&fit=crop&q=80&auto=format'
 
 type CheckoutSummaryProps = {
   van: VanResult
@@ -30,11 +30,11 @@ export function CheckoutSummary({ van, addresses }: CheckoutSummaryProps) {
   return (
     <div className="space-y-4 lg:sticky lg:top-24">
       <AppleCard className="overflow-hidden">
-        <div className="relative aspect-[16/10]">
+        <div className="relative aspect-[16/10] overflow-hidden">
           <img
             src={VAN_IMAGE}
             alt={van.vehicleName ?? van.operator}
-            className="size-full object-cover"
+            className="size-full object-cover object-center"
           />
           <span className="absolute top-3 left-3 rounded-full bg-[#1d1d1f]/80 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-sm">
             Door-to-door

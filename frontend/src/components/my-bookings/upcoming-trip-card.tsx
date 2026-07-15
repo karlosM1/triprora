@@ -28,11 +28,11 @@ export function UpcomingTripCard({ booking }: UpcomingTripCardProps) {
 
       <AppleCard className="overflow-hidden">
         <div className="flex flex-col lg:flex-row">
-          <div className="relative aspect-16/10 shrink-0 lg:aspect-auto lg:w-72 xl:w-80">
+          <div className="relative aspect-16/10 shrink-0 overflow-hidden lg:aspect-auto lg:w-72 xl:w-80">
             <img
               src={booking.image}
               alt={booking.route}
-              className="size-full object-cover"
+              className="size-full object-cover object-center"
             />
             <span className="absolute bottom-3 left-3 rounded-full bg-black/50 px-3 py-1 text-[11px] font-medium tracking-wide text-white backdrop-blur-sm">
               {booking.routeCode}

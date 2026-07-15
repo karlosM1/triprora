@@ -48,7 +48,7 @@ export function BookingTicketSheet({
             <img
               src={booking.image}
               alt={booking.route}
-              className="aspect-[16/9] w-full object-cover"
+              className="aspect-[16/9] w-full object-cover object-center"
             />
             <div className="p-5">
               <div className="flex items-center justify-between border-b border-black/5 pb-4">
