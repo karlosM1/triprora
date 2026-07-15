@@ -1,6 +1,7 @@
+import { isAxiosError } from 'axios'
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Link, notFound, useNavigate } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
 import { CheckoutFooter } from '@/components/booking/booking-footer'
 import {
@@ -13,7 +14,7 @@ import { Button } from '@/components/ui/button'
 import {
   cancelDelivery,
   deliveryQueryKey,
-  fetchDelivery,
+  deliveryQueryOptions,
   historyDeliveriesQueryKey,
   payDelivery,
   upcomingDeliveriesQueryKey,
@@ -25,29 +26,52 @@ import {
   weightBandLabel,
 } from '@/lib/delivery'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
-import { requireAuth } from '@/lib/route-guards'
+import { queryClient } from '@/lib/query-client'
 
 export const Route = createFileRoute('/my-deliveries/$deliveryId/pay')({
-  beforeLoad: async ({ params }) => {
-    await requireAuth(`/my-deliveries/${params.deliveryId}/pay`)
+  loader: async ({ params }) => {
+    try {
+      return await queryClient.ensureQueryData(
+        deliveryQueryOptions(params.deliveryId),
+      )
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 404) {
+        throw notFound()
+      }
+      throw error
+    }
   },
+  notFoundComponent: DeliveryNotFound,
   component: PayDeliveryPage,
 })
+
+function DeliveryNotFound() {
+  return (
+    <div className="app-page min-h-svh bg-[#f5f5f7]">
+      <Header activeLink="my-deliveries" />
+      <main className="mx-auto max-w-[720px] px-6 py-16 text-center">
+        <h1 className="text-[24px] font-semibold text-[#1d1d1f]">
+          Delivery not found
+        </h1>
+        <Button className="mt-6 rounded-full" asChild>
+          <Link to="/my-deliveries">Back to deliveries</Link>
+        </Button>
+      </main>
+    </div>
+  )
+}
 
 function PayDeliveryPage() {
   const { deliveryId } = Route.useParams()
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
+  const client = useQueryClient()
   const [error, setError] = useState<string | null>(null)
   const [paymentMethod, setPaymentMethod] =
     useState<CheckoutPaymentMethod>('qrph')
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null)
   const [paymentReady, setPaymentReady] = useState(false)
 
-  const deliveryQuery = useQuery({
-    queryKey: deliveryQueryKey(deliveryId),
-    queryFn: () => fetchDelivery(deliveryId),
-  })
+  const deliveryQuery = useQuery(deliveryQueryOptions(deliveryId))
 
   const delivery = deliveryQuery.data
   const fare =
@@ -76,9 +100,9 @@ function PayDeliveryPage() {
       })
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: upcomingDeliveriesQueryKey })
-      queryClient.invalidateQueries({ queryKey: historyDeliveriesQueryKey })
-      queryClient.invalidateQueries({ queryKey: deliveryQueryKey(deliveryId) })
+      client.invalidateQueries({ queryKey: upcomingDeliveriesQueryKey })
+      client.invalidateQueries({ queryKey: historyDeliveriesQueryKey })
+      client.invalidateQueries({ queryKey: deliveryQueryKey(deliveryId) })
       void navigate({ to: '/my-deliveries' })
     },
     onError: (err: Error & { response?: { data?: { message?: string } } }) => {
@@ -91,9 +115,9 @@ function PayDeliveryPage() {
   const cancelMutation = useMutation({
     mutationFn: () => cancelDelivery(deliveryId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: upcomingDeliveriesQueryKey })
-      queryClient.invalidateQueries({ queryKey: historyDeliveriesQueryKey })
-      queryClient.invalidateQueries({ queryKey: deliveryQueryKey(deliveryId) })
+      client.invalidateQueries({ queryKey: upcomingDeliveriesQueryKey })
+      client.invalidateQueries({ queryKey: historyDeliveriesQueryKey })
+      client.invalidateQueries({ queryKey: deliveryQueryKey(deliveryId) })
       void navigate({ to: '/my-deliveries' })
     },
     onError: (err: Error & { response?: { data?: { message?: string } } }) => {

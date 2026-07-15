@@ -7,6 +7,7 @@ import type {
   PackageType,
   PackageWeightBand,
 } from '@/lib/types/api'
+import { DEFAULT_STALE_TIME } from '@/lib/query-client'
 
 export type CreateDeliveryInput = {
   vanId: string
@@ -67,3 +68,27 @@ export const upcomingDeliveriesQueryKey = ['deliveries', 'upcoming'] as const
 export const historyDeliveriesQueryKey = ['deliveries', 'history'] as const
 export const deliveryQueryKey = (deliveryId: string) =>
   ['deliveries', deliveryId] as const
+
+export function upcomingDeliveriesQueryOptions() {
+  return {
+    queryKey: upcomingDeliveriesQueryKey,
+    queryFn: () => fetchDeliveries('upcoming'),
+    staleTime: DEFAULT_STALE_TIME,
+  }
+}
+
+export function historyDeliveriesQueryOptions() {
+  return {
+    queryKey: historyDeliveriesQueryKey,
+    queryFn: () => fetchDeliveries('history'),
+    staleTime: DEFAULT_STALE_TIME,
+  }
+}
+
+export function deliveryQueryOptions(deliveryId: string) {
+  return {
+    queryKey: deliveryQueryKey(deliveryId),
+    queryFn: () => fetchDelivery(deliveryId),
+    staleTime: DEFAULT_STALE_TIME,
+  }
+}

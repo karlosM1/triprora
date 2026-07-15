@@ -10,7 +10,7 @@ export type VanBookingData = {
   seats: Seat[]
 }
 
-export const VAN_BOOKING_STALE_TIME = 1000 * 30
+export const VAN_BOOKING_STALE_TIME = 1000 * 60 * 2
 
 export const vanBookingQueryKey = (vanId: string) =>
   ['vans', vanId, 'booking'] as const

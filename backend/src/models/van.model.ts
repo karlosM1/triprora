@@ -280,12 +280,18 @@ export const VanModel = {
   },
 
   async findByDriverId(driverId: string): Promise<DriverTrip[]> {
+    // List view does not need nested driver application/vehicle joins.
     const vans = await prisma.van.findMany({
       where: { driverId },
-      include: vanInclude,
+      include: {
+        route: true,
+        operator: true,
+        vanClass: true,
+        vehicle: true,
+      },
       orderBy: [{ departureDate: 'desc' }, { departureTime: 'desc' }],
     })
-    return vans.map(toDriverTrip)
+    return vans.map((van) => toDriverTrip(van as VanWithRelations))
   },
 
   async findDriverTripDetails(
@@ -312,12 +318,32 @@ export const VanModel = {
             },
           },
         },
+        deliveries: {
+          where: {
+            status: {
+              in: [
+                'pending',
+                'accepted',
+                'confirmed',
+                'picked_up',
+                'cancelled',
+                'declined',
+              ],
+            },
+          },
+          include: {
+            snapshot: true,
+            payment: true,
+            user: { select: { fullName: true, email: true, phone: true } },
+          },
+          orderBy: { createdAt: 'asc' },
+        },
       },
     })
 
     if (!van) return null
 
-    const { seats, bookings, ...tripFields } = van
+    const { seats, bookings, deliveries: rawDeliveries, ...tripFields } = van
     const trip = toDriverTrip(tripFields as VanWithRelations)
 
     const mappedSeats: DriverTripSeat[] = seats.map((seat) => ({
@@ -337,7 +363,7 @@ export const VanModel = {
       bookedAt: booking.createdAt,
     }))
 
-    const deliveries = await DeliveryModel.listForDriverTrip(tripId, driverId)
+    const deliveries = DeliveryModel.mapDriverRequests(rawDeliveries)
 
     return {
       trip,

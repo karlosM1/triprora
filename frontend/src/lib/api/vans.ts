@@ -1,6 +1,7 @@
 import { api } from '@/lib/axios'
 import type { ApiVan, Seat } from '@/lib/types/api'
 import type { DepartureTimeFilter } from '@/lib/trip-search'
+import { DEFAULT_STALE_TIME } from '@/lib/query-client'
 
 export type VanListSort = 'price' | 'departure'
 
@@ -69,5 +70,6 @@ export function vansQueryOptions(params: VanListParams = {}) {
   return {
     queryKey: vansListQueryKey(params),
     queryFn: () => fetchVans(params),
+    staleTime: DEFAULT_STALE_TIME,
   }
 }

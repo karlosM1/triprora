@@ -1,4 +1,5 @@
 import { api } from '@/lib/axios'
+import { DEFAULT_STALE_TIME } from '@/lib/query-client'
 
 export type DriverTrip = {
   id: string
@@ -145,9 +146,18 @@ export const driverTripsQueryKey = ['driver', 'trips'] as const
 export const driverTripDetailsQueryKey = (tripId: string) =>
   ['driver', 'trips', tripId] as const
 
+export function driverTripsQueryOptions() {
+  return {
+    queryKey: driverTripsQueryKey,
+    queryFn: fetchDriverTrips,
+    staleTime: DEFAULT_STALE_TIME,
+  }
+}
+
 export function driverTripDetailsQueryOptions(tripId: string) {
   return {
     queryKey: driverTripDetailsQueryKey(tripId),
     queryFn: () => fetchDriverTripDetails(tripId),
+    staleTime: DEFAULT_STALE_TIME,
   }
 }

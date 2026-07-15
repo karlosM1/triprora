@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
@@ -17,7 +17,10 @@ import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { TablePagination } from '@/components/ui/table-pagination'
 import { usePagination } from '@/hooks/use-pagination'
-import { driverTripsQueryKey, fetchDriverTrips } from '@/lib/api/driver-trips'
+import {
+  driverTripDetailsQueryOptions,
+  driverTripsQueryOptions,
+} from '@/lib/api/driver-trips'
 import { driverWalletQueryKey, fetchDriverWallet } from '@/lib/api/wallet'
 import { useAuth } from '@/lib/auth-context'
 import {
@@ -59,10 +62,14 @@ function EmptyState({ title, description }: { title: string; description: string
 }
 
 function useDriverTrips() {
-  return useQuery({
-    queryKey: driverTripsQueryKey,
-    queryFn: fetchDriverTrips,
-  })
+  return useQuery(driverTripsQueryOptions())
+}
+
+function usePrefetchTripDetails() {
+  const client = useQueryClient()
+  return (tripId: string) => {
+    void client.prefetchQuery(driverTripDetailsQueryOptions(tripId))
+  }
 }
 
 function publishedTripsCount(trips: { status: string }[]) {
@@ -87,6 +94,7 @@ function StatusPill({ label, variant }: { label: string; variant: 'success' | 'd
 export function DriverDashboardPage() {
   const { profile } = useAuth()
   const tripsQuery = useDriverTrips()
+  const prefetchTrip = usePrefetchTripDetails()
   const trips = tripsQuery.data ?? []
   const firstName = profile?.fullName?.split(' ')[0] ?? 'Driver'
 
@@ -229,7 +237,13 @@ export function DriverDashboardPage() {
                   className="h-10 rounded-full bg-[#0071e3] px-6 text-[14px] font-normal hover:bg-[#0077ed]"
                   asChild
                 >
-                  <Link to="/driver/trips/$tripId" params={{ tripId: nextTrip.id }}>
+                  <Link
+                    to="/driver/trips/$tripId"
+                    params={{ tripId: nextTrip.id }}
+                    onMouseEnter={() => prefetchTrip(nextTrip.id)}
+                    onFocus={() => prefetchTrip(nextTrip.id)}
+                    onTouchStart={() => prefetchTrip(nextTrip.id)}
+                  >
                     View trip details
                   </Link>
                 </Button>
@@ -396,6 +410,7 @@ const TRIPS_PAGE_SIZE = 6
 
 export function DriverMyTripsPage() {
   const tripsQuery = useDriverTrips()
+  const prefetchTrip = usePrefetchTripDetails()
   const trips = tripsQuery.data ?? []
   const [activeTab, setActiveTab] = useState<TripTab>('upcoming')
   const [page, setPage] = useState(1)
@@ -556,7 +571,13 @@ export function DriverMyTripsPage() {
                         className="h-9 rounded-full bg-[#0071e3] px-5 text-[13px] font-normal hover:bg-[#0077ed]"
                         asChild
                       >
-                        <Link to="/driver/trips/$tripId" params={{ tripId: trip.id }}>
+                        <Link
+                          to="/driver/trips/$tripId"
+                          params={{ tripId: trip.id }}
+                          onMouseEnter={() => prefetchTrip(trip.id)}
+                          onFocus={() => prefetchTrip(trip.id)}
+                          onTouchStart={() => prefetchTrip(trip.id)}
+                        >
                           View details
                         </Link>
                       </Button>

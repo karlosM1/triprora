@@ -8,7 +8,7 @@ export type VanDeliveryData = {
   van: VanResult
 }
 
-export const VAN_DELIVERY_STALE_TIME = 1000 * 30
+export const VAN_DELIVERY_STALE_TIME = 1000 * 60 * 2
 
 export const vanDeliveryQueryKey = (vanId: string) =>
   ['vans', vanId, 'delivery'] as const

@@ -584,6 +584,43 @@ export const DeliveryModel = {
     })
   },
 
+  mapDriverRequests(
+    deliveries: Array<{
+      id: string
+      reference: string | null
+      status: string
+      description: string
+      packageType: string
+      weightBand: string
+      size: string
+      pickupAddress: string
+      dropoffAddress: string
+      receiverName: string
+      receiverPhone: string
+      specialInstructions: string | null
+      createdAt: Date
+      snapshot: {
+        packageLabel: string
+        priceDisplay: string
+        baseFareCents: number
+      } | null
+      user: { fullName: string | null; email: string; phone: string | null } | null
+      payment?: { provider: string; status: string } | null
+    }>,
+  ): DriverDeliveryRequest[] {
+    return deliveries
+      .map((delivery) =>
+        toDriverRequest({
+          ...delivery,
+          status: delivery.status as DeliveryStatus,
+          packageType: delivery.packageType as PackageType,
+          weightBand: delivery.weightBand as PackageWeightBand,
+          size: delivery.size as PackageSize,
+        }),
+      )
+      .filter((item): item is DriverDeliveryRequest => item != null)
+  },
+
   async listForDriverTrip(
     tripId: string,
     driverId: string,
@@ -618,17 +655,7 @@ export const DeliveryModel = {
       orderBy: { createdAt: 'asc' },
     })
 
-    return deliveries
-      .map((delivery) =>
-        toDriverRequest({
-          ...delivery,
-          status: delivery.status as DeliveryStatus,
-          packageType: delivery.packageType as PackageType,
-          weightBand: delivery.weightBand as PackageWeightBand,
-          size: delivery.size as PackageSize,
-        }),
-      )
-      .filter((item): item is DriverDeliveryRequest => item != null)
+    return DeliveryModel.mapDriverRequests(deliveries)
   },
 
   async acceptByDriver(

@@ -7,31 +7,26 @@ import { UpcomingTripCard } from '@/components/my-bookings/upcoming-trip-card'
 import { Footer } from '@/components/landing/footer'
 import { Header } from '@/components/landing/header'
 import {
-  bookingHistoryQueryKey,
-  fetchBookingHistory,
-  fetchUpcomingBooking,
-  upcomingBookingQueryKey,
+  bookingHistoryQueryOptions,
+  upcomingBookingQueryOptions,
 } from '@/lib/api/bookings'
+import { queryClient } from '@/lib/query-client'
 import { requireAuth } from '@/lib/route-guards'
 
 export const Route = createFileRoute('/my-bookings')({
   beforeLoad: async () => {
     await requireAuth('/my-bookings')
   },
+  loader: () => {
+    void queryClient.prefetchQuery(upcomingBookingQueryOptions())
+    void queryClient.prefetchQuery(bookingHistoryQueryOptions())
+  },
   component: MyBookingsPage,
 })
 
 function MyBookingsPage() {
-  const upcomingQuery = useQuery({
-    queryKey: upcomingBookingQueryKey,
-    queryFn: fetchUpcomingBooking,
-  })
-  const historyQuery = useQuery({
-    queryKey: bookingHistoryQueryKey,
-    queryFn: fetchBookingHistory,
-  })
-
-  const isLoading = upcomingQuery.isLoading || historyQuery.isLoading
+  const upcomingQuery = useQuery(upcomingBookingQueryOptions())
+  const historyQuery = useQuery(bookingHistoryQueryOptions())
 
   return (
     <div className="app-page min-h-svh bg-[#f5f5f7]">
@@ -45,17 +40,19 @@ function MyBookingsPage() {
         />
 
         <div className="mt-12 space-y-14">
-          {isLoading ? (
-            <p className="text-[15px] text-[#86868b]">Loading bookings...</p>
+          {upcomingQuery.isLoading ? (
+            <p className="text-[15px] text-[#86868b]">Loading upcoming trip…</p>
           ) : (
-            <>
-              {upcomingQuery.data && (
-                <UpcomingTripCard booking={upcomingQuery.data} />
-              )}
-              {historyQuery.data && (
-                <BookingHistoryTable bookings={historyQuery.data} />
-              )}
-            </>
+            upcomingQuery.data && (
+              <UpcomingTripCard booking={upcomingQuery.data} />
+            )
+          )}
+          {historyQuery.isLoading ? (
+            <p className="text-[15px] text-[#86868b]">Loading booking history…</p>
+          ) : (
+            historyQuery.data && (
+              <BookingHistoryTable bookings={historyQuery.data} />
+            )
           )}
           <PlanTripCta />
         </div>

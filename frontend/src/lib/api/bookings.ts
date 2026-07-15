@@ -5,6 +5,7 @@ import type {
   UpcomingBooking,
   UpdateBookingInput,
 } from '@/lib/types/api'
+import { DEFAULT_STALE_TIME } from '@/lib/query-client'
 
 export type CreateBookingInput = {
   vanId: string
@@ -50,3 +51,19 @@ export async function cancelBooking(bookingId: string) {
 
 export const upcomingBookingQueryKey = ['bookings', 'upcoming'] as const
 export const bookingHistoryQueryKey = ['bookings', 'history'] as const
+
+export function upcomingBookingQueryOptions() {
+  return {
+    queryKey: upcomingBookingQueryKey,
+    queryFn: fetchUpcomingBooking,
+    staleTime: DEFAULT_STALE_TIME,
+  }
+}
+
+export function bookingHistoryQueryOptions() {
+  return {
+    queryKey: bookingHistoryQueryKey,
+    queryFn: fetchBookingHistory,
+    staleTime: DEFAULT_STALE_TIME,
+  }
+}

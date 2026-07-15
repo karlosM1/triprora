@@ -8,13 +8,21 @@ import { TablePagination } from '@/components/ui/table-pagination'
 import { usePagination } from '@/hooks/use-pagination'
 import {
   cancelDelivery,
-  fetchDeliveries,
+  deliveryQueryOptions,
   historyDeliveriesQueryKey,
+  historyDeliveriesQueryOptions,
   upcomingDeliveriesQueryKey,
+  upcomingDeliveriesQueryOptions,
 } from '@/lib/api/deliveries'
+import { queryClient } from '@/lib/query-client'
 import type { DeliveryListItem } from '@/lib/types/api'
 
 export const Route = createFileRoute('/my-deliveries/')({
+  loader: () => {
+    // Warm the cache without blocking the route — sections render independently.
+    void queryClient.prefetchQuery(upcomingDeliveriesQueryOptions())
+    void queryClient.prefetchQuery(historyDeliveriesQueryOptions())
+  },
   component: MyDeliveriesPage,
 })
 
@@ -52,25 +60,18 @@ function paymentMethodLabel(delivery: DeliveryListItem) {
 }
 
 function MyDeliveriesPage() {
-  const queryClient = useQueryClient()
-  const upcomingQuery = useQuery({
-    queryKey: upcomingDeliveriesQueryKey,
-    queryFn: () => fetchDeliveries('upcoming'),
-  })
-  const historyQuery = useQuery({
-    queryKey: historyDeliveriesQueryKey,
-    queryFn: () => fetchDeliveries('history'),
-  })
+  const client = useQueryClient()
+  const upcomingQuery = useQuery(upcomingDeliveriesQueryOptions())
+  const historyQuery = useQuery(historyDeliveriesQueryOptions())
 
   const cancelMutation = useMutation({
     mutationFn: cancelDelivery,
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: upcomingDeliveriesQueryKey })
-      void queryClient.invalidateQueries({ queryKey: historyDeliveriesQueryKey })
+      void client.invalidateQueries({ queryKey: upcomingDeliveriesQueryKey })
+      void client.invalidateQueries({ queryKey: historyDeliveriesQueryKey })
     },
   })
 
-  const isLoading = upcomingQuery.isLoading || historyQuery.isLoading
   const upcoming = upcomingQuery.data ?? []
   const history = historyQuery.data ?? []
   const {
@@ -84,6 +85,10 @@ function MyDeliveriesPage() {
     showPagination: showHistoryPagination,
   } = usePagination(history, 5)
 
+  function prefetchDelivery(deliveryId: string) {
+    void client.prefetchQuery(deliveryQueryOptions(deliveryId))
+  }
+
   return (
     <div className="app-page min-h-svh bg-[#f5f5f7]">
       <Header activeLink="my-deliveries" />
@@ -95,123 +100,126 @@ function MyDeliveriesPage() {
         />
 
         <div className="mt-12 space-y-14">
-          {isLoading ? (
-            <p className="text-[15px] text-[#86868b]">Loading deliveries…</p>
-          ) : (
-            <>
-              <section className="space-y-4">
-                <h2 className="text-[21px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">
-                  Upcoming
-                </h2>
-                {upcoming.length === 0 ? (
-                  <p className="rounded-2xl bg-white p-6 text-[15px] text-[#86868b] ring-1 ring-black/5">
-                    No upcoming deliveries.{' '}
-                    <Link
-                      to="/send-package"
-                      className="font-medium text-[#0066cc] hover:underline"
-                    >
-                      Send a package
-                    </Link>
-                  </p>
-                ) : (
-                  <div className="space-y-4">
-                    {upcoming.map((delivery) => (
-                      <DeliveryCard
-                        key={delivery.id}
-                        delivery={delivery}
-                        onCancel={
-                          delivery.canCancel
-                            ? () => cancelMutation.mutate(delivery.id)
-                            : undefined
-                        }
-                        cancelling={
-                          cancelMutation.isPending &&
-                          cancelMutation.variables === delivery.id
-                        }
-                        cancelError={
-                          cancelMutation.variables === delivery.id
-                            ? (
-                                cancelMutation.error as Error & {
-                                  response?: { data?: { message?: string } }
-                                }
-                              )?.response?.data?.message
-                            : undefined
-                        }
-                      />
-                    ))}
-                  </div>
-                )}
-              </section>
+          <section className="space-y-4">
+            <h2 className="text-[21px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">
+              Upcoming
+            </h2>
+            {upcomingQuery.isLoading ? (
+              <p className="text-[15px] text-[#86868b]">Loading upcoming…</p>
+            ) : upcoming.length === 0 ? (
+              <p className="rounded-2xl bg-white p-6 text-[15px] text-[#86868b] ring-1 ring-black/5">
+                No upcoming deliveries.{' '}
+                <Link
+                  to="/send-package"
+                  className="font-medium text-[#0066cc] hover:underline"
+                >
+                  Send a package
+                </Link>
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {upcoming.map((delivery) => (
+                  <DeliveryCard
+                    key={delivery.id}
+                    delivery={delivery}
+                    onPrefetchPay={
+                      delivery.canPay
+                        ? () => prefetchDelivery(delivery.id)
+                        : undefined
+                    }
+                    onCancel={
+                      delivery.canCancel
+                        ? () => cancelMutation.mutate(delivery.id)
+                        : undefined
+                    }
+                    cancelling={
+                      cancelMutation.isPending &&
+                      cancelMutation.variables === delivery.id
+                    }
+                    cancelError={
+                      cancelMutation.variables === delivery.id
+                        ? (
+                            cancelMutation.error as Error & {
+                              response?: { data?: { message?: string } }
+                            }
+                          )?.response?.data?.message
+                        : undefined
+                    }
+                  />
+                ))}
+              </div>
+            )}
+          </section>
 
-              <section className="space-y-4">
-                <h2 className="text-[21px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">
-                  History
-                </h2>
-                {history.length === 0 ? (
-                  <p className="text-[15px] text-[#86868b]">No past deliveries yet.</p>
-                ) : (
-                  <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-black/5">
-                    <table className="w-full text-left text-[14px]">
-                      <thead className="border-b border-black/5 text-[12px] text-[#86868b]">
-                        <tr>
-                          <th className="px-4 py-3 font-medium">Reference</th>
-                          <th className="hidden px-4 py-3 font-medium sm:table-cell">
-                            Date
-                          </th>
-                          <th className="px-4 py-3 font-medium">Route</th>
-                          <th className="px-4 py-3 font-medium">Status</th>
-                          <th className="hidden px-4 py-3 font-medium md:table-cell">
-                            Payment
-                          </th>
-                          <th className="px-4 py-3 font-medium text-right">
-                            Price
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {historyPage.map((delivery) => (
-                          <tr
-                            key={delivery.id}
-                            className="border-b border-black/5 last:border-0"
-                          >
-                            <td className="px-4 py-3 font-mono text-[13px] text-[#0066cc]">
-                              {delivery.reference}
-                            </td>
-                            <td className="hidden px-4 py-3 text-[#1d1d1f] sm:table-cell">
-                              {delivery.date}
-                            </td>
-                            <td className="px-4 py-3 text-[#1d1d1f]">
-                              {delivery.route}
-                            </td>
-                            <td className="px-4 py-3 text-[#86868b]">
-                              {statusLabel(delivery)}
-                            </td>
-                            <td className="hidden px-4 py-3 text-[#86868b] md:table-cell">
-                              {paymentMethodLabel(delivery) ?? '—'}
-                            </td>
-                            <td className="px-4 py-3 text-right font-medium text-[#1d1d1f]">
-                              {delivery.price}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    {showHistoryPagination && (
-                      <TablePagination
-                        currentPage={historyPageNumber}
-                        totalPages={historyTotalPages}
-                        rangeStart={historyRangeStart}
-                        rangeEnd={historyRangeEnd}
-                        totalItems={historyTotalItems}
-                        itemLabel="deliveries"
-                        onPageChange={goToHistoryPage}
-                      />
-                    )}
-                  </div>
+          <section className="space-y-4">
+            <h2 className="text-[21px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">
+              History
+            </h2>
+            {historyQuery.isLoading ? (
+              <p className="text-[15px] text-[#86868b]">Loading history…</p>
+            ) : history.length === 0 ? (
+              <p className="text-[15px] text-[#86868b]">No past deliveries yet.</p>
+            ) : (
+              <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-black/5">
+                <table className="w-full text-left text-[14px]">
+                  <thead className="border-b border-black/5 text-[12px] text-[#86868b]">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Reference</th>
+                      <th className="hidden px-4 py-3 font-medium sm:table-cell">
+                        Date
+                      </th>
+                      <th className="px-4 py-3 font-medium">Route</th>
+                      <th className="px-4 py-3 font-medium">Status</th>
+                      <th className="hidden px-4 py-3 font-medium md:table-cell">
+                        Payment
+                      </th>
+                      <th className="px-4 py-3 font-medium text-right">
+                        Price
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {historyPage.map((delivery) => (
+                      <tr
+                        key={delivery.id}
+                        className="border-b border-black/5 last:border-0"
+                      >
+                        <td className="px-4 py-3 font-mono text-[13px] text-[#0066cc]">
+                          {delivery.reference}
+                        </td>
+                        <td className="hidden px-4 py-3 text-[#1d1d1f] sm:table-cell">
+                          {delivery.date}
+                        </td>
+                        <td className="px-4 py-3 text-[#1d1d1f]">
+                          {delivery.route}
+                        </td>
+                        <td className="px-4 py-3 text-[#86868b]">
+                          {statusLabel(delivery)}
+                        </td>
+                        <td className="hidden px-4 py-3 text-[#86868b] md:table-cell">
+                          {paymentMethodLabel(delivery) ?? '—'}
+                        </td>
+                        <td className="px-4 py-3 text-right font-medium text-[#1d1d1f]">
+                          {delivery.price}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {showHistoryPagination && (
+                  <TablePagination
+                    currentPage={historyPageNumber}
+                    totalPages={historyTotalPages}
+                    rangeStart={historyRangeStart}
+                    rangeEnd={historyRangeEnd}
+                    totalItems={historyTotalItems}
+                    itemLabel="deliveries"
+                    onPageChange={goToHistoryPage}
+                  />
                 )}
-              </section>
-            </>
-          )}
+              </div>
+            )}
+          </section>
 
           <div className="rounded-2xl bg-[#1d1d1f] px-6 py-8 text-center sm:px-10">
             <h3 className="text-[21px] font-semibold tracking-[-0.02em] text-white">
@@ -238,11 +246,13 @@ function MyDeliveriesPage() {
 function DeliveryCard({
   delivery,
   onCancel,
+  onPrefetchPay,
   cancelling,
   cancelError,
 }: {
   delivery: DeliveryListItem
   onCancel?: () => void
+  onPrefetchPay?: () => void
   cancelling?: boolean
   cancelError?: string
 }) {
@@ -307,6 +317,9 @@ function DeliveryCard({
               <Link
                 to="/my-deliveries/$deliveryId/pay"
                 params={{ deliveryId: delivery.id }}
+                onMouseEnter={onPrefetchPay}
+                onFocus={onPrefetchPay}
+                onTouchStart={onPrefetchPay}
               >
                 Pay now
               </Link>
