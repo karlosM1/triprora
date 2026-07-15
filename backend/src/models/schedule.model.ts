@@ -37,7 +37,7 @@ export type SchedulesResponse = {
 const featuredRoute: FeaturedRoute = {
   id: 'casiguran-manila',
   label: 'Main Route',
-  title: 'Casiguran, Aurora — Metro Manila',
+  title: 'Casiguran, Aurora to Metro Manila',
   availability: 'Daily Departures',
   departures: 'Morning & evening trips available',
   duration: 'Approx. 6–8 hours',
@@ -46,7 +46,7 @@ const featuredRoute: FeaturedRoute = {
 const businessRoute: BusinessRoute = {
   id: 'casiguran-baler',
   label: 'Aurora Route',
-  title: 'Casiguran — Baler',
+  title: 'Casiguran to Baler',
   description:
     'Door-to-door vans linking northern Aurora with the provincial capital.',
   frequency: 'Frequency: Daily departures',
@@ -56,7 +56,7 @@ const compactRoutes: RouteCard[] = [
   {
     id: 'baler-casiguran',
     icon: 'bus',
-    name: 'Baler — Casiguran',
+    name: 'Baler to Casiguran',
     location: 'Aurora Province',
     frequency: 'Daily',
     duration: '2h 30m trip',
@@ -64,7 +64,7 @@ const compactRoutes: RouteCard[] = [
   {
     id: 'baler-dingalan',
     icon: 'mountains',
-    name: 'Baler — Dingalan',
+    name: 'Baler to Dingalan',
     location: 'Southern Aurora coast',
     frequency: 'Daily',
     duration: '2h trip',
@@ -72,7 +72,7 @@ const compactRoutes: RouteCard[] = [
   {
     id: 'manila-casiguran',
     icon: 'building',
-    name: 'Metro Manila — Casiguran',
+    name: 'Metro Manila to Casiguran',
     location: 'Return trips to Aurora',
     frequency: 'Daily',
     duration: '6–8h trip',

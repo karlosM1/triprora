@@ -3,13 +3,14 @@ import { fadeInUp, staggerContainer, viewportOnce } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
 const partners = [
-  { name: 'Cubao', abbr: 'CUB' },
-  { name: 'Makati', abbr: 'MKT' },
-  { name: 'Pasay', abbr: 'PSY' },
-  { name: 'Quezon City', abbr: 'QC' },
-  { name: 'Taguig', abbr: 'TAG' },
-  { name: 'Manila', abbr: 'MNL' },
-  { name: 'Caloocan', abbr: 'CAL' },
+  { name: 'Dilasag', abbr: 'DIL' },
+  { name: 'Casiguran', abbr: 'CAS' },
+  { name: 'Dinalungan', abbr: 'DIN' },
+  { name: 'Dipaculao', abbr: 'DIP' },
+  { name: 'Baler', abbr: 'BAL' },
+  { name: 'Maria Aurora', abbr: 'MAR' },
+  { name: 'San Luis', abbr: 'SAN' },
+  { name: 'Dingalan', abbr: 'DNG' },
 ]
 
 export function TrustSection() {
@@ -26,19 +27,19 @@ export function TrustSection() {
           variants={fadeInUp}
           className="text-[32px] leading-tight font-semibold tracking-[-0.02em] text-[#1d1d1f] sm:text-[40px]"
         >
-          Trusted by 2,000+ travelers.
+          Door-to-door across Aurora.
         </motion.h2>
         <motion.p
           variants={fadeInUp}
           className="mx-auto mt-3 max-w-lg text-[17px] leading-relaxed text-[#86868b]"
         >
-          Serving routes between Aurora and Metro Manila, both ways, with
-          verified local drivers.
+          Pickup and drop-off in every Aurora municipality, then connected to
+          Metro Manila, both ways, with verified local drivers.
         </motion.p>
 
         <motion.div
           variants={staggerContainer}
-          className="mx-auto mt-14 grid max-w-md grid-cols-3 justify-items-center gap-x-4 gap-y-8 sm:max-w-none sm:grid-cols-4 sm:gap-x-6 lg:grid-cols-7"
+          className="mx-auto mt-14 grid max-w-md grid-cols-3 justify-items-center gap-x-4 gap-y-8 sm:max-w-none sm:grid-cols-4 sm:gap-x-6 lg:grid-cols-8"
         >
           {partners.map((partner, index) => {
             const isMobileOrphan =

@@ -105,7 +105,7 @@ export function CheckoutSummary({ van, addresses }: CheckoutSummaryProps) {
         <Shield className="size-5 shrink-0 text-[#0066cc]" strokeWidth={1.75} />
         <p className="text-[13px] leading-relaxed text-[#86868b]">
           Protected by{' '}
-          <span className="font-medium text-[#1d1d1f]">Flexi-Cancel</span> — cancel
+          <span className="font-medium text-[#1d1d1f]">Flexi-Cancel</span>: cancel
           free up to 24 hours before pickup.
         </p>
       </AppleCard>

@@ -27,7 +27,7 @@ export const Route = createFileRoute('/book/$vanId/confirmation')({
 })
 
 function formatTripDate(departureDate?: string) {
-  if (!departureDate) return '—'
+  if (!departureDate) return '-'
   return new Date(`${departureDate}T00:00:00`).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
@@ -79,7 +79,7 @@ function ConfirmationPage() {
               <div className="flex items-center justify-between border-b border-black/5 pb-4">
                 <span className="text-[13px] text-[#86868b]">Booking reference</span>
                 <span className="font-mono text-[15px] font-semibold text-[#0066cc]">
-                  {ref || '—'}
+                  {ref || '-'}
                 </span>
               </div>
 

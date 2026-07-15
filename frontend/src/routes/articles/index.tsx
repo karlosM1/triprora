@@ -19,7 +19,7 @@ function ArticlesPage() {
         <PageHeader
           eyebrow="Travel Journal"
           title="Tips, insights & inspiration."
-          subtitle="Explore Aurora Province through local stories, travel guides, and insider tips — from surfing in Baler to hidden waterfalls across the Sierra Madre."
+          subtitle="Explore Aurora Province through local stories, travel guides, and insider tips, from surfing in Baler to hidden waterfalls across the Sierra Madre."
         />
 
         <ArticlesGrid

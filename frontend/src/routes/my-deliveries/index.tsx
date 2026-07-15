@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { motion } from "framer-motion";
 import { PageHeader } from "@/components/layout/page-header";
 import { Footer } from "@/components/landing/footer";
 import { Header } from "@/components/landing/header";
@@ -14,12 +15,13 @@ import {
   upcomingDeliveriesQueryKey,
   upcomingDeliveriesQueryOptions,
 } from "@/lib/api/deliveries";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
 import { queryClient } from "@/lib/query-client";
 import type { DeliveryListItem } from "@/lib/types/api";
 
 export const Route = createFileRoute("/my-deliveries/")({
   loader: () => {
-    // Warm the cache without blocking the route — sections render independently.
+    // Warm the cache without blocking the route. Sections render independently.
     void queryClient.prefetchQuery(upcomingDeliveriesQueryOptions());
     void queryClient.prefetchQuery(historyDeliveriesQueryOptions());
   },
@@ -31,10 +33,10 @@ function statusLabel(delivery: DeliveryListItem) {
     case "pending":
       return "Awaiting driver";
     case "accepted":
-      return "Accepted — pay now";
+      return "Accepted: pay now";
     case "confirmed":
       if (delivery.isPaid) return "Paid";
-      if (delivery.paymentMethod === "cash") return "Confirmed — cash due";
+      if (delivery.paymentMethod === "cash") return "Confirmed: cash due";
       return "Confirmed";
     case "picked_up":
       return "Picked up";
@@ -93,14 +95,21 @@ function MyDeliveriesPage() {
     <div className="app-page min-h-svh bg-[#f5f5f7]">
       <Header activeLink="my-deliveries" />
       <main className="mx-auto max-w-245 px-6 py-10 lg:px-8 lg:py-14">
-        <PageHeader
-          eyebrow="Your packages"
-          title="My Deliveries"
-          subtitle="Track package requests. Pay only after the driver accepts."
-        />
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={staggerContainer}
+          className="space-y-12"
+        >
+          <motion.div variants={fadeInUp}>
+            <PageHeader
+              eyebrow="Your packages"
+              title="My Deliveries"
+              subtitle="Track package requests. Pay only after the driver accepts."
+            />
+          </motion.div>
 
-        <div className="mt-12 space-y-14">
-          <section className="space-y-4">
+          <motion.section className="space-y-4" variants={fadeInUp}>
             <h2 className="text-[21px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">
               Upcoming
             </h2>
@@ -117,41 +126,45 @@ function MyDeliveriesPage() {
                 </Link>
               </p>
             ) : (
-              <div className="space-y-4">
+              <motion.div
+                className="space-y-4"
+                variants={staggerContainer}
+              >
                 {upcoming.map((delivery) => (
-                  <DeliveryCard
-                    key={delivery.id}
-                    delivery={delivery}
-                    onPrefetchPay={
-                      delivery.canPay
-                        ? () => prefetchDelivery(delivery.id)
-                        : undefined
-                    }
-                    onCancel={
-                      delivery.canCancel
-                        ? () => cancelMutation.mutate(delivery.id)
-                        : undefined
-                    }
-                    cancelling={
-                      cancelMutation.isPending &&
-                      cancelMutation.variables === delivery.id
-                    }
-                    cancelError={
-                      cancelMutation.variables === delivery.id
-                        ? (
-                            cancelMutation.error as Error & {
-                              response?: { data?: { message?: string } };
-                            }
-                          )?.response?.data?.message
-                        : undefined
-                    }
-                  />
+                  <motion.div key={delivery.id} variants={fadeInUp}>
+                    <DeliveryCard
+                      delivery={delivery}
+                      onPrefetchPay={
+                        delivery.canPay
+                          ? () => prefetchDelivery(delivery.id)
+                          : undefined
+                      }
+                      onCancel={
+                        delivery.canCancel
+                          ? () => cancelMutation.mutate(delivery.id)
+                          : undefined
+                      }
+                      cancelling={
+                        cancelMutation.isPending &&
+                        cancelMutation.variables === delivery.id
+                      }
+                      cancelError={
+                        cancelMutation.variables === delivery.id
+                          ? (
+                              cancelMutation.error as Error & {
+                                response?: { data?: { message?: string } };
+                              }
+                            )?.response?.data?.message
+                          : undefined
+                      }
+                    />
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             )}
-          </section>
+          </motion.section>
 
-          <section className="space-y-4">
+          <motion.section className="space-y-4" variants={fadeInUp}>
             <h2 className="text-[21px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">
               History
             </h2>
@@ -199,7 +212,7 @@ function MyDeliveriesPage() {
                           {statusLabel(delivery)}
                         </td>
                         <td className="hidden px-4 py-3 text-[#86868b] md:table-cell">
-                          {paymentMethodLabel(delivery) ?? "—"}
+                          {paymentMethodLabel(delivery) ?? "-"}
                         </td>
                         <td className="px-4 py-3 text-right font-medium text-[#1d1d1f]">
                           {delivery.price}
@@ -221,14 +234,17 @@ function MyDeliveriesPage() {
                 )}
               </div>
             )}
-          </section>
+          </motion.section>
 
-          <div className="rounded-2xl bg-[#1d1d1f] px-6 py-8 text-center sm:px-10">
+          <motion.div
+            variants={fadeInUp}
+            className="rounded-2xl bg-[#1d1d1f] px-6 py-8 text-center sm:px-10"
+          >
             <h3 className="text-[21px] font-semibold tracking-[-0.02em] text-white">
               Need to send something?
             </h3>
             <p className="mt-2 text-[15px] text-white/70">
-              Request cargo on a published van trip — the driver chooses whether
+              Request cargo on a published van trip. The driver chooses whether
               to accept.
             </p>
             <Button
@@ -237,8 +253,8 @@ function MyDeliveriesPage() {
             >
               <Link to="/send-package">Send a package</Link>
             </Button>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </main>
       <Footer />
     </div>
@@ -305,7 +321,7 @@ function DeliveryCard({
             delivery.paymentMethod === "cash" &&
             !delivery.isPaid && (
               <p className="text-[13px] text-[#bf4800]">
-                Pay cash to the driver on trip day — not marked as paid online.
+                Pay cash to the driver on trip day, not marked as paid online.
               </p>
             )}
         </div>

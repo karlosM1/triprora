@@ -212,7 +212,7 @@ function DeliveryCheckoutPage() {
             <PageHeader
               eyebrow="Review request"
               title="Request delivery"
-              subtitle="Send this package request to the driver. They will set the delivery fee when they accept — then you can pay."
+              subtitle="Send this package request to the driver. They will set the delivery fee when they accept, then you can pay."
             />
           </motion.div>
 

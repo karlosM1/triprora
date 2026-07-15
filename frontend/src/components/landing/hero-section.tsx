@@ -73,7 +73,7 @@ export function HeroSection() {
             variants={fadeInUp}
             className="mt-4 max-w-xl text-[16px] leading-relaxed font-normal text-white/75 sm:mt-5 sm:text-[19px] lg:text-[21px]"
           >
-            Door-to-door van rides between Aurora and Metro Manila — both ways,
+            Door-to-door van rides between Aurora and Metro Manila, both ways,
             fast, easy, and always on your schedule.
           </motion.p>
           <motion.div variants={fadeInUp} className="mt-6 flex w-full flex-col gap-3 sm:mt-8 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-center sm:gap-4">

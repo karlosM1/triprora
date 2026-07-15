@@ -27,7 +27,6 @@ const DEFAULT_IMAGE =
   'https://images.unsplash.com/photo-1603292444039-af0812cb5226?w=800&h=500&fit=crop&q=80'
 
 function resolveBookingImage(imageUrl: string) {
-  // Always serve the current van default for known stock photo IDs.
   if (
     imageUrl.includes('photo-1544620347-c4fd4a3d5957') ||
     imageUrl.includes('photo-1559050695-edde77c73609') ||

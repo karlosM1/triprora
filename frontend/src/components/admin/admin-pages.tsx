@@ -572,7 +572,7 @@ export function AdminTripsPage() {
         <PageHeader
           eyebrow="Admin portal"
           title="Trips & fleet"
-          subtitle="All van trips across the platform — published, draft, and cancelled."
+          subtitle="All van trips across the platform: published, draft, and cancelled."
         />
       </motion.div>
 
@@ -724,8 +724,8 @@ export function AdminBookingsPage() {
                         {booking.date}
                         {booking.time ? ` · ${booking.time}` : ''}
                       </td>
-                      <td className="px-5 py-4 text-[#86868b]">{booking.seat ?? '—'}</td>
-                      <td className="px-5 py-4 text-[#1d1d1f]">{booking.price ?? '—'}</td>
+                      <td className="px-5 py-4 text-[#86868b]">{booking.seat ?? '-'}</td>
+                      <td className="px-5 py-4 text-[#1d1d1f]">{booking.price ?? '-'}</td>
                       <td className="px-5 py-4">
                         <StatusPill
                           label={booking.status}
@@ -783,7 +783,7 @@ export function AdminUsersPage() {
         <PageHeader
           eyebrow="Admin portal"
           title="Users"
-          subtitle="All registered accounts — passengers, drivers, and admins."
+          subtitle="All registered accounts: passengers, drivers, and admins."
         />
       </motion.div>
 
@@ -813,7 +813,7 @@ export function AdminUsersPage() {
                   {pageItems.map((user) => (
                     <tr key={user.id} className="border-b border-black/5 last:border-0">
                       <td className="px-5 py-4 font-medium text-[#1d1d1f]">
-                        {user.fullName ?? '—'}
+                        {user.fullName ?? '-'}
                       </td>
                       <td className="px-5 py-4 text-[#86868b]">{user.email}</td>
                       <td className="px-5 py-4">

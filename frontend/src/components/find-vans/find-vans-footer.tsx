@@ -14,7 +14,7 @@ export function FindVansFooter() {
               Crabr
             </a>
             <p className="mt-3 max-w-sm text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} Crabr — Door-to-door van
+              &copy; {new Date().getFullYear()} Crabr. Door-to-door van
               service between Aurora and Metro Manila, both ways.
             </p>
           </div>

@@ -585,7 +585,7 @@ export function DriverCreateTripPage({ draftTripId }: DriverCreateTripPageProps 
             <div className="flex gap-3 rounded-xl bg-[#f0f7ff] p-4 text-[13px] text-[#86868b]">
               <Info className="mt-0.5 size-4 shrink-0 text-[#0066cc]" />
               <p>
-                Door-to-door service — passengers provide exact pickup and drop-off
+                Door-to-door service. Passengers provide exact pickup and drop-off
                 addresses when booking.
               </p>
             </div>

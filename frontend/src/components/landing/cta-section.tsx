@@ -24,7 +24,7 @@ export function CtaSection() {
           className="mx-auto mt-4 max-w-lg text-[17px] leading-relaxed text-[#a1a1a6]"
         >
           Book a door-to-door van between Aurora and Metro Manila today. Pick
-          your van, choose your seat, and travel comfortably — either direction.
+          your van, choose your seat, and travel comfortably in either direction.
         </motion.p>
         <motion.div
           variants={fadeInUp}

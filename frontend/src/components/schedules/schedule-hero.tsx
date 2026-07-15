@@ -52,7 +52,7 @@ export function ScheduleHero() {
           className="mx-auto mt-3 max-w-xl text-[15px] leading-relaxed text-[#a1a1a6] sm:mt-4 sm:text-[17px]"
         >
           View door-to-door van departures between Aurora and Metro Manila, both
-          ways. No terminals — we pick you up at your door.
+          ways. No terminals. We pick you up at your door.
         </motion.p>
       </motion.div>
 

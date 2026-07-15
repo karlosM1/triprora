@@ -547,13 +547,13 @@ function DriverTripDetailsPage() {
                           )}
                         </td>
                         <td className="px-6 py-4 text-[14px] font-medium text-[#1d1d1f]">
-                          {passenger.seat ?? '—'}
+                          {passenger.seat ?? '-'}
                         </td>
                         <td className="px-6 py-4 text-[14px] text-[#86868b]">
-                          {passenger.phone ?? '—'}
+                          {passenger.phone ?? '-'}
                         </td>
                         <td className="px-6 py-4 font-mono text-[13px] text-[#0066cc]">
-                          {passenger.reference ?? '—'}
+                          {passenger.reference ?? '-'}
                         </td>
                       </tr>
                     ))}
@@ -596,8 +596,8 @@ function DriverTripDetailsPage() {
                       key={seat.label}
                       title={
                         seat.status === 'available'
-                          ? `Seat ${seat.label} — Available`
-                          : `Seat ${seat.label} — Booked`
+                          ? `Seat ${seat.label}: Available`
+                          : `Seat ${seat.label}: Booked`
                       }
                       className={cn(
                         'flex size-10 items-center justify-center rounded-lg text-[11px] font-semibold ring-1',
@@ -643,12 +643,12 @@ function PackageRequestRow({
     delivery.status === 'pending'
       ? 'Pending'
       : delivery.status === 'accepted'
-        ? 'Accepted — awaiting payment'
+        ? 'Accepted: awaiting payment'
         : delivery.status === 'confirmed'
           ? delivery.isPaid
             ? 'Paid'
             : delivery.paymentMethod === 'cash'
-              ? 'Confirmed — cash due'
+              ? 'Confirmed: cash due'
               : 'Confirmed'
           : delivery.status === 'picked_up'
             ? 'Picked up'

@@ -15,7 +15,7 @@ export function SchedulesFooter() {
             Crabr
           </a>
           <p className="mt-1 text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} Crabr — Aurora ↔ Metro Manila
+            &copy; {new Date().getFullYear()} Crabr. Aurora ↔ Metro Manila
             van service.
           </p>
         </div>

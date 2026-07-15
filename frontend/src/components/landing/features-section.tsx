@@ -66,7 +66,7 @@ export function FeaturesSection() {
         >
           Booking a van ride should be as effortless as planning your dream trip.
           We connect travelers with trusted local drivers for safe, comfortable
-          door-to-door travel between Aurora and Metro Manila — both ways.
+          door-to-door travel between Aurora and Metro Manila, both ways.
         </motion.p>
         <motion.div variants={fadeInUp} className="mt-8">
           <Button

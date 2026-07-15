@@ -6,12 +6,12 @@ Door-to-door van booking platform for travel between Aurora Province and Metro M
 
 ## Features
 
-- **Passengers** — Search vans by route and date, select seats, checkout with QR Ph or cash, manage bookings, and save destination addresses
-- **Drivers** — Multi-step registration with document uploads, trip creation and editing, trip completion, and wallet balance with payouts
-- **Admins** — Dashboard stats, trip and booking management, user listing, driver application review, and wallet / settlement / payout oversight
-- **Payments** — PayMongo QR Ph for cashless checkout; cash bookings with platform commission tracking
-- **Schedules** — Browse frequent routes and network monitoring views
-- **Account** — Profile management, privacy policy, and terms of service
+- **Passengers:** Search vans by route and date, select seats, checkout with QR Ph or cash, manage bookings, and save destination addresses
+- **Drivers:** Multi-step registration with document uploads, trip creation and editing, trip completion, and wallet balance with payouts
+- **Admins:** Dashboard stats, trip and booking management, user listing, driver application review, and wallet / settlement / payout oversight
+- **Payments:** PayMongo QR Ph for cashless checkout; cash bookings with platform commission tracking
+- **Schedules:** Browse frequent routes and network monitoring views
+- **Account:** Profile management, privacy policy, and terms of service
 
 ## Tech stack
 
@@ -40,7 +40,7 @@ triprora/
 - [npm](https://www.npmjs.com/) 10+
 - A [Supabase](https://supabase.com/) project (for authentication and storage)
 - A [PayMongo](https://www.paymongo.com/) account (for QR Ph payments)
-- PostgreSQL — either Supabase hosted or local via Docker
+- PostgreSQL, either Supabase hosted or local via Docker
 
 ## Getting started
 
@@ -75,7 +75,7 @@ cp frontend/.env.example frontend/.env
 
 | Variable | Description |
 | --- | --- |
-| `VITE_API_URL` | API base path (default `/api` — proxied to the backend in dev) |
+| `VITE_API_URL` | API base path (default `/api`, proxied to the backend in dev) |
 | `VITE_SUPABASE_URL` | Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | Supabase anon/public key |
 
@@ -83,7 +83,7 @@ cp frontend/.env.example frontend/.env
 
 ### 3. Set up the database
 
-**Option A — Supabase (recommended)**
+**Option A: Supabase (recommended)**
 
 1. Create a Supabase project and copy the connection strings from **Project Settings → Database**.
 2. Paste them into `backend/.env` as `DATABASE_URL` and `DIRECT_URL`.
@@ -94,7 +94,7 @@ npm run db:push
 npm run db:seed
 ```
 
-**Option B — Local Docker Postgres**
+**Option B: Local Docker Postgres**
 
 ```bash
 npm run db:up
@@ -144,7 +144,7 @@ The Vite dev server proxies `/api` requests to `http://localhost:3001` (override
 
 Compose runs a local **development** stack (Postgres, Express with `tsx watch`, Vite with HMR). Source under `backend/src`, `backend/prisma`, and `frontend/src` is bind-mounted so edits hot-reload inside the containers.
 
-Copy env files first (`backend/.env`, `frontend/.env`) — Supabase Auth and PayMongo keys are still required. Compose overrides `DATABASE_URL` / `DIRECT_URL` to the in-compose Postgres service.
+Copy env files first (`backend/.env`, `frontend/.env`). Supabase Auth and PayMongo keys are still required. Compose overrides `DATABASE_URL` / `DIRECT_URL` to the in-compose Postgres service.
 
 Run the full stack:
 
@@ -186,9 +186,9 @@ All routes are prefixed with `/api`.
 
 | Route | Auth | Description |
 | --- | --- | --- |
-| `GET /health` | — | Health check |
-| `/vans` | — | Search and list van trips |
-| `/schedules` | — | Route schedules and frequent routes |
+| `GET /health` | None | Health check |
+| `/vans` | None | Search and list van trips |
+| `/schedules` | None | Route schedules and frequent routes |
 | `/bookings` | User | Create and manage bookings |
 | `/payments` | User | QR Ph payment intents and status |
 | `/me` | User | Profile, account, and destination addresses |
@@ -209,4 +209,4 @@ The account matching `ADMIN_EMAIL` in the backend env is assigned the `admin` ro
 
 ## License
 
-Private — not licensed for public use.
+Private, not licensed for public use.

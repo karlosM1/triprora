@@ -127,7 +127,7 @@ function toListItem(delivery: {
     return null
   }
 
-  // Unpaid requests (pending / accepted) can always be cancelled — e.g. if the
+  // Unpaid requests (pending / accepted) can always be cancelled, e.g. if the
   // driver's fee is too high. Paid (confirmed) still needs the 24h window.
   const canCancelUnpaid =
     delivery.status === 'pending' || delivery.status === 'accepted'

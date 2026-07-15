@@ -57,7 +57,7 @@ export function TripAddressForm({ values, onChange }: TripAddressFormProps) {
     <AppleCard className="p-6 sm:p-8">
       <SectionTitle
         title="Your addresses"
-        subtitle="Door-to-door service — no terminals. Tell us where to pick you up and drop you off."
+        subtitle="Door-to-door service, no terminals. Tell us where to pick you up and drop you off."
       />
 
       <div className="space-y-5">

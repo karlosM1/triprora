@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router'
 
 const routes = [
   {
-    name: 'Casiguran — Cubao',
+    name: 'Casiguran to Cubao',
     transit: '6h 30m Transit',
     price: '₱850',
     badge: 'Daily',
@@ -11,7 +11,7 @@ const routes = [
       'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=600&q=80&auto=format&fit=crop',
   },
   {
-    name: 'Casiguran — Makati',
+    name: 'Casiguran to Makati',
     transit: '7h Transit',
     price: '₱900',
     badge: 'Daily',
@@ -19,7 +19,7 @@ const routes = [
       'https://images.unsplash.com/photo-1496442226666-8d0d0e62e6e9?w=600&q=80&auto=format&fit=crop',
   },
   {
-    name: 'Casiguran — Pasay',
+    name: 'Casiguran to Pasay',
     transit: '7h 15m Transit',
     price: '₱880',
     badge: 'Daily',
@@ -27,7 +27,7 @@ const routes = [
       'https://images.unsplash.com/photo-1530122037265-a5f1f32fcb39?w=600&q=80&auto=format&fit=crop',
   },
   {
-    name: 'Casiguran — Quezon City',
+    name: 'Casiguran to Quezon City',
     transit: '6h 45m Transit',
     price: '₱850',
     badge: 'Limited',

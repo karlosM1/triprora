@@ -35,7 +35,7 @@ const benefits = [
   {
     icon: MapPin,
     title: 'Door-to-door routes',
-    description: 'Serve passengers between Aurora and Metro Manila — both directions.',
+    description: 'Serve passengers between Aurora and Metro Manila, both directions.',
   },
   {
     icon: Wallet,

@@ -72,7 +72,7 @@ export const Route = createFileRoute('/send-package/$vanId/confirmation')({
 })
 
 function formatTripDate(departureDate?: string) {
-  if (!departureDate) return '—'
+  if (!departureDate) return '-'
   return new Date(`${departureDate}T00:00:00`).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
@@ -124,7 +124,7 @@ function DeliveryConfirmationPage() {
                   Delivery reference
                 </span>
                 <span className="font-mono text-[15px] font-semibold text-[#0066cc]">
-                  {search.ref || '—'}
+                  {search.ref || '-'}
                 </span>
               </div>
               <dl className="mt-5 space-y-4">

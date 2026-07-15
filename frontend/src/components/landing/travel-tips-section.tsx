@@ -39,7 +39,7 @@ export function TravelTipsSection() {
             className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#86868b]"
           >
             Explore Aurora Province through local stories, travel guides, and
-            insider tips — from surfing in Baler to hidden waterfalls across
+            insider tips, from surfing in Baler to hidden waterfalls across
             the Sierra Madre.
           </motion.p>
           <motion.div variants={fadeInUp} className="mt-8">

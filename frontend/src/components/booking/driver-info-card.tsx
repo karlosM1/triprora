@@ -49,7 +49,7 @@ export function DriverInfoCard({ van }: DriverInfoCardProps) {
       </div>
 
       <p className="mt-5 text-[13px] leading-relaxed text-[#86868b]">
-        Door-to-door service — your driver picks you up at your door and drops
+        Door-to-door service. Your driver picks you up at your door and drops
         you off at your destination, Aurora or Metro Manila.
       </p>
     </AppleCard>

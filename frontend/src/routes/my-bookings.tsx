@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
+import { motion } from 'framer-motion'
 import { PageHeader } from '@/components/layout/page-header'
 import { BookingHistoryTable } from '@/components/my-bookings/booking-history-table'
 import { PlanTripCta } from '@/components/my-bookings/plan-trip-cta'
@@ -10,6 +11,7 @@ import {
   bookingHistoryQueryOptions,
   upcomingBookingQueryOptions,
 } from '@/lib/api/bookings'
+import { fadeInUp, staggerContainer } from '@/lib/motion'
 import { queryClient } from '@/lib/query-client'
 import { requireAuth } from '@/lib/route-guards'
 
@@ -33,29 +35,50 @@ function MyBookingsPage() {
       <Header activeLink="my-bookings" />
 
       <main className="mx-auto max-w-[980px] px-6 py-10 lg:px-8 lg:py-14">
-        <PageHeader
-          eyebrow="Your trips"
-          title="My Bookings"
-          subtitle="Manage your trips and track upcoming journeys between Aurora and Metro Manila."
-        />
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={staggerContainer}
+          className="space-y-12"
+        >
+          <motion.div variants={fadeInUp}>
+            <PageHeader
+              eyebrow="Your trips"
+              title="My Bookings"
+              subtitle="Manage your trips and track upcoming journeys between Aurora and Metro Manila."
+            />
+          </motion.div>
 
-        <div className="mt-12 space-y-14">
           {upcomingQuery.isLoading ? (
-            <p className="text-[15px] text-[#86868b]">Loading upcoming trip…</p>
+            <motion.p
+              variants={fadeInUp}
+              className="text-[15px] text-[#86868b]"
+            >
+              Loading upcoming trip…
+            </motion.p>
           ) : (
             upcomingQuery.data && (
-              <UpcomingTripCard booking={upcomingQuery.data} />
+              <motion.div variants={fadeInUp}>
+                <UpcomingTripCard booking={upcomingQuery.data} />
+              </motion.div>
             )
           )}
           {historyQuery.isLoading ? (
-            <p className="text-[15px] text-[#86868b]">Loading booking history…</p>
+            <motion.p
+              variants={fadeInUp}
+              className="text-[15px] text-[#86868b]"
+            >
+              Loading booking history…
+            </motion.p>
           ) : (
             historyQuery.data && (
-              <BookingHistoryTable bookings={historyQuery.data} />
+              <motion.div variants={fadeInUp}>
+                <BookingHistoryTable bookings={historyQuery.data} />
+              </motion.div>
             )
           )}
           <PlanTripCta />
-        </div>
+        </motion.div>
       </main>
 
       <Footer />
