@@ -43,8 +43,8 @@ export function Footer() {
         viewport={viewportOnce}
         variants={staggerContainer}
       >
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
-          <motion.div variants={fadeInUp} className="sm:col-span-2 lg:col-span-2">
+        <div className="grid grid-cols-2 gap-8 sm:gap-10 lg:grid-cols-5">
+          <motion.div variants={fadeInUp} className="col-span-2 lg:col-span-2">
             <Link
               to="/"
               className="text-[17px] font-semibold tracking-tight text-[#1d1d1f]"

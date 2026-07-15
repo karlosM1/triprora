@@ -46,12 +46,12 @@ type StatCardProps = {
 
 function StatCard({ title, value, footer }: StatCardProps) {
   return (
-    <AppleCard className="p-6">
-      <p className="text-[13px] font-medium text-[#86868b]">{title}</p>
-      <p className="mt-2 text-[32px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">
+    <AppleCard className="p-4 sm:p-6">
+      <p className="text-[12px] font-medium text-[#86868b] sm:text-[13px]">{title}</p>
+      <p className="mt-2 text-[26px] font-semibold tracking-[-0.02em] text-[#1d1d1f] sm:text-[32px]">
         {value}
       </p>
-      <p className="mt-1 text-[13px] text-[#86868b]">{footer}</p>
+      <p className="mt-1 text-[12px] text-[#86868b] sm:text-[13px]">{footer}</p>
     </AppleCard>
   );
 }
@@ -173,7 +173,7 @@ export function DriverDashboardPage() {
         />
       </motion.div>
 
-      <motion.div variants={fadeInUp} className="grid gap-4 md:grid-cols-3">
+      <motion.div variants={fadeInUp} className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
         <StatCard
           title="Trips completed"
           value={String(pastTrips.length)}
@@ -507,7 +507,7 @@ export function DriverMyTripsPage() {
         subtitle="Manage your upcoming assignments and review historical travel data."
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
         <StatCard
           title="Total trips"
           value={String(trips.length)}

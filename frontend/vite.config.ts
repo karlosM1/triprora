@@ -23,7 +23,17 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      host: true,
+      // Bind to all interfaces so other devices on the WiFi can open the app
+      host: '0.0.0.0',
+      port: 5173,
+      strictPort: true,
+      // Allow tunnels (localtunnel, etc.) and LAN hostnames
+      allowedHosts: true,
+      // localtunnel terminates TLS on 443; keep HMR from aiming at :5173
+      hmr: {
+        protocol: 'wss',
+        clientPort: 443,
+      },
       proxy: {
         '/api': {
           target: apiProxyTarget,
@@ -43,6 +53,18 @@ export default defineConfig(({ mode }) => {
               )
             })
           },
+        },
+      },
+    },
+    preview: {
+      host: '0.0.0.0',
+      port: 4173,
+      strictPort: true,
+      allowedHosts: true,
+      proxy: {
+        '/api': {
+          target: apiProxyTarget,
+          changeOrigin: true,
         },
       },
     },

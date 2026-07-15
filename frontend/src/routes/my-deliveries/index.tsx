@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
+import type { ReactNode } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Footer } from "@/components/landing/footer";
 import { Header } from "@/components/landing/header";
@@ -18,6 +19,7 @@ import {
 import { fadeInUp, staggerContainer } from "@/lib/motion";
 import { queryClient } from "@/lib/query-client";
 import type { DeliveryListItem } from "@/lib/types/api";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/my-deliveries/")({
   loader: () => {
@@ -307,22 +309,22 @@ function DeliveryCard({
             </p>
           )}
           {delivery.status === "pending" && (
-            <p className="text-[13px] text-[#bf4800]">
+            <SystemNotice>
               Waiting for the driver to accept before you can pay.
-            </p>
+            </SystemNotice>
           )}
           {isAccepted && (
-            <p className="text-[13px] text-[#86868b]">
+            <SystemNotice tone="neutral">
               Driver set this fee. Pay to confirm, or cancel if it&apos;s too
               expensive.
-            </p>
+            </SystemNotice>
           )}
           {delivery.status === "confirmed" &&
             delivery.paymentMethod === "cash" &&
             !delivery.isPaid && (
-              <p className="text-[13px] text-[#bf4800]">
+              <SystemNotice>
                 Pay cash to the driver on trip day, not marked as paid online.
-              </p>
+              </SystemNotice>
             )}
         </div>
         <div className="flex shrink-0 flex-col items-stretch gap-2 sm:items-end">
@@ -359,8 +361,38 @@ function DeliveryCard({
         </div>
       </div>
       {cancelError && (
-        <p className="mt-3 text-[13px] text-[#bf4800]">{cancelError}</p>
+        <SystemNotice className="mt-3" tone="danger">
+          {cancelError}
+        </SystemNotice>
       )}
     </article>
+  );
+}
+
+function SystemNotice({
+  children,
+  tone = "warning",
+  className,
+}: {
+  children: ReactNode;
+  tone?: "warning" | "neutral" | "danger";
+  className?: string;
+}) {
+  return (
+    <p
+      role="status"
+      className={cn(
+        "rounded-xl px-3.5 py-2.5 text-[13px] leading-relaxed ring-1",
+        tone === "warning" &&
+          "bg-[#fff8eb] text-[#bf4800] ring-[#bf4800]/20",
+        tone === "neutral" &&
+          "bg-[#f5f5f7] text-[#424245] ring-black/5",
+        tone === "danger" &&
+          "bg-[#fff2f2] text-[#bf4800] ring-[#bf4800]/20",
+        className,
+      )}
+    >
+      {children}
+    </p>
   );
 }

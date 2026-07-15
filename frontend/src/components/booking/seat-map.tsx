@@ -27,7 +27,8 @@ function groupSeatsByRow(seats: Seat[]) {
     }))
 }
 
-const SEAT_CLASS = 'size-[64px] shrink-0'
+const SEAT_CLASS =
+  'size-12 shrink-0 sm:size-14 md:size-[64px]'
 
 export function SeatMap({ seats, selectedSeatId, onSelectSeat }: SeatMapProps) {
   const seatById = Object.fromEntries(seats.map((s) => [s.id, s]))
@@ -61,31 +62,36 @@ export function SeatMap({ seats, selectedSeatId, onSelectSeat }: SeatMapProps) {
             'cursor-not-allowed bg-[#e8e8ed] text-[#86868b]/50 ring-1 ring-transparent',
         )}
       >
-        <svg viewBox="0 0 24 24" fill="currentColor" className="size-5" aria-hidden>
+        <svg viewBox="0 0 24 24" fill="currentColor" className="size-4 sm:size-5" aria-hidden>
           <path d="M4 18v-5h16v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zm2-7V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4H6zm4-5a1 1 0 0 0-1 1v1h2V7a1 1 0 0 0-1-1z" />
         </svg>
-        <span className="mt-0.5 text-[12px] font-medium">{seat.label}</span>
+        <span className="mt-0.5 text-[10px] font-medium sm:text-[12px]">{seat.label}</span>
       </button>
     )
   }
 
   return (
-    <AppleCard className="p-6 sm:p-8">
+    <AppleCard className="overflow-hidden p-4 sm:p-6 md:p-8">
       <SectionTitle
         title="Choose your seat"
         subtitle="Select any available seat. All seats are the same price."
       />
 
-      <div className="flex flex-wrap items-center gap-4 text-[12px] text-[#86868b]">
+      <div className="flex flex-wrap items-center gap-3 text-[12px] text-[#86868b] sm:gap-4">
         <Legend color="bg-[#f5f5f7] ring-1 ring-[#d2d2d7]" label="Available" />
         <Legend color="bg-[#e8e8ed]" label="Occupied" />
         <Legend color="bg-[#0071e3]" label="Selected" />
       </div>
 
-      <div className="mx-auto mt-8 w-fit rounded-2xl bg-[#f5f5f7] p-6 ring-1 ring-black/5 sm:p-8">
-        <div className="mb-5 flex items-center justify-center gap-2.5 rounded-xl bg-white p-5 ring-1 ring-black/5">
-          <div className={cn('flex items-center justify-center rounded-xl bg-[#f5f5f7] ring-1 ring-[#d2d2d7]', SEAT_CLASS)}>
-            <svg viewBox="0 0 24 24" fill="currentColor" className="size-5 text-[#86868b]">
+      <div className="mx-auto mt-6 w-full max-w-[320px] rounded-2xl bg-[#f5f5f7] p-3 ring-1 ring-black/5 sm:mt-8 sm:max-w-[360px] sm:p-6 md:max-w-none md:w-fit md:p-8">
+        <div className="mb-3 grid grid-cols-4 justify-items-center gap-2 rounded-xl bg-white p-3 ring-1 ring-black/5 sm:mb-5 sm:gap-2.5 sm:p-5">
+          <div
+            className={cn(
+              'flex items-center justify-center rounded-xl bg-[#f5f5f7] ring-1 ring-[#d2d2d7]',
+              SEAT_CLASS,
+            )}
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" className="size-4 text-[#86868b] sm:size-5">
               <path d="M4 18v-5h16v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zm2-7V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4H6z" />
             </svg>
           </div>
@@ -94,9 +100,12 @@ export function SeatMap({ seats, selectedSeatId, onSelectSeat }: SeatMapProps) {
           {frontSeat ? renderSeat(frontSeat) : <div className={SEAT_CLASS} aria-hidden />}
         </div>
 
-        <div className="space-y-2.5">
+        <div className="space-y-2 sm:space-y-2.5">
           {passengerRows.map(({ row, seats: rowSeats }) => (
-            <div key={row} className="flex justify-center gap-2.5">
+            <div
+              key={row}
+              className="grid grid-cols-4 justify-items-center gap-2 sm:gap-2.5"
+            >
               {rowSeats.map((seat) => renderSeat(seat))}
             </div>
           ))}

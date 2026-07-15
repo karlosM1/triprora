@@ -388,14 +388,11 @@ function DriverTripDetailsPage() {
                 : 'Packages that were cancelled by the sender or declined by you.'}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {(
               [
                 ['requests', `Package requests (${openDeliveries.length})`],
-                [
-                  'closed',
-                  `Cancelled / declined (${closedDeliveries.length})`,
-                ],
+                ['closed', `Cancelled (${closedDeliveries.length})`],
               ] as const
             ).map(([tab, label]) => (
               <button
@@ -403,13 +400,13 @@ function DriverTripDetailsPage() {
                 type="button"
                 onClick={() => setPackageTab(tab)}
                 className={cn(
-                  'inline-flex h-9 items-center rounded-full px-4 text-[13px] font-medium transition-colors',
+                  'inline-flex h-9 w-full items-center justify-center rounded-full px-2 text-[12px] font-medium transition-colors sm:px-4 sm:text-[13px]',
                   packageTab === tab
                     ? 'bg-[#1d1d1f] text-white'
                     : 'bg-[#e8e8ed] text-[#86868b] hover:text-[#1d1d1f]',
                 )}
               >
-                {label}
+                <span className="truncate">{label}</span>
               </button>
             ))}
           </div>

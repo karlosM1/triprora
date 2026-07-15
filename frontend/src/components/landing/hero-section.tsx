@@ -76,10 +76,10 @@ export function HeroSection() {
             Door-to-door van rides between Aurora and Metro Manila, both ways,
             fast, easy, and always on your schedule.
           </motion.p>
-          <motion.div variants={fadeInUp} className="mt-6 flex w-full flex-col gap-3 sm:mt-8 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-center sm:gap-4">
+          <motion.div variants={fadeInUp} className="mt-6 flex w-full flex-row justify-center gap-3 sm:mt-8 sm:w-auto sm:flex-wrap sm:gap-4">
             <Button
               size="lg"
-              className="h-11 w-full rounded-full bg-[#0071e3] px-7 text-[15px] font-normal hover:bg-[#0077ed] sm:w-auto sm:text-[17px]"
+              className="h-11 flex-1 rounded-full bg-[#0071e3] px-4 text-[15px] font-normal hover:bg-[#0077ed] sm:flex-none sm:px-7 sm:text-[17px]"
               onClick={handleSearch}
             >
               Find a van
@@ -87,7 +87,7 @@ export function HeroSection() {
             <Button
               size="lg"
               variant="ghost"
-              className="h-11 w-full rounded-full px-7 text-[15px] font-normal text-[#2997ff] hover:bg-white/10 hover:text-[#2997ff] sm:w-auto sm:text-[17px]"
+              className="h-11 flex-1 rounded-full px-4 text-[15px] font-normal text-[#2997ff] hover:bg-white/10 hover:text-[#2997ff] sm:flex-none sm:px-7 sm:text-[17px]"
               asChild
             >
               <Link to="/send-package">Send a Package</Link>
