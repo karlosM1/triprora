@@ -1,43 +1,50 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { motion } from 'framer-motion'
-import { Header } from '@/components/landing/header'
-import { Footer } from '@/components/landing/footer'
-import { PageHeader, AppleCard, SectionTitle } from '@/components/layout/page-header'
-import { fadeInUp, staggerContainer, viewportOnce } from '@/lib/motion'
+import { createFileRoute } from "@tanstack/react-router";
+import { motion } from "framer-motion";
+import { Header } from "@/components/landing/header";
+import { Footer } from "@/components/landing/footer";
+import {
+  PageHeader,
+  AppleCard,
+  SectionTitle,
+} from "@/components/layout/page-header";
+import { fadeInUp, staggerContainer, viewportOnce } from "@/lib/motion";
 
-export const Route = createFileRoute('/support')({
+export const Route = createFileRoute("/support")({
   component: SupportPage,
-})
+});
 
 const FAQ_ITEMS = [
   {
-    question: 'How do I change or cancel a booking?',
+    question: "How do I change or cancel a booking?",
     answer: (
       <>
-        Go to <strong>My Bookings</strong>, open your trip, and use the available options to
-        change or cancel, subject to the trip&apos;s cancellation policy.
+        Go to <strong>My Bookings</strong>, open your trip, and use the
+        available options to change or cancel, subject to the trip&apos;s
+        cancellation policy.
       </>
     ),
   },
   {
-    question: 'What should I do if my van is late?',
+    question: "What should I do if my van is late?",
     answer: (
       <>
-        Check your booking details for the driver&apos;s contact information. If you can&apos;t
-        reach them or the delay is significant, contact our support team so we can assist.
+        Check your booking details for the driver&apos;s contact information. If
+        you can&apos;t reach them or the delay is significant, contact our
+        support team so we can assist.
       </>
     ),
   },
   {
-    question: 'How are payments and refunds handled?',
+    question: "How are payments and refunds handled?",
     answer: (
       <>
-        Payments are processed securely through our payment partners. If a refund is due
-        under the applicable policy, it will be issued back to your original payment method.
+        Payments are processed securely through our payment partners. If a
+        refund is due under the applicable policy, it will be issued back to
+        your original payment method.
       </>
     ),
   },
-] as const
+] as const;
 
 function SupportPage() {
   return (
@@ -88,33 +95,31 @@ function SupportPage() {
               </AppleCard>
             </motion.div>
 
-            <motion.div
-              className="space-y-6"
-              variants={staggerContainer}
-            >
+            <motion.div className="space-y-6" variants={staggerContainer}>
               <motion.div variants={fadeInUp}>
                 <AppleCard className="p-6 sm:p-7">
                   <h2 className="text-[17px] font-semibold tracking-[-0.01em] text-[#1d1d1f]">
                     Contact support
                   </h2>
                   <p className="mt-2 text-[14px] leading-relaxed text-[#86868b]">
-                    Can&apos;t find what you&apos;re looking for? Reach out and we&apos;ll get back
-                    to you as soon as we can.
+                    Can&apos;t find what you&apos;re looking for? Reach out and
+                    we&apos;ll get back to you as soon as we can.
                   </p>
                   <ul className="mt-4 space-y-2 text-[14px] text-[#1d1d1f]">
                     <li>
-                      Email:{' '}
+                      Email:{" "}
                       <a
-                        href="mailto:hello@crabr.ph"
+                        href="mailto:crabr0001@gmail.com"
                         className="text-[#0066cc] hover:underline"
                       >
-                        hello@crabr.ph
+                        crabr0001@gmail.com
                       </a>
                     </li>
                   </ul>
                   <p className="mt-3 text-[12px] text-[#86868b]">
-                    When you contact us, please include your booking reference (if you have one) and
-                    any relevant details so we can help faster.
+                    When you contact us, please include your booking reference
+                    (if you have one) and any relevant details so we can help
+                    faster.
                   </p>
                 </AppleCard>
               </motion.div>
@@ -125,8 +130,8 @@ function SupportPage() {
                     Safety & policies
                   </h2>
                   <p className="mt-2 text-[14px] leading-relaxed text-[#86868b]">
-                    For details about how we handle your data, your rights, and our platform rules,
-                    please review our policies:
+                    For details about how we handle your data, your rights, and
+                    our platform rules, please review our policies:
                   </p>
                   <ul className="mt-3 list-disc pl-5 text-[14px] text-[#1d1d1f]">
                     <li>
@@ -154,5 +159,5 @@ function SupportPage() {
       </main>
       <Footer />
     </div>
-  )
+  );
 }
