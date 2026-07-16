@@ -1,92 +1,93 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
-import { format } from 'date-fns'
-import { useEffect, useState } from 'react'
-import { AuthAlert } from '@/components/auth/auth-layout'
-import { AuthField } from '@/components/auth/auth-field'
-import { AppleCard, PageHeader } from '@/components/layout/page-header'
-import { Footer } from '@/components/landing/footer'
-import { Header } from '@/components/landing/header'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
-import { DatePicker } from '@/components/ui/date-picker'
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { format } from "date-fns";
+import { useEffect, useState } from "react";
+import { AuthAlert } from "@/components/auth/auth-layout";
+import { AuthField } from "@/components/auth/auth-field";
+import { AppleCard, PageHeader } from "@/components/layout/page-header";
+import { Footer } from "@/components/landing/footer";
+import { Header } from "@/components/landing/header";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { DestinationAddressesSection } from '@/components/profile/destination-addresses-section'
-import { profileQueryKey, updateProfile } from '@/lib/api/profile'
-import { useAuth } from '@/lib/auth-context'
+} from "@/components/ui/select";
+import { DestinationAddressesSection } from "@/components/profile/destination-addresses-section";
+import { profileQueryKey, updateProfile } from "@/lib/api/profile";
+import { useAuth } from "@/lib/auth-context";
 import type {
   DriverApplicationStatus,
   Profile,
   Role,
   UpdateProfilePayload,
-} from '@/lib/types/profile'
-import { todayDateInputValue } from '@/lib/trip-search'
-import { cn } from '@/lib/utils'
+} from "@/lib/types/profile";
+import { todayDateInputValue } from "@/lib/trip-search";
+import { cn } from "@/lib/utils";
 
 const roleLabels: Record<Role, string> = {
-  passenger: 'Passenger',
-  driver: 'Driver',
-  admin: 'Admin',
-}
+  passenger: "Passenger",
+  driver: "Driver",
+  admin: "Admin",
+  superadmin: "Superadmin",
+};
 
 const applicationStatusLabels: Record<DriverApplicationStatus, string> = {
-  pending: 'Under review',
-  approved: 'Approved',
-  rejected: 'Not approved',
-}
+  pending: "Under review",
+  approved: "Approved",
+  rejected: "Not approved",
+};
 
 const GENDER_OPTIONS = [
-  { value: 'male', label: 'Male' },
-  { value: 'female', label: 'Female' },
-  { value: 'other', label: 'Other' },
-  { value: 'prefer_not_to_say', label: 'Prefer not to say' },
-] as const
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" },
+  { value: "other", label: "Other" },
+  { value: "prefer_not_to_say", label: "Prefer not to say" },
+] as const;
 
 const datePickerClassName =
-  'h-11 rounded-xl bg-white px-4 ring-1 ring-[#d2d2d7] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0071e3]/40'
+  "h-11 rounded-xl bg-white px-4 ring-1 ring-[#d2d2d7] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0071e3]/40";
 
 function getInitials(fullName: string | null, email: string) {
   if (fullName?.trim()) {
-    const parts = fullName.trim().split(/\s+/)
+    const parts = fullName.trim().split(/\s+/);
     if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
     }
-    return parts[0].slice(0, 2).toUpperCase()
+    return parts[0].slice(0, 2).toUpperCase();
   }
 
-  return (email.split('@')[0] ?? 'U').slice(0, 2).toUpperCase()
+  return (email.split("@")[0] ?? "U").slice(0, 2).toUpperCase();
 }
 
 function profileToForm(profile: Profile): UpdateProfilePayload {
   return {
-    fullName: profile.fullName ?? '',
-    phone: profile.phone ?? '',
-    dateOfBirth: profile.dateOfBirth ?? '',
-    gender: profile.gender ?? '',
-    nationality: profile.nationality ?? '',
-    houseStreet: profile.houseStreet ?? '',
-    barangay: profile.barangay ?? '',
-    city: profile.city ?? '',
-    province: profile.province ?? '',
-    zipCode: profile.zipCode ?? '',
-    emergencyContactName: profile.emergencyContactName ?? '',
-    emergencyContactRelationship: profile.emergencyContactRelationship ?? '',
-    emergencyContactPhone: profile.emergencyContactPhone ?? '',
-  }
+    fullName: profile.fullName ?? "",
+    phone: profile.phone ?? "",
+    dateOfBirth: profile.dateOfBirth ?? "",
+    gender: profile.gender ?? "",
+    nationality: profile.nationality ?? "",
+    houseStreet: profile.houseStreet ?? "",
+    barangay: profile.barangay ?? "",
+    city: profile.city ?? "",
+    province: profile.province ?? "",
+    zipCode: profile.zipCode ?? "",
+    emergencyContactName: profile.emergencyContactName ?? "",
+    emergencyContactRelationship: profile.emergencyContactRelationship ?? "",
+    emergencyContactPhone: profile.emergencyContactPhone ?? "",
+  };
 }
 
 function SectionHeading({
   title,
   subtitle,
 }: {
-  title: string
-  subtitle: string
+  title: string;
+  subtitle: string;
 }) {
   return (
     <div>
@@ -95,11 +96,11 @@ function SectionHeading({
       </h2>
       <p className="mt-1 text-[14px] text-[#86868b]">{subtitle}</p>
     </div>
-  )
+  );
 }
 
 export function ProfilePage() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   const {
     user,
     profile,
@@ -108,63 +109,65 @@ export function ProfilePage() {
     isDriver,
     isPassenger,
     refreshProfile,
-  } = useAuth()
+  } = useAuth();
 
   const [form, setForm] = useState<UpdateProfilePayload>(() => ({
-    fullName: '',
-    phone: '',
-    dateOfBirth: '',
-    gender: '',
-    nationality: '',
-    houseStreet: '',
-    barangay: '',
-    city: '',
-    province: '',
-    zipCode: '',
-    emergencyContactName: '',
-    emergencyContactRelationship: '',
-    emergencyContactPhone: '',
-  }))
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
+    fullName: "",
+    phone: "",
+    dateOfBirth: "",
+    gender: "",
+    nationality: "",
+    houseStreet: "",
+    barangay: "",
+    city: "",
+    province: "",
+    zipCode: "",
+    emergencyContactName: "",
+    emergencyContactRelationship: "",
+    emergencyContactPhone: "",
+  }));
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (profile) {
-      setForm(profileToForm(profile))
+      setForm(profileToForm(profile));
     }
-  }, [profile])
+  }, [profile]);
 
   const mutation = useMutation({
     mutationFn: updateProfile,
     onSuccess: async () => {
       if (user?.id) {
-        await queryClient.invalidateQueries({ queryKey: profileQueryKey(user.id) })
+        await queryClient.invalidateQueries({
+          queryKey: profileQueryKey(user.id),
+        });
       }
-      await refreshProfile()
-      setSuccess('Your profile has been updated.')
-      setError(null)
+      await refreshProfile();
+      setSuccess("Your profile has been updated.");
+      setError(null);
     },
     onError: () => {
-      setSuccess(null)
-      setError('Unable to save your profile. Please try again.')
+      setSuccess(null);
+      setError("Unable to save your profile. Please try again.");
     },
-  })
+  });
 
   function updateField<K extends keyof UpdateProfilePayload>(
     key: K,
     value: UpdateProfilePayload[K],
   ) {
-    setForm((current) => ({ ...current, [key]: value }))
+    setForm((current) => ({ ...current, [key]: value }));
   }
 
   async function handleSubmit(event: React.FormEvent) {
-    event.preventDefault()
-    setError(null)
-    setSuccess(null)
+    event.preventDefault();
+    setError(null);
+    setSuccess(null);
 
     if (!form.fullName.trim()) {
-      setError('Please enter your full name.')
-      return
+      setError("Please enter your full name.");
+      return;
     }
 
     mutation.mutate({
@@ -182,21 +185,21 @@ export function ProfilePage() {
       emergencyContactName: form.emergencyContactName.trim(),
       emergencyContactRelationship: form.emergencyContactRelationship.trim(),
       emergencyContactPhone: form.emergencyContactPhone.trim(),
-    })
+    });
   }
 
-  const application = profile?.driverApplication
-  const displayEmail = profile?.email ?? user?.email ?? ''
-  const initials = getInitials(profile?.fullName ?? null, displayEmail)
+  const application = profile?.driverApplication;
+  const displayEmail = profile?.email ?? user?.email ?? "";
+  const initials = getInitials(profile?.fullName ?? null, displayEmail);
   const memberSince = profile?.createdAt
-    ? format(new Date(profile.createdAt), 'MMMM yyyy')
-    : null
+    ? format(new Date(profile.createdAt), "MMMM yyyy")
+    : null;
 
   return (
     <div className="app-page min-h-svh bg-[#f5f5f7]">
       <Header activeLink="profile" />
 
-      <main className="mx-auto max-w-[980px] px-6 py-10 lg:px-8 lg:py-14">
+      <main className="mx-auto max-w-245 px-6 py-10 lg:px-8 lg:py-14">
         <PageHeader
           eyebrow="Account"
           title="Profile"
@@ -216,9 +219,11 @@ export function ProfilePage() {
                     </AvatarFallback>
                   </Avatar>
                   <p className="mt-4 text-[17px] font-semibold text-[#1d1d1f]">
-                    {profile?.fullName?.trim() || 'Your account'}
+                    {profile?.fullName?.trim() || "Your account"}
                   </p>
-                  <p className="mt-1 text-[14px] text-[#86868b]">{displayEmail}</p>
+                  <p className="mt-1 text-[14px] text-[#86868b]">
+                    {displayEmail}
+                  </p>
                   {memberSince && (
                     <p className="mt-2 text-[13px] text-[#86868b]">
                       Member since {memberSince}
@@ -227,10 +232,13 @@ export function ProfilePage() {
                   {profileReady && profile && (
                     <span
                       className={cn(
-                        'mt-4 inline-flex rounded-full px-3 py-1 text-[12px] font-medium',
-                        profile.role === 'admin' && 'bg-[#f0f7ff] text-[#0066cc]',
-                        profile.role === 'driver' && 'bg-[#f0fdf4] text-[#15803d]',
-                        profile.role === 'passenger' && 'bg-[#f5f5f7] text-[#1d1d1f]',
+                        "mt-4 inline-flex rounded-full px-3 py-1 text-[12px] font-medium",
+                        profile.role === "admin" &&
+                          "bg-[#f0f7ff] text-[#0066cc]",
+                        profile.role === "driver" &&
+                          "bg-[#f0fdf4] text-[#15803d]",
+                        profile.role === "passenger" &&
+                          "bg-[#f5f5f7] text-[#1d1d1f]",
                       )}
                     >
                       {roleLabels[profile.role]}
@@ -258,7 +266,7 @@ export function ProfilePage() {
                     <AuthField
                       label="Full name"
                       value={form.fullName}
-                      onChange={(value) => updateField('fullName', value)}
+                      onChange={(value) => updateField("fullName", value)}
                       autoComplete="name"
                       required
                     />
@@ -267,7 +275,7 @@ export function ProfilePage() {
                       label="Phone number"
                       type="tel"
                       value={form.phone}
-                      onChange={(value) => updateField('phone', value)}
+                      onChange={(value) => updateField("phone", value)}
                       autoComplete="tel"
                       placeholder="+63 912 345 6789"
                     />
@@ -279,7 +287,9 @@ export function ProfilePage() {
                         </span>
                         <DatePicker
                           value={form.dateOfBirth}
-                          onChange={(value) => updateField('dateOfBirth', value)}
+                          onChange={(value) =>
+                            updateField("dateOfBirth", value)
+                          }
                           max={todayDateInputValue()}
                           placeholder="Select date"
                           captionLayout="dropdown"
@@ -293,13 +303,15 @@ export function ProfilePage() {
                         </span>
                         <Select
                           value={form.gender || undefined}
-                          onValueChange={(value) => updateField('gender', value)}
+                          onValueChange={(value) =>
+                            updateField("gender", value)
+                          }
                         >
                           <SelectTrigger
                             className={cn(
-                              '!h-11 min-h-11 w-full rounded-xl border-0 bg-white px-4 py-0 text-[16px] text-[#1d1d1f] shadow-none ring-1 ring-[#d2d2d7]',
-                              'focus-visible:border-0 focus-visible:ring-2 focus-visible:ring-[#0071e3]/40',
-                              !form.gender && 'text-[#86868b]',
+                              "h-11! min-h-11 w-full rounded-xl border-0 bg-white px-4 py-0 text-[16px] text-[#1d1d1f] shadow-none ring-1 ring-[#d2d2d7]",
+                              "focus-visible:border-0 focus-visible:ring-2 focus-visible:ring-[#0071e3]/40",
+                              !form.gender && "text-[#86868b]",
                             )}
                           >
                             <SelectValue placeholder="Select gender" />
@@ -322,7 +334,7 @@ export function ProfilePage() {
                     <AuthField
                       label="Nationality"
                       value={form.nationality}
-                      onChange={(value) => updateField('nationality', value)}
+                      onChange={(value) => updateField("nationality", value)}
                       placeholder="Filipino"
                     />
                   </div>
@@ -338,7 +350,7 @@ export function ProfilePage() {
                     <AuthField
                       label="House no. / Street"
                       value={form.houseStreet}
-                      onChange={(value) => updateField('houseStreet', value)}
+                      onChange={(value) => updateField("houseStreet", value)}
                       autoComplete="street-address"
                       placeholder="123 Rizal Street"
                     />
@@ -347,12 +359,12 @@ export function ProfilePage() {
                       <AuthField
                         label="Barangay"
                         value={form.barangay}
-                        onChange={(value) => updateField('barangay', value)}
+                        onChange={(value) => updateField("barangay", value)}
                       />
                       <AuthField
                         label="City / Municipality"
                         value={form.city}
-                        onChange={(value) => updateField('city', value)}
+                        onChange={(value) => updateField("city", value)}
                         autoComplete="address-level2"
                       />
                     </div>
@@ -361,13 +373,13 @@ export function ProfilePage() {
                       <AuthField
                         label="Province"
                         value={form.province}
-                        onChange={(value) => updateField('province', value)}
+                        onChange={(value) => updateField("province", value)}
                         autoComplete="address-level1"
                       />
                       <AuthField
                         label="ZIP code"
                         value={form.zipCode}
-                        onChange={(value) => updateField('zipCode', value)}
+                        onChange={(value) => updateField("zipCode", value)}
                         autoComplete="postal-code"
                         placeholder="3200"
                       />
@@ -385,7 +397,9 @@ export function ProfilePage() {
                     <AuthField
                       label="Contact name"
                       value={form.emergencyContactName}
-                      onChange={(value) => updateField('emergencyContactName', value)}
+                      onChange={(value) =>
+                        updateField("emergencyContactName", value)
+                      }
                       autoComplete="name"
                     />
 
@@ -394,7 +408,7 @@ export function ProfilePage() {
                         label="Relationship"
                         value={form.emergencyContactRelationship}
                         onChange={(value) =>
-                          updateField('emergencyContactRelationship', value)
+                          updateField("emergencyContactRelationship", value)
                         }
                         placeholder="Spouse, parent, sibling..."
                       />
@@ -402,7 +416,9 @@ export function ProfilePage() {
                         label="Contact phone"
                         type="tel"
                         value={form.emergencyContactPhone}
-                        onChange={(value) => updateField('emergencyContactPhone', value)}
+                        onChange={(value) =>
+                          updateField("emergencyContactPhone", value)
+                        }
                         autoComplete="tel"
                         placeholder="+63 912 345 6789"
                       />
@@ -415,7 +431,7 @@ export function ProfilePage() {
                   disabled={mutation.isPending}
                   className="h-11 rounded-full bg-[#0071e3] px-6 text-[14px] font-normal text-white hover:bg-[#0077ed]"
                 >
-                  {mutation.isPending ? 'Saving...' : 'Save changes'}
+                  {mutation.isPending ? "Saving..." : "Save changes"}
                 </Button>
               </form>
             </div>
@@ -432,20 +448,26 @@ export function ProfilePage() {
                 <div className="mt-6 flex flex-wrap items-center gap-3">
                   <span
                     className={cn(
-                      'inline-flex rounded-full px-3 py-1 text-[12px] font-medium',
-                      application.status === 'pending' && 'bg-[#fff8eb] text-[#b45309]',
-                      application.status === 'approved' && 'bg-[#f0fdf4] text-[#15803d]',
-                      application.status === 'rejected' && 'bg-[#fff2f2] text-[#bf4800]',
+                      "inline-flex rounded-full px-3 py-1 text-[12px] font-medium",
+                      application.status === "pending" &&
+                        "bg-[#fff8eb] text-[#b45309]",
+                      application.status === "approved" &&
+                        "bg-[#f0fdf4] text-[#15803d]",
+                      application.status === "rejected" &&
+                        "bg-[#fff2f2] text-[#bf4800]",
                     )}
                   >
                     {applicationStatusLabels[application.status]}
                   </span>
-                  {application.status === 'rejected' && application.adminNotes && (
-                    <p className="text-[14px] text-[#86868b]">{application.adminNotes}</p>
-                  )}
+                  {application.status === "rejected" &&
+                    application.adminNotes && (
+                      <p className="text-[14px] text-[#86868b]">
+                        {application.adminNotes}
+                      </p>
+                    )}
                 </div>
 
-                {application.status === 'rejected' && (
+                {application.status === "rejected" && (
                   <Button
                     asChild
                     variant="outline"
@@ -501,5 +523,5 @@ export function ProfilePage() {
 
       <Footer />
     </div>
-  )
+  );
 }

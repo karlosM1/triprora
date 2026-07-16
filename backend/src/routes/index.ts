@@ -9,6 +9,7 @@ import { meRouter } from './me.routes.js'
 import { schedulesRouter } from './schedules.routes.js'
 import { vansRouter } from './vans.routes.js'
 import { paymentsRouter } from './payments.routes.js'
+import { superadminRouter } from './superadmin.routes.js'
 
 export const apiRouter = Router()
 
@@ -16,6 +17,7 @@ apiRouter.get('/health', asyncHandler(getHealth))
 apiRouter.use('/me', meRouter)
 apiRouter.use('/driver', driverRouter)
 apiRouter.use('/admin', adminRouter)
+apiRouter.use('/superadmin', superadminRouter)
 apiRouter.use('/bookings', bookingsRouter)
 apiRouter.use('/deliveries', deliveriesRouter)
 apiRouter.use('/schedules', schedulesRouter)

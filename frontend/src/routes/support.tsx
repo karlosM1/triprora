@@ -50,7 +50,7 @@ function SupportPage() {
   return (
     <div className="app-page min-h-svh bg-[#f5f5f7]">
       <Header activeLink="home" />
-      <main className="mx-auto max-w-[980px] px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-20">
+      <main className="mx-auto max-w-245 px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-20">
         <motion.div
           initial="hidden"
           animate="visible"

@@ -1,4 +1,5 @@
-import type { Profile, Role } from '@prisma/client'
+import type { Profile } from '@prisma/client'
+import type { AppRole } from './role.js'
 
 declare global {
   namespace Express {
@@ -8,7 +9,7 @@ declare global {
         email: string
       }
       profile?: Profile
-      role?: Role
+      role?: AppRole
     }
   }
 }

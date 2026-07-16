@@ -45,7 +45,7 @@ export type DriverApplication = {
   agreePrivacy: boolean
 }
 
-export type Role = 'passenger' | 'driver' | 'admin'
+export type Role = 'passenger' | 'driver' | 'admin' | 'superadmin'
 
 export type DriverApplicationStatus = 'pending' | 'approved' | 'rejected'
 

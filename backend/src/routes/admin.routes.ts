@@ -22,7 +22,10 @@ import {
   applicationIdParamSchema,
   reviewDriverApplicationSchema,
 } from '../validators/driver-applications.validator.js'
-import { adminListQuerySchema } from '../validators/admin.validator.js'
+import {
+  adminListQuerySchema,
+  adminTripsQuerySchema,
+} from '../validators/admin.validator.js'
 import {
   adminPayoutsQuerySchema,
   adminUpdatePayoutSchema,
@@ -39,10 +42,14 @@ adminRouter.use(authenticate, requireRole('admin'))
 adminRouter.get('/stats', asyncHandler(getAdminStats))
 adminRouter.get(
   '/trips',
-  validateRequest({ query: adminListQuerySchema }),
+  validateRequest({ query: adminTripsQuerySchema }),
   asyncHandler(listAdminTrips),
 )
-adminRouter.get('/bookings', asyncHandler(listAdminBookings))
+adminRouter.get(
+  '/bookings',
+  validateRequest({ query: adminListQuerySchema }),
+  asyncHandler(listAdminBookings),
+)
 adminRouter.get(
   '/users',
   validateRequest({ query: adminListQuerySchema }),

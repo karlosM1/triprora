@@ -13,11 +13,12 @@ import { DocumentLink } from '@/components/driver/document-link'
 import { AppleCard, PageHeader, SectionTitle } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { TablePagination } from '@/components/ui/table-pagination'
-import { usePagination } from '@/hooks/use-pagination'
 import {
+  ADMIN_PAGE_SIZE,
   adminBookingsQueryKey,
   adminStatsQueryKey,
   adminTripsQueryKey,
+  adminUsersInvalidateKey,
   adminUsersQueryKey,
   fetchAdminBookings,
   fetchAdminStats,
@@ -27,6 +28,7 @@ import {
   type AdminTrip,
   type AdminUser,
 } from '@/lib/api/admin'
+import { getServerPageRange } from '@/lib/admin-pagination'
 import {
   fetchPendingDriverApplications,
   pendingApplicationsQueryKey,
@@ -80,7 +82,7 @@ function StatusPill({
   return (
     <span
       className={cn(
-        'inline-flex rounded-full px-3 py-1 text-[12px] font-medium',
+        'inline-flex rounded-full px-3 py-1 text-[12px] font-medium capitalize',
         variant === 'success' && 'bg-[#f0fdf4] text-[#248a3d]',
         variant === 'warning' && 'bg-[#fff8eb] text-[#bf4800]',
         variant === 'danger' && 'bg-[#fef2f2] text-[#b42318]',
@@ -107,6 +109,7 @@ function bookingStatusVariant(status: AdminBooking['status']) {
 }
 
 function roleVariant(role: AdminUser['role']) {
+  if (role === 'superadmin') return 'danger' as const
   if (role === 'admin') return 'default' as const
   if (role === 'driver') return 'success' as const
   return 'muted' as const
@@ -276,7 +279,7 @@ export function AdminDashboardPage() {
                     </div>
                     <div>
                       <p className="text-[17px] font-semibold text-[#1d1d1f] group-hover:text-[#0066cc]">
-                        Browse user accounts
+                        Browse users
                       </p>
                       <p className="text-[13px] text-[#86868b]">
                         {stats.totalUsers} registered users
@@ -322,7 +325,7 @@ export function AdminDriversPage() {
       setActionError(null)
       await queryClient.invalidateQueries({ queryKey: pendingApplicationsQueryKey })
       await queryClient.invalidateQueries({ queryKey: adminStatsQueryKey })
-      await queryClient.invalidateQueries({ queryKey: adminUsersQueryKey })
+      await queryClient.invalidateQueries({ queryKey: adminUsersInvalidateKey })
       await queryClient.invalidateQueries({ queryKey: ['profile', 'me'] })
     },
     onError: () => {
@@ -545,21 +548,16 @@ export function AdminDriversPage() {
 }
 
 export function AdminTripsPage() {
+  const [page, setPage] = useState(1)
   const tripsQuery = useQuery({
-    queryKey: adminTripsQueryKey,
-    queryFn: fetchAdminTrips,
+    queryKey: adminTripsQueryKey({ page, pageSize: ADMIN_PAGE_SIZE }),
+    queryFn: () => fetchAdminTrips({ page, pageSize: ADMIN_PAGE_SIZE }),
   })
-  const trips = tripsQuery.data ?? []
-  const {
-    pageItems,
-    currentPage,
-    totalPages,
-    rangeStart,
-    rangeEnd,
-    totalItems,
-    goToPage,
-    showPagination,
-  } = usePagination(trips)
+  const data = tripsQuery.data
+  const trips = data?.items ?? []
+  const total = data?.total ?? 0
+  const { currentPage, totalPages, rangeStart, rangeEnd, showPagination } =
+    getServerPageRange(page, ADMIN_PAGE_SIZE, total)
 
   return (
     <motion.div
@@ -600,7 +598,7 @@ export function AdminTripsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {pageItems.map((trip) => (
+                  {trips.map((trip) => (
                     <tr key={trip.id} className="border-b border-black/5 last:border-0">
                       <td className="px-5 py-4 font-medium text-[#1d1d1f]">{trip.route}</td>
                       <td className="px-5 py-4 text-[#86868b]">
@@ -638,9 +636,9 @@ export function AdminTripsPage() {
                 totalPages={totalPages}
                 rangeStart={rangeStart}
                 rangeEnd={rangeEnd}
-                totalItems={totalItems}
+                totalItems={total}
                 itemLabel="trips"
-                onPageChange={goToPage}
+                onPageChange={setPage}
               />
             )}
           </AppleCard>
@@ -651,21 +649,16 @@ export function AdminTripsPage() {
 }
 
 export function AdminBookingsPage() {
+  const [page, setPage] = useState(1)
   const bookingsQuery = useQuery({
-    queryKey: adminBookingsQueryKey,
-    queryFn: fetchAdminBookings,
+    queryKey: adminBookingsQueryKey({ page, pageSize: ADMIN_PAGE_SIZE }),
+    queryFn: () => fetchAdminBookings({ page, pageSize: ADMIN_PAGE_SIZE }),
   })
-  const bookings = bookingsQuery.data ?? []
-  const {
-    pageItems,
-    currentPage,
-    totalPages,
-    rangeStart,
-    rangeEnd,
-    totalItems,
-    goToPage,
-    showPagination,
-  } = usePagination(bookings)
+  const data = bookingsQuery.data
+  const bookings = data?.items ?? []
+  const total = data?.total ?? 0
+  const { currentPage, totalPages, rangeStart, rangeEnd, showPagination } =
+    getServerPageRange(page, ADMIN_PAGE_SIZE, total)
 
   return (
     <motion.div
@@ -706,7 +699,7 @@ export function AdminBookingsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {pageItems.map((booking) => (
+                  {bookings.map((booking) => (
                     <tr key={booking.id} className="border-b border-black/5 last:border-0">
                       <td className="px-5 py-4 font-medium text-[#1d1d1f]">
                         {booking.reference ?? booking.id.slice(0, 8)}
@@ -743,9 +736,9 @@ export function AdminBookingsPage() {
                 totalPages={totalPages}
                 rangeStart={rangeStart}
                 rangeEnd={rangeEnd}
-                totalItems={totalItems}
+                totalItems={total}
                 itemLabel="bookings"
-                onPageChange={goToPage}
+                onPageChange={setPage}
               />
             )}
           </AppleCard>
@@ -756,21 +749,16 @@ export function AdminBookingsPage() {
 }
 
 export function AdminUsersPage() {
+  const [page, setPage] = useState(1)
   const usersQuery = useQuery({
-    queryKey: adminUsersQueryKey,
-    queryFn: fetchAdminUsers,
+    queryKey: adminUsersQueryKey({ page, pageSize: ADMIN_PAGE_SIZE }),
+    queryFn: () => fetchAdminUsers({ page, pageSize: ADMIN_PAGE_SIZE }),
   })
-  const users = usersQuery.data ?? []
-  const {
-    pageItems,
-    currentPage,
-    totalPages,
-    rangeStart,
-    rangeEnd,
-    totalItems,
-    goToPage,
-    showPagination,
-  } = usePagination(users)
+  const data = usersQuery.data
+  const users = data?.items ?? []
+  const total = data?.total ?? 0
+  const { currentPage, totalPages, rangeStart, rangeEnd, showPagination } =
+    getServerPageRange(page, ADMIN_PAGE_SIZE, total)
 
   return (
     <motion.div
@@ -810,7 +798,7 @@ export function AdminUsersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {pageItems.map((user) => (
+                  {users.map((user) => (
                     <tr key={user.id} className="border-b border-black/5 last:border-0">
                       <td className="px-5 py-4 font-medium text-[#1d1d1f]">
                         {user.fullName ?? '-'}
@@ -835,9 +823,9 @@ export function AdminUsersPage() {
                 totalPages={totalPages}
                 rangeStart={rangeStart}
                 rangeEnd={rangeEnd}
-                totalItems={totalItems}
+                totalItems={total}
                 itemLabel="users"
-                onPageChange={goToPage}
+                onPageChange={setPage}
               />
             )}
           </AppleCard>

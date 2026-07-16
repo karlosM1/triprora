@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Session, User } from '@supabase/supabase-js'
+import { isAxiosError } from 'axios'
 import {
   createContext,
   useCallback,
@@ -33,6 +34,7 @@ type AuthContextValue = {
   profileLoading: boolean
   profileReady: boolean
   isAdmin: boolean
+  isSuperAdmin: boolean
   isDriver: boolean
   isPassenger: boolean
   signIn: (
@@ -74,6 +76,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     staleTime: PROFILE_STALE_TIME,
     placeholderData: (previousData) => previousData,
   })
+
+  useEffect(() => {
+    if (!profileQuery.isError || !userId) return
+
+    const error = profileQuery.error
+    const message = isAxiosError(error)
+      ? String(error.response?.data?.message ?? '')
+      : ''
+
+    if (
+      error &&
+      isAxiosError(error) &&
+      error.response?.status === 403 &&
+      message.toLowerCase().includes('banned')
+    ) {
+      void supabase.auth.signOut()
+      queryClient.removeQueries({ queryKey: ['profile'] })
+    }
+  }, [profileQuery.isError, profileQuery.error, userId, queryClient])
 
   useEffect(() => {
     const {
@@ -181,6 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profileLoading,
       profileReady,
       isAdmin: profileReady && profile?.role === 'admin',
+      isSuperAdmin: profileReady && profile?.role === 'superadmin',
       isDriver: profileReady && profile?.role === 'driver',
       isPassenger: profileReady && profile?.role === 'passenger',
       signIn,

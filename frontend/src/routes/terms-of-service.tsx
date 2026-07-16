@@ -11,7 +11,7 @@ function TermsOfServicePage() {
   return (
     <div className="app-page min-h-svh bg-[#f5f5f7]">
       <Header />
-      <main className="mx-auto max-w-[720px] px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-20">
+      <main className="mx-auto max-w-180 px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-20">
         <PageHeader
           eyebrow="Terms of Service"
           title="Terms, conditions, and usage rules"

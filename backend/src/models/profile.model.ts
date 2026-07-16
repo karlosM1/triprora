@@ -6,8 +6,13 @@ import type { UpdateProfileBody } from '../validators/me.validator.js'
 type UpdateProfileData = UpdateProfileBody
 
 function resolveInitialRole(email: string): Role {
+  const normalized = email.toLowerCase()
+  const superadminEmail = process.env.SUPERADMIN_EMAIL?.toLowerCase()
+  if (superadminEmail && normalized === superadminEmail) {
+    return 'superadmin'
+  }
   const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase()
-  if (adminEmail && email.toLowerCase() === adminEmail) {
+  if (adminEmail && normalized === adminEmail) {
     return 'admin'
   }
   return 'passenger'
@@ -35,6 +40,23 @@ export const ProfileModel = {
   async ensureProfile(id: string, email: string) {
     const existingById = await prisma.profile.findUnique({ where: { id } })
     if (existingById) {
+      const bootstrapRole = resolveInitialRole(email)
+      if (
+        bootstrapRole !== 'passenger' &&
+        existingById.role !== bootstrapRole &&
+        existingById.role !== 'superadmin'
+      ) {
+        // Promote env-bootstrap emails without demoting an existing superadmin.
+        if (
+          bootstrapRole === 'superadmin' ||
+          (bootstrapRole === 'admin' && existingById.role === 'passenger')
+        ) {
+          return prisma.profile.update({
+            where: { id },
+            data: { role: bootstrapRole },
+          })
+        }
+      }
       return existingById
     }
 
@@ -84,6 +106,21 @@ export const ProfileModel = {
     return prisma.profile.update({
       where: { id },
       data: { role },
+    })
+  },
+
+  async setBanned(
+    id: string,
+    isBanned: boolean,
+    bannedReason?: string | null,
+  ) {
+    return prisma.profile.update({
+      where: { id },
+      data: {
+        isBanned,
+        bannedAt: isBanned ? new Date() : null,
+        bannedReason: isBanned ? (bannedReason ?? null) : null,
+      },
     })
   },
 

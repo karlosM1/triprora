@@ -18,16 +18,22 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as MyBookingsRouteImport } from './routes/my-bookings'
 import { Route as FindVansRouteImport } from './routes/find-vans'
+import { Route as SuperadminRouteRouteImport } from './routes/superadmin/route'
 import { Route as MyDeliveriesRouteRouteImport } from './routes/my-deliveries/route'
 import { Route as DriverRouteRouteImport } from './routes/driver/route'
 import { Route as ArticlesRouteRouteImport } from './routes/articles/route'
 import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SuperadminIndexRouteImport } from './routes/superadmin/index'
 import { Route as SendPackageIndexRouteImport } from './routes/send-package/index'
 import { Route as MyDeliveriesIndexRouteImport } from './routes/my-deliveries/index'
 import { Route as DriverIndexRouteImport } from './routes/driver/index'
 import { Route as ArticlesIndexRouteImport } from './routes/articles/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as SuperadminUsersRouteImport } from './routes/superadmin/users'
+import { Route as SuperadminTripsRouteImport } from './routes/superadmin/trips'
+import { Route as SuperadminDriversRouteImport } from './routes/superadmin/drivers'
+import { Route as SuperadminBookingsRouteImport } from './routes/superadmin/bookings'
 import { Route as DriverWalletRouteImport } from './routes/driver/wallet'
 import { Route as DriverRegisterRouteImport } from './routes/driver/register'
 import { Route as DriverCreateRouteImport } from './routes/driver/create'
@@ -94,6 +100,11 @@ const FindVansRoute = FindVansRouteImport.update({
   path: '/find-vans',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SuperadminRouteRoute = SuperadminRouteRouteImport.update({
+  id: '/superadmin',
+  path: '/superadmin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MyDeliveriesRouteRoute = MyDeliveriesRouteRouteImport.update({
   id: '/my-deliveries',
   path: '/my-deliveries',
@@ -119,6 +130,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SuperadminIndexRoute = SuperadminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SuperadminRouteRoute,
+} as any)
 const SendPackageIndexRoute = SendPackageIndexRouteImport.update({
   id: '/send-package/',
   path: '/send-package/',
@@ -143,6 +159,26 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRouteRoute,
+} as any)
+const SuperadminUsersRoute = SuperadminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => SuperadminRouteRoute,
+} as any)
+const SuperadminTripsRoute = SuperadminTripsRouteImport.update({
+  id: '/trips',
+  path: '/trips',
+  getParentRoute: () => SuperadminRouteRoute,
+} as any)
+const SuperadminDriversRoute = SuperadminDriversRouteImport.update({
+  id: '/drivers',
+  path: '/drivers',
+  getParentRoute: () => SuperadminRouteRoute,
+} as any)
+const SuperadminBookingsRoute = SuperadminBookingsRouteImport.update({
+  id: '/bookings',
+  path: '/bookings',
+  getParentRoute: () => SuperadminRouteRoute,
 } as any)
 const DriverWalletRoute = DriverWalletRouteImport.update({
   id: '/wallet',
@@ -254,6 +290,7 @@ export interface FileRoutesByFullPath {
   '/articles': typeof ArticlesRouteRouteWithChildren
   '/driver': typeof DriverRouteRouteWithChildren
   '/my-deliveries': typeof MyDeliveriesRouteRouteWithChildren
+  '/superadmin': typeof SuperadminRouteRouteWithChildren
   '/find-vans': typeof FindVansRoute
   '/my-bookings': typeof MyBookingsRoute
   '/privacy': typeof PrivacyRoute
@@ -273,11 +310,16 @@ export interface FileRoutesByFullPath {
   '/driver/create': typeof DriverCreateRoute
   '/driver/register': typeof DriverRegisterRoute
   '/driver/wallet': typeof DriverWalletRoute
+  '/superadmin/bookings': typeof SuperadminBookingsRoute
+  '/superadmin/drivers': typeof SuperadminDriversRoute
+  '/superadmin/trips': typeof SuperadminTripsRoute
+  '/superadmin/users': typeof SuperadminUsersRoute
   '/admin/': typeof AdminIndexRoute
   '/articles/': typeof ArticlesIndexRoute
   '/driver/': typeof DriverIndexRoute
   '/my-deliveries/': typeof MyDeliveriesIndexRoute
   '/send-package/': typeof SendPackageIndexRoute
+  '/superadmin/': typeof SuperadminIndexRoute
   '/book/$vanId/checkout': typeof BookVanIdCheckoutRoute
   '/book/$vanId/confirmation': typeof BookVanIdConfirmationRoute
   '/my-deliveries/$deliveryId/pay': typeof MyDeliveriesDeliveryIdPayRoute
@@ -309,11 +351,16 @@ export interface FileRoutesByTo {
   '/driver/create': typeof DriverCreateRoute
   '/driver/register': typeof DriverRegisterRoute
   '/driver/wallet': typeof DriverWalletRoute
+  '/superadmin/bookings': typeof SuperadminBookingsRoute
+  '/superadmin/drivers': typeof SuperadminDriversRoute
+  '/superadmin/trips': typeof SuperadminTripsRoute
+  '/superadmin/users': typeof SuperadminUsersRoute
   '/admin': typeof AdminIndexRoute
   '/articles': typeof ArticlesIndexRoute
   '/driver': typeof DriverIndexRoute
   '/my-deliveries': typeof MyDeliveriesIndexRoute
   '/send-package': typeof SendPackageIndexRoute
+  '/superadmin': typeof SuperadminIndexRoute
   '/book/$vanId/checkout': typeof BookVanIdCheckoutRoute
   '/book/$vanId/confirmation': typeof BookVanIdConfirmationRoute
   '/my-deliveries/$deliveryId/pay': typeof MyDeliveriesDeliveryIdPayRoute
@@ -332,6 +379,7 @@ export interface FileRoutesById {
   '/articles': typeof ArticlesRouteRouteWithChildren
   '/driver': typeof DriverRouteRouteWithChildren
   '/my-deliveries': typeof MyDeliveriesRouteRouteWithChildren
+  '/superadmin': typeof SuperadminRouteRouteWithChildren
   '/find-vans': typeof FindVansRoute
   '/my-bookings': typeof MyBookingsRoute
   '/privacy': typeof PrivacyRoute
@@ -351,11 +399,16 @@ export interface FileRoutesById {
   '/driver/create': typeof DriverCreateRoute
   '/driver/register': typeof DriverRegisterRoute
   '/driver/wallet': typeof DriverWalletRoute
+  '/superadmin/bookings': typeof SuperadminBookingsRoute
+  '/superadmin/drivers': typeof SuperadminDriversRoute
+  '/superadmin/trips': typeof SuperadminTripsRoute
+  '/superadmin/users': typeof SuperadminUsersRoute
   '/admin/': typeof AdminIndexRoute
   '/articles/': typeof ArticlesIndexRoute
   '/driver/': typeof DriverIndexRoute
   '/my-deliveries/': typeof MyDeliveriesIndexRoute
   '/send-package/': typeof SendPackageIndexRoute
+  '/superadmin/': typeof SuperadminIndexRoute
   '/book/$vanId/checkout': typeof BookVanIdCheckoutRoute
   '/book/$vanId/confirmation': typeof BookVanIdConfirmationRoute
   '/my-deliveries/$deliveryId/pay': typeof MyDeliveriesDeliveryIdPayRoute
@@ -375,6 +428,7 @@ export interface FileRouteTypes {
     | '/articles'
     | '/driver'
     | '/my-deliveries'
+    | '/superadmin'
     | '/find-vans'
     | '/my-bookings'
     | '/privacy'
@@ -394,11 +448,16 @@ export interface FileRouteTypes {
     | '/driver/create'
     | '/driver/register'
     | '/driver/wallet'
+    | '/superadmin/bookings'
+    | '/superadmin/drivers'
+    | '/superadmin/trips'
+    | '/superadmin/users'
     | '/admin/'
     | '/articles/'
     | '/driver/'
     | '/my-deliveries/'
     | '/send-package/'
+    | '/superadmin/'
     | '/book/$vanId/checkout'
     | '/book/$vanId/confirmation'
     | '/my-deliveries/$deliveryId/pay'
@@ -430,11 +489,16 @@ export interface FileRouteTypes {
     | '/driver/create'
     | '/driver/register'
     | '/driver/wallet'
+    | '/superadmin/bookings'
+    | '/superadmin/drivers'
+    | '/superadmin/trips'
+    | '/superadmin/users'
     | '/admin'
     | '/articles'
     | '/driver'
     | '/my-deliveries'
     | '/send-package'
+    | '/superadmin'
     | '/book/$vanId/checkout'
     | '/book/$vanId/confirmation'
     | '/my-deliveries/$deliveryId/pay'
@@ -452,6 +516,7 @@ export interface FileRouteTypes {
     | '/articles'
     | '/driver'
     | '/my-deliveries'
+    | '/superadmin'
     | '/find-vans'
     | '/my-bookings'
     | '/privacy'
@@ -471,11 +536,16 @@ export interface FileRouteTypes {
     | '/driver/create'
     | '/driver/register'
     | '/driver/wallet'
+    | '/superadmin/bookings'
+    | '/superadmin/drivers'
+    | '/superadmin/trips'
+    | '/superadmin/users'
     | '/admin/'
     | '/articles/'
     | '/driver/'
     | '/my-deliveries/'
     | '/send-package/'
+    | '/superadmin/'
     | '/book/$vanId/checkout'
     | '/book/$vanId/confirmation'
     | '/my-deliveries/$deliveryId/pay'
@@ -494,6 +564,7 @@ export interface RootRouteChildren {
   ArticlesRouteRoute: typeof ArticlesRouteRouteWithChildren
   DriverRouteRoute: typeof DriverRouteRouteWithChildren
   MyDeliveriesRouteRoute: typeof MyDeliveriesRouteRouteWithChildren
+  SuperadminRouteRoute: typeof SuperadminRouteRouteWithChildren
   FindVansRoute: typeof FindVansRoute
   MyBookingsRoute: typeof MyBookingsRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -577,6 +648,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FindVansRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/superadmin': {
+      id: '/superadmin'
+      path: '/superadmin'
+      fullPath: '/superadmin'
+      preLoaderRoute: typeof SuperadminRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/my-deliveries': {
       id: '/my-deliveries'
       path: '/my-deliveries'
@@ -612,6 +690,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/superadmin/': {
+      id: '/superadmin/'
+      path: '/'
+      fullPath: '/superadmin/'
+      preLoaderRoute: typeof SuperadminIndexRouteImport
+      parentRoute: typeof SuperadminRouteRoute
+    }
     '/send-package/': {
       id: '/send-package/'
       path: '/send-package'
@@ -646,6 +731,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRouteRoute
+    }
+    '/superadmin/users': {
+      id: '/superadmin/users'
+      path: '/users'
+      fullPath: '/superadmin/users'
+      preLoaderRoute: typeof SuperadminUsersRouteImport
+      parentRoute: typeof SuperadminRouteRoute
+    }
+    '/superadmin/trips': {
+      id: '/superadmin/trips'
+      path: '/trips'
+      fullPath: '/superadmin/trips'
+      preLoaderRoute: typeof SuperadminTripsRouteImport
+      parentRoute: typeof SuperadminRouteRoute
+    }
+    '/superadmin/drivers': {
+      id: '/superadmin/drivers'
+      path: '/drivers'
+      fullPath: '/superadmin/drivers'
+      preLoaderRoute: typeof SuperadminDriversRouteImport
+      parentRoute: typeof SuperadminRouteRoute
+    }
+    '/superadmin/bookings': {
+      id: '/superadmin/bookings'
+      path: '/bookings'
+      fullPath: '/superadmin/bookings'
+      preLoaderRoute: typeof SuperadminBookingsRouteImport
+      parentRoute: typeof SuperadminRouteRoute
     }
     '/driver/wallet': {
       id: '/driver/wallet'
@@ -874,12 +987,33 @@ const MyDeliveriesRouteRouteChildren: MyDeliveriesRouteRouteChildren = {
 const MyDeliveriesRouteRouteWithChildren =
   MyDeliveriesRouteRoute._addFileChildren(MyDeliveriesRouteRouteChildren)
 
+interface SuperadminRouteRouteChildren {
+  SuperadminBookingsRoute: typeof SuperadminBookingsRoute
+  SuperadminDriversRoute: typeof SuperadminDriversRoute
+  SuperadminTripsRoute: typeof SuperadminTripsRoute
+  SuperadminUsersRoute: typeof SuperadminUsersRoute
+  SuperadminIndexRoute: typeof SuperadminIndexRoute
+}
+
+const SuperadminRouteRouteChildren: SuperadminRouteRouteChildren = {
+  SuperadminBookingsRoute: SuperadminBookingsRoute,
+  SuperadminDriversRoute: SuperadminDriversRoute,
+  SuperadminTripsRoute: SuperadminTripsRoute,
+  SuperadminUsersRoute: SuperadminUsersRoute,
+  SuperadminIndexRoute: SuperadminIndexRoute,
+}
+
+const SuperadminRouteRouteWithChildren = SuperadminRouteRoute._addFileChildren(
+  SuperadminRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRouteRoute: AdminRouteRouteWithChildren,
   ArticlesRouteRoute: ArticlesRouteRouteWithChildren,
   DriverRouteRoute: DriverRouteRouteWithChildren,
   MyDeliveriesRouteRoute: MyDeliveriesRouteRouteWithChildren,
+  SuperadminRouteRoute: SuperadminRouteRouteWithChildren,
   FindVansRoute: FindVansRoute,
   MyBookingsRoute: MyBookingsRoute,
   PrivacyRoute: PrivacyRoute,

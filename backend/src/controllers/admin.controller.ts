@@ -1,8 +1,27 @@
 import type { Request, Response } from 'express'
+import { getSupabaseAdmin } from '../lib/supabase-admin.js'
 import { AdminModel } from '../models/admin.model.js'
 import { DriverApplicationModel } from '../models/driver-application.model.js'
+import { ProfileModel } from '../models/profile.model.js'
 import { AppError } from '../utils/app-error.js'
-import type { AdminListQuery } from '../validators/admin.validator.js'
+import type {
+  AdminBookingsQuery,
+  AdminDriversQuery,
+  AdminTripsQuery,
+  AdminUsersQuery,
+  BanUserBody,
+  SetUserPasswordBody,
+  UpdateUserRoleBody,
+} from '../validators/admin.validator.js'
+
+function assertCanMutateUser(actorId: string, target: { id: string; role: string }) {
+  if (target.id === actorId) {
+    throw new AppError('You cannot modify your own account this way', 400)
+  }
+  if (target.role === 'superadmin') {
+    throw new AppError('Cannot modify another superadmin', 403)
+  }
+}
 
 export async function getAdminStats(_req: Request, res: Response) {
   const stats = await AdminModel.getStats()
@@ -10,20 +29,95 @@ export async function getAdminStats(_req: Request, res: Response) {
 }
 
 export async function listAdminTrips(req: Request, res: Response) {
-  const query = req.query as unknown as AdminListQuery
+  const query = req.query as unknown as AdminTripsQuery
   const trips = await AdminModel.listTrips(query)
   res.json(trips)
 }
 
-export async function listAdminBookings(_req: Request, res: Response) {
-  const bookings = await AdminModel.listBookings()
+export async function listAdminBookings(req: Request, res: Response) {
+  const query = req.query as unknown as AdminBookingsQuery
+  const bookings = await AdminModel.listBookings(query)
   res.json(bookings)
 }
 
 export async function listAdminUsers(req: Request, res: Response) {
-  const query = req.query as unknown as AdminListQuery
+  const query = req.query as unknown as AdminUsersQuery
   const users = await AdminModel.listUsers(query)
   res.json(users)
+}
+
+export async function listAdminDrivers(req: Request, res: Response) {
+  const query = req.query as unknown as AdminDriversQuery
+  const drivers = await AdminModel.listDrivers(query)
+  res.json(drivers)
+}
+
+export async function updateAdminUserRole(req: Request, res: Response) {
+  const body = req.body as UpdateUserRoleBody
+  const target = await AdminModel.findUserById(req.params.id)
+
+  if (!target) {
+    throw new AppError('User not found', 404)
+  }
+
+  assertCanMutateUser(req.profile!.id, target)
+
+  if (body.role === 'superadmin' && req.role !== 'superadmin') {
+    throw new AppError('Only a superadmin can assign the superadmin role', 403)
+  }
+
+  const updated = await ProfileModel.updateRole(target.id, body.role)
+
+  res.json({
+    id: updated.id,
+    role: updated.role,
+  })
+}
+
+export async function banAdminUser(req: Request, res: Response) {
+  const body = req.body as BanUserBody
+  const target = await AdminModel.findUserById(req.params.id)
+
+  if (!target) {
+    throw new AppError('User not found', 404)
+  }
+
+  assertCanMutateUser(req.profile!.id, target)
+
+  const updated = await ProfileModel.setBanned(
+    target.id,
+    body.isBanned,
+    body.reason,
+  )
+
+  res.json({
+    id: updated.id,
+    isBanned: updated.isBanned,
+    bannedAt: updated.bannedAt,
+    bannedReason: updated.bannedReason,
+  })
+}
+
+export async function setAdminUserPassword(req: Request, res: Response) {
+  const body = req.body as SetUserPasswordBody
+  const target = await AdminModel.findUserById(req.params.id)
+
+  if (!target) {
+    throw new AppError('User not found', 404)
+  }
+
+  assertCanMutateUser(req.profile!.id, target)
+
+  const { error } = await getSupabaseAdmin().auth.admin.updateUserById(
+    target.id,
+    { password: body.password },
+  )
+
+  if (error) {
+    throw new AppError(error.message || 'Failed to update password', 400)
+  }
+
+  res.json({ id: target.id, updated: true })
 }
 
 export async function listPendingDriverApplications(_req: Request, res: Response) {

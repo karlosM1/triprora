@@ -1,8 +1,10 @@
-import type { Role } from '@prisma/client'
 import type { NextFunction, Request, Response } from 'express'
 import { supabase } from '../lib/supabase.js'
 import { ProfileModel } from '../models/profile.model.js'
+import type { AppRole } from '../types/role.js'
 import { AppError } from '../utils/app-error.js'
+
+export type { AppRole } from '../types/role.js'
 
 export async function authenticate(
   req: Request,
@@ -30,6 +32,18 @@ export async function authenticate(
 
     const profile = await ProfileModel.ensureProfile(user.id, user.email)
 
+    if (profile.isBanned) {
+      next(
+        new AppError(
+          profile.bannedReason
+            ? `Your account has been banned: ${profile.bannedReason}`
+            : 'Your account has been banned',
+          403,
+        ),
+      )
+      return
+    }
+
     req.authUser = { id: user.id, email: user.email }
     req.profile = profile
     req.role = profile.role
@@ -39,7 +53,7 @@ export async function authenticate(
   }
 }
 
-export function requireRole(...roles: Role[]) {
+export function requireRole(...roles: AppRole[]) {
   return (req: Request, _res: Response, next: NextFunction) => {
     if (!req.role || !roles.includes(req.role)) {
       next(new AppError('Insufficient permissions', 403))
