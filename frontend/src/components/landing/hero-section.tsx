@@ -1,42 +1,35 @@
-import { useState } from 'react'
-import { Link, useNavigate } from '@tanstack/react-router'
-import { motion } from 'framer-motion'
-import { ArrowLeftRight } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { DatePicker } from '@/components/ui/date-picker'
-import { PlaceInput } from '@/components/ui/place-input'
-import {
-  fadeIn,
-  fadeInUp,
-  staggerContainer,
-} from '@/lib/motion'
-import {
-  DEFAULT_TRIP_SEARCH,
-  todayDateInputValue,
-} from '@/lib/trip-search'
-import { TRIP_DESTINATION_PLACES } from '@/lib/places'
-import heroBackground from '@/assets/beach-view.jpg'
+import { useState } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { motion } from "framer-motion";
+import { ArrowLeftRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
+import { PlaceInput } from "@/components/ui/place-input";
+import { fadeIn, fadeInUp, staggerContainer } from "@/lib/motion";
+import { DEFAULT_TRIP_SEARCH, todayDateInputValue } from "@/lib/trip-search";
+import { TRIP_DESTINATION_PLACES } from "@/lib/places";
+import heroBackground from "@/assets/beach-view.jpg";
 
 export function HeroSection() {
-  const navigate = useNavigate()
-  const [from, setFrom] = useState(DEFAULT_TRIP_SEARCH.from)
-  const [to, setTo] = useState(DEFAULT_TRIP_SEARCH.to)
-  const [departureDate, setDepartureDate] = useState('')
+  const navigate = useNavigate();
+  const [from, setFrom] = useState(DEFAULT_TRIP_SEARCH.from);
+  const [to, setTo] = useState(DEFAULT_TRIP_SEARCH.to);
+  const [departureDate, setDepartureDate] = useState("");
 
   function swapLocations() {
-    setFrom(to)
-    setTo(from)
+    setFrom(to);
+    setTo(from);
   }
 
   function handleSearch() {
     navigate({
-      to: '/find-vans',
+      to: "/find-vans",
       search: {
         from,
         to,
         departureDate: departureDate || undefined,
       },
-    })
+    });
   }
 
   return (
@@ -76,7 +69,10 @@ export function HeroSection() {
             Door-to-door van rides between Aurora and Metro Manila, both ways,
             fast, easy, and always on your schedule.
           </motion.p>
-          <motion.div variants={fadeInUp} className="mt-6 flex w-full flex-row justify-center gap-3 sm:mt-8 sm:w-auto sm:flex-wrap sm:gap-4">
+          <motion.div
+            variants={fadeInUp}
+            className="mt-6 flex w-full flex-row justify-center gap-3 sm:mt-8 sm:w-auto sm:flex-wrap sm:gap-4"
+          >
             <Button
               size="lg"
               className="h-11 flex-1 rounded-full bg-[#0071e3] px-4 text-[15px] font-normal hover:bg-[#0077ed] sm:flex-none sm:px-7 sm:text-[17px]"
@@ -87,7 +83,7 @@ export function HeroSection() {
             <Button
               size="lg"
               variant="ghost"
-              className="h-11 flex-1 rounded-full px-4 text-[15px] font-normal text-[#2997ff] hover:bg-white/10 hover:text-[#2997ff] sm:flex-none sm:px-7 sm:text-[17px]"
+              className="h-11 flex-1 rounded-full px-4 text-[15px] font-normal text-white hover:bg-white/10 hover:text-[#2997ff] sm:flex-none sm:px-7 sm:text-[17px]"
               asChild
             >
               <Link to="/send-package">Send a Package</Link>
@@ -99,11 +95,15 @@ export function HeroSection() {
           variants={fadeIn}
           initial="hidden"
           animate="visible"
-          transition={{ delay: 0.35, duration: 0.9, ease: [0.25, 0.1, 0.25, 1] }}
+          transition={{
+            delay: 0.35,
+            duration: 0.9,
+            ease: [0.25, 0.1, 0.25, 1],
+          }}
           className="mt-0 w-full rounded-2xl bg-white/10 p-3 ring-1 ring-white/20 backdrop-blur-2xl sm:mt-12 sm:p-4 lg:p-5"
           onSubmit={(event) => {
-            event.preventDefault()
-            handleSearch()
+            event.preventDefault();
+            handleSearch();
           }}
         >
           <div className="flex flex-col gap-3 xl:flex-row xl:items-stretch">
@@ -152,5 +152,5 @@ export function HeroSection() {
         </motion.form>
       </div>
     </section>
-  )
+  );
 }

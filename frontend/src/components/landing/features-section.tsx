@@ -1,40 +1,40 @@
-import { ArrowUpRight } from 'lucide-react'
-import { Link } from '@tanstack/react-router'
-import { motion } from 'framer-motion'
-import { Button } from '@/components/ui/button'
+import { ArrowUpRight } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
 import {
   fadeInUp,
   scaleIn,
   staggerContainer,
   viewportOnce,
-} from '@/lib/motion'
-import beachView from '@/assets/beach-view.jpg'
-import ditumaboFalls from '@/assets/ditumabo-falls.jpg'
-import hillBeachView from '@/assets/hill-beach-view.jpg'
-import surfingSabang from '@/assets/surfing-sabang.jfif'
+} from "@/lib/motion";
+import beachView from "@/assets/beach-view.jpg";
+import ditumaboFalls from "@/assets/ditumabo-falls.jpg";
+import hillBeachView from "@/assets/hill-beach-view.jpg";
+import surfingSabang from "@/assets/surfing-sabang.jfif";
 
 const galleryImages = [
   {
     src: surfingSabang,
-    alt: 'Surfing at Sabang Beach, Baler',
-    className: 'row-span-2',
+    alt: "Surfing at Sabang Beach, Baler",
+    className: "row-span-2",
   },
   {
     src: ditumaboFalls,
-    alt: 'Ditumabo Falls in Aurora Province',
-    className: 'row-span-2',
+    alt: "Ditumabo Falls in Aurora Province",
+    className: "row-span-2",
   },
   {
     src: hillBeachView,
-    alt: 'Coastal hills in Aurora Province',
-    className: '',
+    alt: "Coastal hills in Aurora Province",
+    className: "",
   },
   {
     src: beachView,
-    alt: 'Beach view in Aurora Province',
-    className: '',
+    alt: "Beach view in Aurora Province",
+    className: "",
   },
-]
+];
 
 export function FeaturesSection() {
   return (
@@ -64,9 +64,10 @@ export function FeaturesSection() {
           variants={fadeInUp}
           className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#86868b] sm:text-[19px]"
         >
-          Booking a van ride should be as effortless as planning your dream trip.
-          We connect travelers with trusted local drivers for safe, comfortable
-          door-to-door travel between Aurora and Metro Manila, both ways.
+          Booking a van ride should be as effortless as planning your dream
+          trip. We connect travelers with trusted local drivers for safe,
+          comfortable door-to-door travel between Aurora and Metro Manila, both
+          ways.
         </motion.p>
         <motion.div variants={fadeInUp} className="mt-8">
           <Button
@@ -100,7 +101,7 @@ export function FeaturesSection() {
               alt={image.alt}
               loading="lazy"
               decoding="async"
-              className="size-full min-h-[160px] object-cover lg:min-h-0 lg:h-full"
+              className="size-full min-h-40 object-cover lg:min-h-0 lg:h-full"
               whileHover={{ scale: 1.04 }}
               transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
             />
@@ -117,5 +118,5 @@ export function FeaturesSection() {
         ))}
       </motion.div>
     </section>
-  )
+  );
 }

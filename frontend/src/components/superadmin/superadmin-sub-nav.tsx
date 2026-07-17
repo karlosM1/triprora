@@ -14,7 +14,7 @@ export function SuperadminSubNav() {
 
   return (
     <div className="border-b border-black/5 bg-white/80 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-[980px] items-center gap-1 overflow-x-auto px-6 py-3 lg:px-8">
+      <div className="no-scrollbar mx-auto flex max-w-[980px] items-center gap-1 overflow-x-auto px-6 py-3 lg:px-8">
         {superadminNavItems.map((item) => {
           const isActive = item.exact
             ? pathname === '/superadmin' || pathname === '/superadmin/'

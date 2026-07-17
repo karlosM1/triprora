@@ -7,6 +7,8 @@ import { defineConfig, loadEnv } from 'vite'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, __dirname, '')
   const apiProxyTarget = env.VITE_API_PROXY_TARGET || 'http://localhost:3001'
+  const useTunnelHmr =
+    env.VITE_HMR_TUNNEL === '1' || env.VITE_HMR_TUNNEL === 'true'
 
   return {
     plugins: [
@@ -29,11 +31,15 @@ export default defineConfig(({ mode }) => {
       strictPort: true,
       // Allow tunnels (localtunnel, etc.) and LAN hostnames
       allowedHosts: true,
-      // localtunnel terminates TLS on 443; keep HMR from aiming at :5173
-      hmr: {
-        protocol: 'wss',
-        clientPort: 443,
-      },
+      // localtunnel terminates TLS on 443; set VITE_HMR_TUNNEL=1 when using a tunnel
+      ...(useTunnelHmr
+        ? {
+            hmr: {
+              protocol: 'wss',
+              clientPort: 443,
+            },
+          }
+        : {}),
       proxy: {
         '/api': {
           target: apiProxyTarget,

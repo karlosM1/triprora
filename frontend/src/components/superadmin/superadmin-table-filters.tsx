@@ -1,17 +1,61 @@
 import { Search } from 'lucide-react'
-import { Input } from '@/components/ui/input'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from '@/components/ui/combobox'
+import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 
 export type TableFilterOption = {
   value: string
   label: string
+}
+
+type FilterComboboxProps = {
+  label: string
+  value: string
+  options: TableFilterOption[]
+  onChange: (value: string) => void
+}
+
+function FilterCombobox({
+  label,
+  value,
+  options,
+  onChange,
+}: FilterComboboxProps) {
+  const selected = options.find((option) => option.value === value) ?? null
+
+  return (
+    <Combobox
+      items={options}
+      value={selected}
+      onValueChange={(item) => {
+        if (item) onChange(item.value)
+      }}
+      isItemEqualToValue={(a, b) => a.value === b.value}
+    >
+      <ComboboxInput
+        placeholder={label}
+        showClear={false}
+        className="h-10 w-full rounded-full border border-[#d2d2d7] bg-white text-[14px] sm:w-[180px]"
+      />
+      <ComboboxContent>
+        <ComboboxEmpty>No options found.</ComboboxEmpty>
+        <ComboboxList>
+          {(option) => (
+            <ComboboxItem key={option.value} value={option}>
+              {option.label}
+            </ComboboxItem>
+          )}
+        </ComboboxList>
+      </ComboboxContent>
+    </Combobox>
+  )
 }
 
 type SuperadminTableFiltersProps = {
@@ -56,27 +100,13 @@ export function SuperadminTableFilters({
       </div>
 
       {filters.map((filter) => (
-        <Select
+        <FilterCombobox
           key={filter.id}
+          label={filter.label}
           value={filter.value}
-          onValueChange={(value) => {
-            if (value) filter.onChange(value)
-          }}
-        >
-          <SelectTrigger
-            aria-label={filter.label}
-            className="h-10 w-full rounded-full border-[#d2d2d7] bg-white sm:w-[160px]"
-          >
-            <SelectValue placeholder={filter.label} />
-          </SelectTrigger>
-          <SelectContent>
-            {filter.options.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          options={filter.options}
+          onChange={filter.onChange}
+        />
       ))}
     </div>
   )

@@ -17,6 +17,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { SuperadminColumnPicker, readStoredColumnVisibility, writeStoredColumnVisibility } from '@/components/superadmin/superadmin-column-picker'
 import { SuperadminTableFilters } from '@/components/superadmin/superadmin-table-filters'
 import { SuperadminUserActions } from '@/components/superadmin/superadmin-user-actions'
 import { AppleCard, PageHeader, SectionTitle } from '@/components/layout/page-header'
@@ -58,6 +59,19 @@ const TRIP_FILTERS: Array<{ value: TripStatusFilter; label: string }> = [
   { value: 'completed', label: 'Completed' },
   { value: 'cancelled', label: 'Cancelled' },
 ]
+
+const USER_TABLE_COLUMNS = [
+  { id: 'name', label: 'Name' },
+  { id: 'email', label: 'Email' },
+  { id: 'role', label: 'Role' },
+  { id: 'status', label: 'Status' },
+  { id: 'trips', label: 'Trips' },
+  { id: 'bookings', label: 'Bookings' },
+  { id: 'joined', label: 'Joined' },
+  { id: 'actions', label: 'Actions' },
+] as const
+
+const USER_COLUMNS_STORAGE_KEY = 'superadmin-users-visible-columns'
 
 function StatCard({
   title,
@@ -358,6 +372,12 @@ export function SuperadminUsersPage() {
   const [search, setSearch] = useState('')
   const [role, setRole] = useState<RoleFilter>('all')
   const [banned, setBanned] = useState<BannedFilter>('all')
+  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(
+    () =>
+      readStoredColumnVisibility(USER_COLUMNS_STORAGE_KEY, [
+        ...USER_TABLE_COLUMNS,
+      ]),
+  )
   const debouncedSearch = useDebouncedValue(search)
 
   const queryParams = {
@@ -380,6 +400,26 @@ export function SuperadminUsersPage() {
   const hasFilters =
     Boolean(debouncedSearch.trim()) || role !== 'all' || banned !== 'all'
 
+  function isUserColumnVisible(columnId: string) {
+    return visibleColumns[columnId] !== false
+  }
+
+  function toggleUserColumn(columnId: string, visible: boolean) {
+    setVisibleColumns((current) => {
+      const next = { ...current, [columnId]: visible }
+      writeStoredColumnVisibility(USER_COLUMNS_STORAGE_KEY, next)
+      return next
+    })
+  }
+
+  function resetUserColumns() {
+    const next = Object.fromEntries(
+      USER_TABLE_COLUMNS.map((column) => [column.id, true]),
+    ) as Record<string, boolean>
+    setVisibleColumns(next)
+    writeStoredColumnVisibility(USER_COLUMNS_STORAGE_KEY, next)
+  }
+
   return (
     <motion.div
       className="space-y-10"
@@ -395,8 +435,12 @@ export function SuperadminUsersPage() {
         />
       </motion.div>
 
-      <motion.div variants={fadeInUp}>
+      <motion.div
+        variants={fadeInUp}
+        className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between"
+      >
         <SuperadminTableFilters
+          className="flex-1"
           search={search}
           onSearchChange={(value) => {
             setSearch(value)
@@ -436,6 +480,12 @@ export function SuperadminUsersPage() {
             },
           ]}
         />
+        <SuperadminColumnPicker
+          columns={[...USER_TABLE_COLUMNS]}
+          visible={visibleColumns}
+          onToggle={toggleUserColumn}
+          onReset={resetUserColumns}
+        />
       </motion.div>
 
       <motion.div variants={fadeInUp}>
@@ -452,45 +502,82 @@ export function SuperadminUsersPage() {
           />
         ) : (
           <AppleCard className="overflow-hidden">
-            <div className="overflow-x-auto">
+            <div className="no-scrollbar overflow-x-auto">
               <table className="w-full min-w-[800px] text-left text-[14px]">
                 <thead>
                   <tr className="border-b border-black/5 bg-[#fafafa] text-[12px] font-medium tracking-wide text-[#86868b] uppercase">
-                    <th className="px-5 py-3">Name</th>
-                    <th className="px-5 py-3">Email</th>
-                    <th className="px-5 py-3">Role</th>
-                    <th className="px-5 py-3">Status</th>
-                    <th className="px-5 py-3">Trips</th>
-                    <th className="px-5 py-3">Bookings</th>
-                    <th className="px-5 py-3">Joined</th>
-                    <th className="px-5 py-3">Actions</th>
+                    {isUserColumnVisible('name') && (
+                      <th className="px-5 py-3">Name</th>
+                    )}
+                    {isUserColumnVisible('email') && (
+                      <th className="px-5 py-3">Email</th>
+                    )}
+                    {isUserColumnVisible('role') && (
+                      <th className="px-5 py-3">Role</th>
+                    )}
+                    {isUserColumnVisible('status') && (
+                      <th className="px-5 py-3">Status</th>
+                    )}
+                    {isUserColumnVisible('trips') && (
+                      <th className="px-5 py-3">Trips</th>
+                    )}
+                    {isUserColumnVisible('bookings') && (
+                      <th className="px-5 py-3">Bookings</th>
+                    )}
+                    {isUserColumnVisible('joined') && (
+                      <th className="px-5 py-3">Joined</th>
+                    )}
+                    {isUserColumnVisible('actions') && (
+                      <th className="px-5 py-3">Actions</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
                   {users.map((user) => (
                     <tr key={user.id} className="border-b border-black/5 last:border-0">
-                      <td className="px-5 py-4 font-medium text-[#1d1d1f]">
-                        {user.fullName ?? '-'}
-                      </td>
-                      <td className="px-5 py-4 text-[#86868b]">{user.email}</td>
-                      <td className="px-5 py-4">
-                        <StatusPill label={user.role} variant={roleVariant(user.role)} />
-                      </td>
-                      <td className="px-5 py-4">
-                        {user.isBanned ? (
-                          <StatusPill label="Banned" variant="danger" />
-                        ) : (
-                          <StatusPill label="Active" variant="success" />
-                        )}
-                      </td>
-                      <td className="px-5 py-4 text-[#86868b]">{user.tripCount}</td>
-                      <td className="px-5 py-4 text-[#86868b]">{user.bookingCount}</td>
-                      <td className="px-5 py-4 text-[#86868b]">
-                        {formatDateTime(user.createdAt)}
-                      </td>
-                      <td className="px-5 py-4">
-                        <SuperadminUserActions user={user} />
-                      </td>
+                      {isUserColumnVisible('name') && (
+                        <td className="px-5 py-4 font-medium text-[#1d1d1f]">
+                          {user.fullName ?? '-'}
+                        </td>
+                      )}
+                      {isUserColumnVisible('email') && (
+                        <td className="px-5 py-4 text-[#86868b]">{user.email}</td>
+                      )}
+                      {isUserColumnVisible('role') && (
+                        <td className="px-5 py-4">
+                          <StatusPill
+                            label={user.role}
+                            variant={roleVariant(user.role)}
+                          />
+                        </td>
+                      )}
+                      {isUserColumnVisible('status') && (
+                        <td className="px-5 py-4">
+                          {user.isBanned ? (
+                            <StatusPill label="Banned" variant="danger" />
+                          ) : (
+                            <StatusPill label="Active" variant="success" />
+                          )}
+                        </td>
+                      )}
+                      {isUserColumnVisible('trips') && (
+                        <td className="px-5 py-4 text-[#86868b]">{user.tripCount}</td>
+                      )}
+                      {isUserColumnVisible('bookings') && (
+                        <td className="px-5 py-4 text-[#86868b]">
+                          {user.bookingCount}
+                        </td>
+                      )}
+                      {isUserColumnVisible('joined') && (
+                        <td className="px-5 py-4 text-[#86868b]">
+                          {formatDateTime(user.createdAt)}
+                        </td>
+                      )}
+                      {isUserColumnVisible('actions') && (
+                        <td className="px-5 py-4">
+                          <SuperadminUserActions user={user} />
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -615,7 +702,7 @@ export function SuperadminDriversPage() {
           />
         ) : (
           <AppleCard className="overflow-hidden">
-            <div className="overflow-x-auto">
+            <div className="no-scrollbar overflow-x-auto">
               <table className="w-full min-w-[900px] text-left text-[14px]">
                 <thead>
                   <tr className="border-b border-black/5 bg-[#fafafa] text-[12px] font-medium tracking-wide text-[#86868b] uppercase">
@@ -785,7 +872,7 @@ export function SuperadminTripsPage() {
           />
         ) : (
           <AppleCard className="overflow-hidden">
-            <div className="overflow-x-auto">
+            <div className="no-scrollbar overflow-x-auto">
               <table className="w-full min-w-[720px] text-left text-[14px]">
                 <thead>
                   <tr className="border-b border-black/5 bg-[#fafafa] text-[12px] font-medium tracking-wide text-[#86868b] uppercase">
@@ -930,7 +1017,7 @@ export function SuperadminBookingsPage() {
           />
         ) : (
           <AppleCard className="overflow-hidden">
-            <div className="overflow-x-auto">
+            <div className="no-scrollbar overflow-x-auto">
               <table className="w-full min-w-[720px] text-left text-[14px]">
                 <thead>
                   <tr className="border-b border-black/5 bg-[#fafafa] text-[12px] font-medium tracking-wide text-[#86868b] uppercase">
