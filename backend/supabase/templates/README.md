@@ -17,6 +17,15 @@ Same page → **Reset password**
 - Subject: `Reset your Crabr password`
 - Body: `recovery.html`
 
+## Redirect URLs
+
+In [Authentication → URL Configuration](https://supabase.com/dashboard/project/_/auth/url-configuration), add:
+
+- Site URL: your app origin (e.g. `http://localhost:5173` or production)
+- Redirect URLs: `{origin}/sign-in` and `{origin}/reset-password`
+
+Password reset emails send users to `/reset-password` to choose a new password.
+
 ## Notes
 
 - Templates use Go template variables such as `{{ .ConfirmationURL }}`, `{{ .Email }}`, and `{{ .Data.full_name }}` (set at sign-up).

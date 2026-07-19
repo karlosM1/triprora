@@ -11,18 +11,24 @@ import { GoogleAuthButton } from '@/components/auth/google-auth-button'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth-context'
 import { resolveSession } from '@/lib/auth-session'
-import { getRememberedEmail, setRememberMePreference } from '@/lib/supabase'
+import {
+  getRememberedEmail,
+  getRememberMePreference,
+  setRememberMePreference,
+} from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 
 type SignInSearch = {
   redirect?: string
   error?: string
+  reset?: string
 }
 
 export const Route = createFileRoute('/sign-in')({
   validateSearch: (search: Record<string, unknown>): SignInSearch => ({
     redirect: typeof search.redirect === 'string' ? search.redirect : undefined,
     error: typeof search.error === 'string' ? search.error : undefined,
+    reset: typeof search.reset === 'string' ? search.reset : undefined,
   }),
   beforeLoad: async ({ search }) => {
     const session = await resolveSession()
@@ -52,19 +58,27 @@ export const Route = createFileRoute('/sign-in')({
 })
 
 function SignInPage() {
-  const { redirect, error: searchError } = Route.useSearch()
+  const {
+    redirect,
+    error: searchError,
+    reset: resetStatus,
+  } = Route.useSearch()
   const navigate = useNavigate()
   const { signIn, signInWithGoogle, resetPassword, refreshProfile } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [rememberMe, setRememberMe] = useState(true)
+  const [rememberMe, setRememberMe] = useState(() => getRememberMePreference())
   const [showForgotPassword, setShowForgotPassword] = useState(false)
   const [error, setError] = useState<string | null>(
     searchError === 'account-removed'
       ? 'This account no longer exists. It was removed and cannot sign in.'
       : null,
   )
-  const [success, setSuccess] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(
+    resetStatus === 'success'
+      ? 'Password updated. Sign in with your new password.'
+      : null,
+  )
   const [submitting, setSubmitting] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
 
@@ -73,8 +87,14 @@ function SignInPage() {
     if (rememberedEmail) {
       setEmail(rememberedEmail)
       setRememberMe(true)
+      setRememberMePreference(true)
     }
   }, [])
+
+  function handleRememberMeChange(checked: boolean) {
+    setRememberMe(checked)
+    setRememberMePreference(checked)
+  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
@@ -209,7 +229,9 @@ function SignInPage() {
                 <input
                   type="checkbox"
                   checked={rememberMe}
-                  onChange={(event) => setRememberMe(event.target.checked)}
+                  onChange={(event) =>
+                    handleRememberMeChange(event.target.checked)
+                  }
                   className="size-4 rounded border-[#d2d2d7] text-[#0071e3] focus:ring-[#0071e3]/40"
                 />
                 <span className="text-[14px] text-[#1d1d1f]">Remember me</span>

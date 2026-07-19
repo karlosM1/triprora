@@ -12,12 +12,22 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const REMEMBER_EMAIL_KEY = 'triprora-remember-email'
 export const REMEMBER_ME_KEY = 'triprora-remember-me'
 
+function getSupabaseAuthStorageKey() {
+  try {
+    const hostname = new URL(supabaseUrl).hostname
+    const projectRef = hostname.split('.')[0]
+    return `sb-${projectRef}-auth-token`
+  } catch {
+    return null
+  }
+}
+
 const authStorage = {
   getItem(key: string) {
     return localStorage.getItem(key) ?? sessionStorage.getItem(key)
   },
   setItem(key: string, value: string) {
-    const remember = localStorage.getItem(REMEMBER_ME_KEY) !== 'false'
+    const remember = getRememberMePreference()
     if (remember) {
       localStorage.setItem(key, value)
       sessionStorage.removeItem(key)
@@ -41,8 +51,31 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 })
 
+export function getRememberMePreference() {
+  return localStorage.getItem(REMEMBER_ME_KEY) !== 'false'
+}
+
 export function setRememberMePreference(remember: boolean) {
   localStorage.setItem(REMEMBER_ME_KEY, remember ? 'true' : 'false')
+
+  // Keep an existing session in the storage that matches the preference.
+  const storageKey = getSupabaseAuthStorageKey()
+  if (!storageKey) return
+
+  if (remember) {
+    const fromSession = sessionStorage.getItem(storageKey)
+    if (fromSession) {
+      localStorage.setItem(storageKey, fromSession)
+      sessionStorage.removeItem(storageKey)
+    }
+    return
+  }
+
+  const fromLocal = localStorage.getItem(storageKey)
+  if (fromLocal) {
+    sessionStorage.setItem(storageKey, fromLocal)
+    localStorage.removeItem(storageKey)
+  }
 }
 
 export function getRememberedEmail() {
