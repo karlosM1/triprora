@@ -38,6 +38,7 @@ enum DriverApplicationStatus {
 enum VanStatus {
   draft
   published
+  in_progress
   completed
   cancelled
 }
@@ -383,6 +384,7 @@ model Booking {
   pickupAddress  String?
   dropoffAddress String?
   status         BookingStatus
+  destinationReachedAt DateTime?
   snapshot       BookingSnapshot?
   payment        Payment?
   walletLedgerEntries WalletLedgerEntry[]

@@ -8,7 +8,6 @@ import type {
 } from '@prisma/client'
 import {
   commissionFromBase,
-  earningsFromBase,
   parseSettlementDate,
   startOfUtcDay,
 } from '../lib/wallet.js'
@@ -19,12 +18,13 @@ type Tx = Prisma.TransactionClient
 
 type BookingForSettlement = {
   id: string
-  snapshot: { baseFareCents: number } | null
+  snapshot: { baseFareCents: number; serviceFeeCents?: number } | null
   payment: Payment | null
 }
 
 export type WalletSummary = {
   balancePesos: number
+  systemFeeDuePesos: number
   currency: 'PHP'
   meaning: 'platform_owes_driver' | 'driver_owes_platform' | 'settled'
 }
@@ -234,7 +234,14 @@ export async function postBookingSettlement(
     return null
   }
 
-  const commissionPesos = commissionFromBase(baseFarePesos)
+  const commissionPesos =
+    booking.snapshot?.serviceFeeCents != null
+      ? Math.round(booking.snapshot.serviceFeeCents / 100)
+      : commissionFromBase(baseFarePesos)
+
+  if (commissionPesos <= 0) {
+    return null
+  }
 
   if (payment.provider !== 'cash') {
     const wallet = await ensureWallet(tx, driverId)
@@ -249,11 +256,11 @@ export async function postBookingSettlement(
     return null
   }
 
-  // Driver collected the base fare in cash; platform is owed commission.
+  // Passenger paid the system fee at booking; driver owes that amount to the platform.
   const amountPesos = -commissionPesos
-  const earningsPesos = earningsFromBase(baseFarePesos)
+  const earningsPesos = baseFarePesos
   const type = 'cash_commission' as const
-  const reason = 'Platform commission owed'
+  const reason = 'System fee owed'
 
   const wallet = await ensureWallet(tx, driverId)
   const beforeBalance = wallet.balancePesos
@@ -297,11 +304,75 @@ export async function postBookingSettlement(
   return entry
 }
 
+export async function reverseBookingSettlement(
+  tx: Tx,
+  input: {
+    driverId: string
+    bookingId: string
+    actorProfileId?: string | null
+    reason?: string
+  },
+): Promise<WalletLedgerEntry | null> {
+  const { driverId, bookingId, actorProfileId } = input
+
+  const existing = await tx.walletLedgerEntry.findUnique({
+    where: { bookingId },
+  })
+  if (!existing || existing.amountPesos >= 0) return null
+
+  const reverseKey = `booking-reverse:${bookingId}`
+  const alreadyReversed = await tx.walletLedgerEntry.findUnique({
+    where: { idempotencyKey: reverseKey },
+  })
+  if (alreadyReversed) return alreadyReversed
+
+  const wallet = await ensureWallet(tx, driverId)
+  const beforeBalance = wallet.balancePesos
+  const amountPesos = -existing.amountPesos
+  const balanceAfterPesos = beforeBalance + amountPesos
+
+  const entry = await tx.walletLedgerEntry.create({
+    data: {
+      walletId: wallet.id,
+      type: 'settlement_adjustment',
+      amountPesos,
+      balanceAfterPesos,
+      baseFarePesos: existing.baseFarePesos,
+      commissionPesos: existing.commissionPesos,
+      earningsPesos: existing.earningsPesos,
+      reason: input.reason ?? 'System fee reversed (booking cancelled)',
+      idempotencyKey: reverseKey,
+    },
+  })
+
+  await tx.driverWallet.update({
+    where: { id: wallet.id },
+    data: { balancePesos: balanceAfterPesos },
+  })
+
+  await writeAudit(tx, {
+    walletId: wallet.id,
+    actorProfileId: actorProfileId ?? driverId,
+    action: 'booking_settlement_reversed',
+    entityType: 'WalletLedgerEntry',
+    entityId: entry.id,
+    before: { balancePesos: beforeBalance, bookingId },
+    after: {
+      balancePesos: balanceAfterPesos,
+      amountPesos,
+      bookingId,
+    },
+  })
+
+  return entry
+}
+
 export const WalletModel = {
   async getSummary(driverId: string): Promise<WalletSummary> {
     const wallet = await prisma.$transaction(async (tx) => ensureWallet(tx, driverId))
     return {
       balancePesos: wallet.balancePesos,
+      systemFeeDuePesos: Math.max(0, -wallet.balancePesos),
       currency: 'PHP',
       meaning: balanceMeaning(wallet.balancePesos),
     }
@@ -356,52 +427,13 @@ export const WalletModel = {
   },
 
   async requestPayout(
-    driverId: string,
-    amountPesos: number,
+    _driverId: string,
+    _amountPesos: number,
   ): Promise<PresentedPayout> {
-    if (!Number.isInteger(amountPesos) || amountPesos <= 0) {
-      throw new AppError('Payout amount must be a positive whole number', 400)
-    }
-
-    return prisma.$transaction(async (tx) => {
-      const wallet = await ensureWallet(tx, driverId)
-      if (wallet.balancePesos <= 0) {
-        throw new AppError('No positive balance available for payout', 400)
-      }
-      if (amountPesos > wallet.balancePesos) {
-        throw new AppError('Payout amount exceeds available balance', 400)
-      }
-
-      const application = await tx.driverApplication.findUnique({
-        where: { profileId: driverId },
-        include: { bankAccount: true },
-      })
-      const bank = application?.bankAccount
-
-      const payout = await tx.driverPayout.create({
-        data: {
-          driverId,
-          amountPesos,
-          status: 'requested',
-          method: 'manual',
-          gcashNumber: bank?.gcashNumber ?? null,
-          accountName: bank?.accountName ?? null,
-          bankName: bank?.bankName ?? null,
-          accountNumber: bank?.accountNumber ?? null,
-        },
-      })
-
-      await writeAudit(tx, {
-        walletId: wallet.id,
-        actorProfileId: driverId,
-        action: 'payout_requested',
-        entityType: 'DriverPayout',
-        entityId: payout.id,
-        after: { amountPesos, status: 'requested' },
-      })
-
-      return presentPayout(payout)
-    })
+    throw new AppError(
+      'Payout requests are no longer available. Your wallet tracks system fees owed to the platform.',
+      400,
+    )
   },
 
   async listAllWallets() {
@@ -416,6 +448,7 @@ export const WalletModel = {
       id: w.id,
       driverId: w.driverId,
       balancePesos: w.balancePesos,
+      systemFeeDuePesos: Math.max(0, -w.balancePesos),
       meaning: balanceMeaning(w.balancePesos),
       updatedAt: w.updatedAt.toISOString(),
       driver: w.driver,

@@ -75,5 +75,6 @@ export type DriverBookingPassenger = {
   pickupAddress: string | null
   dropoffAddress: string | null
   status: 'pending' | 'confirmed' | 'declined'
+  destinationReachedAt: Date | null
   bookedAt: Date
 }

@@ -19,7 +19,7 @@ import {
 } from '../lib/seat-layout.js'
 import { DeliveryModel } from './delivery.model.js'
 import type { DriverDeliveryRequest } from './delivery.types.js'
-import { postBookingSettlement } from './wallet.model.js'
+import { postBookingSettlement, reverseBookingSettlement } from './wallet.model.js'
 import type { ListVansQuery } from '../validators/vans.validator.js'
 
 export type { Van, VanClassType, VanClassVariant }
@@ -41,7 +41,7 @@ export type DriverTrip = {
   tripCategory: string | null
   vehicleName: string | null
   plateNumber: string | null
-  status: 'draft' | 'published' | 'completed' | 'cancelled'
+  status: 'draft' | 'published' | 'in_progress' | 'completed' | 'cancelled'
   driverId: string | null
   createdAt: Date
 }
@@ -63,6 +63,7 @@ export type DriverTripPassenger = {
   pickupAddress: string | null
   dropoffAddress: string | null
   status: 'pending' | 'confirmed'
+  destinationReachedAt: Date | null
   bookedAt: Date
 }
 
@@ -236,6 +237,143 @@ export type VanListResult = {
   pageSize: number
 }
 
+async function finalizeDriverTrip(
+  tripId: string,
+  driverId: string,
+  options: {
+    routeLabel: string
+    departureDate: string
+    departureTime: string
+    notifyPassengers: boolean
+  },
+  outerTx?: Prisma.TransactionClient,
+): Promise<DriverTrip | null> {
+  const whenLabel = [options.departureDate, options.departureTime]
+    .filter(Boolean)
+    .join(' at ')
+
+  const run = async (tx: Prisma.TransactionClient) => {
+    const current = await tx.van.findFirst({
+      where: {
+        id: tripId,
+        driverId,
+        status: { in: ['published', 'in_progress'] },
+      },
+      select: { id: true },
+    })
+
+    if (!current) return null
+
+    const pendingBookings = await tx.booking.findMany({
+      where: { vanId: tripId, status: 'pending' },
+      select: { id: true, seatId: true, userId: true, reference: true },
+    })
+
+    const pendingSeatIds = pendingBookings
+      .map((booking) => booking.seatId)
+      .filter((seatId): seatId is string => Boolean(seatId))
+
+    if (pendingSeatIds.length > 0) {
+      await tx.seat.updateMany({
+        where: { id: { in: pendingSeatIds } },
+        data: { status: 'available' },
+      })
+    }
+
+    if (pendingBookings.length > 0) {
+      await tx.booking.updateMany({
+        where: { vanId: tripId, status: 'pending' },
+        data: { status: 'cancelled' },
+      })
+      await tx.van.update({
+        where: { id: tripId },
+        data: { seatsLeft: { increment: pendingBookings.length } },
+      })
+      for (const booking of pendingBookings) {
+        await reverseBookingSettlement(tx, {
+          driverId,
+          bookingId: booking.id,
+          actorProfileId: driverId,
+          reason: 'System fee reversed (trip ended)',
+        })
+      }
+    }
+
+    const confirmedBookings = await tx.booking.findMany({
+      where: { vanId: tripId, status: 'confirmed' },
+      select: { id: true, userId: true, reference: true },
+    })
+
+    const completedAt = new Date()
+
+    await tx.booking.updateMany({
+      where: { vanId: tripId, status: 'confirmed' },
+      data: {
+        status: 'completed',
+        destinationReachedAt: completedAt,
+      },
+    })
+
+    await tx.van.update({
+      where: { id: tripId },
+      data: { status: 'completed' },
+    })
+
+    const bookings = await tx.booking.findMany({
+      where: {
+        vanId: tripId,
+        status: 'completed',
+        id: { in: confirmedBookings.map((booking) => booking.id) },
+      },
+      include: {
+        snapshot: true,
+        payment: true,
+      },
+    })
+
+    for (const booking of bookings) {
+      await postBookingSettlement(tx, {
+        driverId,
+        booking,
+        actorProfileId: driverId,
+      })
+    }
+
+    if (options.notifyPassengers && confirmedBookings.length > 0) {
+      const notificationRows: Prisma.NotificationCreateManyInput[] = []
+      for (const booking of confirmedBookings) {
+        if (!booking.userId) continue
+        const reference = booking.reference ? ` (${booking.reference})` : ''
+        notificationRows.push({
+          userId: booking.userId,
+          type: 'trip_ended',
+          title: 'Trip ended',
+          body: `Your trip${reference} on ${options.routeLabel}${whenLabel ? ` (${whenLabel})` : ''} has ended. Thank you for riding with us.`,
+          data: {
+            tripId,
+            bookingId: booking.id,
+            kind: 'booking',
+          },
+        })
+      }
+      if (notificationRows.length > 0) {
+        await tx.notification.createMany({ data: notificationRows })
+      }
+    }
+
+    return tx.van.findUniqueOrThrow({
+      where: { id: tripId },
+      include: vanInclude,
+    })
+  }
+
+  const van = outerTx
+    ? await run(outerTx)
+    : await prisma.$transaction((tx) => run(tx))
+
+  return van ? toDriverTrip(van) : null
+}
+
 export const VanModel = {
   async findAll(query: ListVansQuery): Promise<VanListResult> {
     const {
@@ -378,6 +516,7 @@ export const VanModel = {
       pickupAddress: booking.pickupAddress ?? null,
       dropoffAddress: booking.dropoffAddress ?? null,
       status: booking.status as DriverTripPassenger['status'],
+      destinationReachedAt: booking.destinationReachedAt,
       bookedAt: booking.createdAt,
     }))
 
@@ -534,22 +673,66 @@ export const VanModel = {
     return toDriverTrip(van)
   },
 
-  async completeDriverTrip(
+  async startDriverTrip(
     tripId: string,
     driverId: string,
-  ): Promise<DriverTrip | null> {
+  ): Promise<{ trip: DriverTrip; notifiedCount: number } | null> {
     const existing = await prisma.van.findFirst({
       where: { id: tripId, driverId, status: 'published' },
-      select: { id: true },
+      include: {
+        route: true,
+        bookings: {
+          where: { status: { in: ['pending', 'confirmed'] } },
+          select: {
+            id: true,
+            userId: true,
+            seatId: true,
+            reference: true,
+            status: true,
+            snapshot: {
+              select: {
+                routeLabel: true,
+                departureDate: true,
+                departureTime: true,
+              },
+            },
+          },
+        },
+        deliveries: {
+          where: { status: 'pending' },
+          select: {
+            id: true,
+            userId: true,
+            reference: true,
+            snapshot: {
+              select: {
+                routeLabel: true,
+              },
+            },
+          },
+        },
+      },
     })
 
     if (!existing) return null
 
-    const van = await prisma.$transaction(async (tx) => {
-      const pendingBookings = await tx.booking.findMany({
-        where: { vanId: tripId, status: 'pending' },
-        select: { id: true, seatId: true, userId: true, reference: true },
-      })
+    const routeLabel =
+      existing.bookings[0]?.snapshot?.routeLabel ??
+      existing.deliveries[0]?.snapshot?.routeLabel ??
+      `${existing.route.departureLocation} → ${existing.route.arrivalLocation}`
+    const tripDate =
+      existing.bookings[0]?.snapshot?.departureDate ?? existing.departureDate
+    const tripTime =
+      existing.bookings[0]?.snapshot?.departureTime ?? existing.departureTime
+    const whenLabel = [tripDate, tripTime].filter(Boolean).join(' at ')
+
+    const result = await prisma.$transaction(async (tx) => {
+      const pendingBookings = existing.bookings.filter(
+        (booking) => booking.status === 'pending',
+      )
+      const confirmedBookings = existing.bookings.filter(
+        (booking) => booking.status === 'confirmed',
+      )
 
       const pendingSeatIds = pendingBookings
         .map((booking) => booking.seatId)
@@ -571,41 +754,244 @@ export const VanModel = {
           where: { id: tripId },
           data: { seatsLeft: { increment: pendingBookings.length } },
         })
+        for (const booking of pendingBookings) {
+          await reverseBookingSettlement(tx, {
+            driverId,
+            bookingId: booking.id,
+            actorProfileId: driverId,
+            reason: 'System fee reversed (trip started)',
+          })
+        }
       }
 
-      await tx.booking.updateMany({
-        where: { vanId: tripId, status: 'confirmed' },
-        data: { status: 'completed' },
-      })
-
-      await tx.van.update({
-        where: { id: tripId },
-        data: { status: 'completed' },
-      })
-
-      const bookings = await tx.booking.findMany({
-        where: { vanId: tripId, status: 'completed' },
-        include: {
-          snapshot: true,
-          payment: true,
-        },
-      })
-
-      for (const booking of bookings) {
-        await postBookingSettlement(tx, {
-          driverId,
-          booking,
-          actorProfileId: driverId,
+      if (existing.deliveries.length > 0) {
+        await tx.delivery.updateMany({
+          where: { vanId: tripId, status: 'pending' },
+          data: { status: 'cancelled' },
         })
       }
 
-      return tx.van.findUniqueOrThrow({
+      await tx.van.update({
+        where: { id: tripId },
+        data: { status: 'in_progress' },
+      })
+
+      const notificationRows: Prisma.NotificationCreateManyInput[] = []
+
+      for (const booking of confirmedBookings) {
+        if (!booking.userId) continue
+        const reference = booking.reference ? ` (${booking.reference})` : ''
+        notificationRows.push({
+          userId: booking.userId,
+          type: 'trip_started',
+          title: 'Trip started',
+          body: `Your trip${reference} on ${routeLabel}${whenLabel ? ` (${whenLabel})` : ''} has started. The driver is on the way.`,
+          data: {
+            tripId,
+            bookingId: booking.id,
+            kind: 'booking',
+          },
+        })
+      }
+
+      for (const booking of pendingBookings) {
+        if (!booking.userId) continue
+        const reference = booking.reference ? ` (${booking.reference})` : ''
+        notificationRows.push({
+          userId: booking.userId,
+          type: 'booking_cancelled',
+          title: 'Seat request cancelled',
+          body: `Your pending seat request${reference} for ${routeLabel} was cancelled because the trip has started.`,
+          data: {
+            tripId,
+            bookingId: booking.id,
+            kind: 'booking',
+          },
+        })
+      }
+
+      for (const delivery of existing.deliveries) {
+        if (!delivery.userId) continue
+        const reference = delivery.reference ? ` (${delivery.reference})` : ''
+        notificationRows.push({
+          userId: delivery.userId,
+          type: 'booking_cancelled',
+          title: 'Package request cancelled',
+          body: `Your pending package request${reference} for ${routeLabel} was cancelled because the trip has started.`,
+          data: {
+            tripId,
+            deliveryId: delivery.id,
+            kind: 'delivery',
+          },
+        })
+      }
+
+      if (notificationRows.length > 0) {
+        await tx.notification.createMany({ data: notificationRows })
+      }
+
+      const van = await tx.van.findUniqueOrThrow({
         where: { id: tripId },
         include: vanInclude,
       })
+
+      return {
+        trip: toDriverTrip(van),
+        notifiedCount: notificationRows.length,
+      }
     })
 
-    return toDriverTrip(van)
+    return result
+  },
+
+  async markPassengerDestinationReached(
+    tripId: string,
+    bookingId: string,
+    driverId: string,
+  ): Promise<{
+    passenger: DriverTripPassenger
+    tripEnded: boolean
+    trip: DriverTrip | null
+  }> {
+    return prisma.$transaction(async (tx) => {
+      const van = await tx.van.findFirst({
+        where: { id: tripId, driverId, status: 'in_progress' },
+        include: {
+          route: true,
+        },
+      })
+
+      if (!van) {
+        throw new AppError('Trip not found or has not been started', 404)
+      }
+
+      const booking = await tx.booking.findFirst({
+        where: {
+          id: bookingId,
+          vanId: tripId,
+          status: 'confirmed',
+          destinationReachedAt: null,
+        },
+        include: {
+          snapshot: true,
+          user: {
+            select: { fullName: true, email: true, phone: true },
+          },
+        },
+      })
+
+      if (!booking) {
+        throw new AppError(
+          'Confirmed passenger not found or already marked as reached',
+          404,
+        )
+      }
+
+      const reachedAt = new Date()
+
+      const updated = await tx.booking.update({
+        where: { id: bookingId },
+        data: { destinationReachedAt: reachedAt },
+        include: {
+          snapshot: true,
+          user: {
+            select: { fullName: true, email: true, phone: true },
+          },
+        },
+      })
+
+      const remaining = await tx.booking.count({
+        where: {
+          vanId: tripId,
+          status: 'confirmed',
+          destinationReachedAt: null,
+        },
+      })
+
+      let tripEnded = false
+      let completedTrip: DriverTrip | null = null
+
+      if (remaining === 0) {
+        completedTrip = await finalizeDriverTrip(
+          tripId,
+          driverId,
+          {
+            routeLabel:
+              booking.snapshot?.routeLabel ??
+              `${van.route.departureLocation} → ${van.route.arrivalLocation}`,
+            departureDate:
+              booking.snapshot?.departureDate ?? van.departureDate,
+            departureTime:
+              booking.snapshot?.departureTime ?? van.departureTime,
+            notifyPassengers: true,
+          },
+          tx,
+        )
+        tripEnded = Boolean(completedTrip)
+      }
+
+      return {
+        passenger: {
+          id: updated.id,
+          reference: updated.reference,
+          seat: updated.snapshot?.seatLabel ?? null,
+          name:
+            updated.user?.fullName?.trim() || updated.user?.email || 'Guest',
+          email: updated.user?.email ?? null,
+          phone: updated.user?.phone ?? null,
+          price: updated.snapshot?.priceDisplay ?? null,
+          pickupAddress: updated.pickupAddress ?? null,
+          dropoffAddress: updated.dropoffAddress ?? null,
+          status: 'confirmed',
+          destinationReachedAt: updated.destinationReachedAt,
+          bookedAt: updated.createdAt,
+        },
+        tripEnded,
+        trip: completedTrip,
+      }
+    })
+  },
+
+  async completeDriverTrip(
+    tripId: string,
+    driverId: string,
+  ): Promise<DriverTrip | null> {
+    const existing = await prisma.van.findFirst({
+      where: {
+        id: tripId,
+        driverId,
+        status: { in: ['published', 'in_progress'] },
+      },
+      include: {
+        route: true,
+        bookings: {
+          where: { status: 'confirmed' },
+          select: {
+            snapshot: {
+              select: {
+                routeLabel: true,
+                departureDate: true,
+                departureTime: true,
+              },
+            },
+          },
+          take: 1,
+        },
+      },
+    })
+
+    if (!existing) return null
+
+    return finalizeDriverTrip(tripId, driverId, {
+      routeLabel:
+        existing.bookings[0]?.snapshot?.routeLabel ??
+        `${existing.route.departureLocation} → ${existing.route.arrivalLocation}`,
+      departureDate:
+        existing.bookings[0]?.snapshot?.departureDate ?? existing.departureDate,
+      departureTime:
+        existing.bookings[0]?.snapshot?.departureTime ?? existing.departureTime,
+      notifyPassengers: existing.status === 'in_progress',
+    })
   },
 
   async cancelDriverTrip(
@@ -694,6 +1080,15 @@ export const VanModel = {
         where: { vanId: tripId, status: { in: ['pending', 'confirmed'] } },
         data: { status: 'cancelled' },
       })
+
+      for (const booking of existing.bookings) {
+        await reverseBookingSettlement(tx, {
+          driverId,
+          bookingId: booking.id,
+          actorProfileId: driverId,
+          reason: 'System fee reversed (trip cancelled)',
+        })
+      }
 
       await tx.delivery.updateMany({
         where: {

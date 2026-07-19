@@ -64,6 +64,32 @@ export async function updateDriverTrip(req: Request, res: Response) {
   res.json(trip)
 }
 
+export async function startDriverTrip(req: Request, res: Response) {
+  const result = await VanModel.startDriverTrip(
+    req.params.tripId,
+    req.profile!.id,
+  )
+
+  if (!result) {
+    throw new AppError('Published trip not found', 404)
+  }
+
+  res.json(result)
+}
+
+export async function markPassengerDestinationReached(
+  req: Request,
+  res: Response,
+) {
+  const result = await VanModel.markPassengerDestinationReached(
+    req.params.tripId,
+    req.params.bookingId,
+    req.profile!.id,
+  )
+
+  res.json(result)
+}
+
 export async function completeDriverTrip(req: Request, res: Response) {
   const trip = await VanModel.completeDriverTrip(
     req.params.tripId,
@@ -71,7 +97,7 @@ export async function completeDriverTrip(req: Request, res: Response) {
   )
 
   if (!trip) {
-    throw new AppError('Published trip not found', 404)
+    throw new AppError('Active trip not found', 404)
   }
 
   res.json(trip)

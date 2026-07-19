@@ -18,7 +18,7 @@ export type DriverTrip = {
   tripCategory: string | null
   vehicleName: string | null
   plateNumber: string | null
-  status: 'draft' | 'published' | 'completed' | 'cancelled'
+  status: 'draft' | 'published' | 'in_progress' | 'completed' | 'cancelled'
   driverId: string | null
   createdAt: string
 }
@@ -40,6 +40,7 @@ export type DriverTripPassenger = {
   pickupAddress: string | null
   dropoffAddress: string | null
   status: 'pending' | 'confirmed'
+  destinationReachedAt: string | null
   bookedAt: string
 }
 
@@ -122,6 +123,34 @@ export async function updateDriverTrip(
 export async function completeDriverTrip(tripId: string) {
   const { data } = await api.post<DriverTrip>(
     `/driver/trips/${encodeURIComponent(tripId)}/complete`,
+  )
+  return data
+}
+
+export type StartDriverTripResult = {
+  trip: DriverTrip
+  notifiedCount: number
+}
+
+export async function startDriverTrip(tripId: string) {
+  const { data } = await api.post<StartDriverTripResult>(
+    `/driver/trips/${encodeURIComponent(tripId)}/start`,
+  )
+  return data
+}
+
+export type MarkDestinationReachedResult = {
+  passenger: DriverTripPassenger
+  tripEnded: boolean
+  trip: DriverTrip | null
+}
+
+export async function markPassengerDestinationReached(
+  tripId: string,
+  bookingId: string,
+) {
+  const { data } = await api.post<MarkDestinationReachedResult>(
+    `/driver/trips/${encodeURIComponent(tripId)}/bookings/${encodeURIComponent(bookingId)}/reach-destination`,
   )
   return data
 }

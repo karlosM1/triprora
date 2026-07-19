@@ -13,6 +13,10 @@ import {
 import { prisma } from '../lib/prisma.js'
 import { presentVan, vanInclude } from '../lib/van-presenter.js'
 import { AppError } from '../utils/app-error.js'
+import {
+  postBookingSettlement,
+  reverseBookingSettlement,
+} from './wallet.model.js'
 
 export type {
   BookingStatus,
@@ -213,6 +217,18 @@ export const BookingModel = {
           status: 'pending',
         },
       })
+
+      if (van.driverId) {
+        const settled = await tx.booking.findUniqueOrThrow({
+          where: { id: booking.id },
+          include: { snapshot: true, payment: true },
+        })
+        await postBookingSettlement(tx, {
+          driverId: van.driverId,
+          booking: settled,
+          actorProfileId: input.userId,
+        })
+      }
 
       return {
         id: booking.id,
@@ -439,6 +455,15 @@ export const BookingModel = {
         include: { snapshot: true },
       })
 
+      if (booking.van.driverId) {
+        await reverseBookingSettlement(tx, {
+          driverId: booking.van.driverId,
+          bookingId,
+          actorProfileId: userId,
+          reason: 'System fee reversed (booking cancelled)',
+        })
+      }
+
       return {
         id: updated.id,
         reference: updated.reference ?? '',
@@ -522,6 +547,7 @@ export const BookingModel = {
       pickupAddress: updated.pickupAddress ?? null,
       dropoffAddress: updated.dropoffAddress ?? null,
       status: 'confirmed',
+      destinationReachedAt: updated.destinationReachedAt,
       bookedAt: updated.createdAt,
     }
   },
@@ -580,6 +606,13 @@ export const BookingModel = {
         },
       })
 
+      await reverseBookingSettlement(tx, {
+        driverId,
+        bookingId,
+        actorProfileId: driverId,
+        reason: 'System fee reversed (seat request declined)',
+      })
+
       if (booking.userId) {
         const routeLabel = booking.snapshot?.routeLabel ?? 'your trip'
         const seatLabel = booking.snapshot?.seatLabel
@@ -616,6 +649,7 @@ export const BookingModel = {
       pickupAddress: updated.pickupAddress ?? null,
       dropoffAddress: updated.dropoffAddress ?? null,
       status: 'declined',
+      destinationReachedAt: null,
       bookedAt: updated.createdAt,
     }
   },

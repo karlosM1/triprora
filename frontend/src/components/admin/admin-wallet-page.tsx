@@ -5,17 +5,13 @@ import { AppleCard, PageHeader, SectionTitle } from '@/components/layout/page-he
 import { Button } from '@/components/ui/button'
 import {
   adminDriverWalletQueryKey,
-  adminPayoutsQueryKey,
   adminSettlementsQueryKey,
   adminWalletsQueryKey,
   fetchAdminDriverWallet,
-  fetchAdminPayouts,
   fetchAdminSettlements,
   fetchAdminWallets,
   finalizeAdminSettlements,
-  updateAdminPayout,
   type AdminWalletRow,
-  type DriverPayout,
   type WalletSettlement,
 } from '@/lib/api/wallet'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
@@ -34,11 +30,14 @@ function formatPesos(amount: number) {
   return `${sign}₱${Math.abs(amount).toLocaleString()}`
 }
 
+function feesDueFor(wallet: Pick<AdminWalletRow, 'systemFeeDuePesos' | 'balancePesos'>) {
+  return wallet.systemFeeDuePesos ?? Math.max(0, -wallet.balancePesos)
+}
+
 export function AdminWalletPage() {
   const queryClient = useQueryClient()
   const [settlementDate, setSettlementDate] = useState(todayIsoDate)
   const [selectedDriverId, setSelectedDriverId] = useState<string | null>(null)
-  const [payoutFilter, setPayoutFilter] = useState<string>('')
   const [message, setMessage] = useState<string | null>(null)
 
   const walletsQuery = useQuery({
@@ -49,11 +48,6 @@ export function AdminWalletPage() {
   const settlementsQuery = useQuery({
     queryKey: adminSettlementsQueryKey(settlementDate),
     queryFn: () => fetchAdminSettlements(settlementDate),
-  })
-
-  const payoutsQuery = useQuery({
-    queryKey: [...adminPayoutsQueryKey, payoutFilter] as const,
-    queryFn: () => fetchAdminPayouts(payoutFilter || undefined),
   })
 
   const detailQuery = useQuery({
@@ -75,38 +69,10 @@ export function AdminWalletPage() {
     },
   })
 
-  const payoutMutation = useMutation({
-    mutationFn: ({
-      id,
-      status,
-    }: {
-      id: string
-      status: 'approved' | 'paid' | 'rejected'
-    }) => updateAdminPayout(id, { status }),
-    onSuccess: () => {
-      setMessage('Payout updated.')
-      queryClient.invalidateQueries({ queryKey: adminPayoutsQueryKey })
-      queryClient.invalidateQueries({ queryKey: adminWalletsQueryKey })
-      if (selectedDriverId) {
-        queryClient.invalidateQueries({
-          queryKey: adminDriverWalletQueryKey(selectedDriverId),
-        })
-      }
-    },
-    onError: (err: Error & { response?: { data?: { message?: string } } }) => {
-      setMessage(err.response?.data?.message ?? 'Failed to update payout.')
-    },
-  })
-
   const wallets = walletsQuery.data ?? []
   const totals = useMemo(() => {
-    const positive = wallets
-      .filter((w) => w.balancePesos > 0)
-      .reduce((sum, w) => sum + w.balancePesos, 0)
-    const negative = wallets
-      .filter((w) => w.balancePesos < 0)
-      .reduce((sum, w) => sum + w.balancePesos, 0)
-    return { positive, negative, count: wallets.length }
+    const feesDue = wallets.reduce((sum, w) => sum + feesDueFor(w), 0)
+    return { feesDue, count: wallets.length }
   }, [wallets])
 
   return (
@@ -120,7 +86,7 @@ export function AdminWalletPage() {
         <PageHeader
           eyebrow="Admin"
           title="Driver wallets."
-          subtitle="Balances, daily settlements, and payout approvals."
+          subtitle="System fees drivers owe from passenger bookings, plus daily settlements."
         />
       </motion.div>
 
@@ -133,21 +99,15 @@ export function AdminWalletPage() {
         </motion.p>
       )}
 
-      <motion.div variants={fadeInUp} className="grid gap-4 md:grid-cols-3">
+      <motion.div variants={fadeInUp} className="grid gap-4 md:grid-cols-2">
         <AppleCard className="p-5">
           <p className="text-[13px] text-[#86868b]">Wallets</p>
           <p className="mt-1 text-[28px] font-semibold text-[#1d1d1f]">{totals.count}</p>
         </AppleCard>
         <AppleCard className="p-5">
-          <p className="text-[13px] text-[#86868b]">Owed to drivers</p>
-          <p className="mt-1 text-[28px] font-semibold text-[#248a3d]">
-            ₱{totals.positive.toLocaleString()}
-          </p>
-        </AppleCard>
-        <AppleCard className="p-5">
-          <p className="text-[13px] text-[#86868b]">Owed by drivers</p>
+          <p className="text-[13px] text-[#86868b]">System fees due</p>
           <p className="mt-1 text-[28px] font-semibold text-[#b42318]">
-            ₱{Math.abs(totals.negative).toLocaleString()}
+            ₱{totals.feesDue.toLocaleString()}
           </p>
         </AppleCard>
       </motion.div>
@@ -177,7 +137,7 @@ export function AdminWalletPage() {
           <AppleCard className="p-6">
             <SectionTitle
               title={detailQuery.data.driver.fullName ?? detailQuery.data.driver.email}
-              subtitle={`Balance ₱${detailQuery.data.wallet.balancePesos.toLocaleString()}`}
+              subtitle={`System fees due ₱${feesDueFor(detailQuery.data.wallet).toLocaleString()}`}
             />
             <div className="mt-4 space-y-2">
               {detailQuery.data.history.slice(0, 10).map((entry) => (
@@ -208,77 +168,40 @@ export function AdminWalletPage() {
       )}
 
       <motion.div variants={fadeInUp}>
-        <SectionTitle
-          title="Daily settlements"
-          subtitle="Finalize a calendar day to snapshot cash commissions owed to the platform."
-        />
-        <div className="mt-4 flex flex-wrap items-end gap-3">
-          <label className="text-[13px] text-[#86868b]">
-            Date
-            <input
-              type="date"
-              value={settlementDate}
-              onChange={(e) => setSettlementDate(e.target.value)}
-              className="mt-1.5 block h-11 rounded-xl border border-[#d2d2d7] bg-white px-3 text-base text-[#1d1d1f]"
-            />
-          </label>
-          <Button
-            className="h-11 rounded-full bg-[#0071e3] px-5 hover:bg-[#0077ed]"
-            disabled={finalizeMutation.isPending}
-            onClick={() => finalizeMutation.mutate()}
-          >
-            {finalizeMutation.isPending ? 'Finalizing…' : 'Finalize day'}
-          </Button>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <SectionTitle
+            title="Daily settlements"
+            subtitle="Finalize a day to snapshot system fees owed."
+          />
+          <div className="flex flex-wrap items-end gap-2">
+            <label className="text-[13px] text-[#86868b]">
+              Date
+              <input
+                type="date"
+                value={settlementDate}
+                onChange={(e) => setSettlementDate(e.target.value)}
+                className="mt-1.5 block h-10 rounded-xl border border-[#d2d2d7] bg-white px-3 text-[14px] text-[#1d1d1f]"
+              />
+            </label>
+            <Button
+              className="h-10 rounded-full bg-[#0071e3] px-5 hover:bg-[#0077ed]"
+              disabled={finalizeMutation.isPending}
+              onClick={() => finalizeMutation.mutate()}
+            >
+              {finalizeMutation.isPending ? 'Finalizing…' : 'Finalize day'}
+            </Button>
+          </div>
         </div>
         <div className="mt-4 space-y-2">
           {(settlementsQuery.data ?? []).length === 0 ? (
             <AppleCard className="border border-dashed border-[#d2d2d7] bg-transparent px-6 py-8 text-center">
               <p className="text-[14px] text-[#86868b]">
-                No settlements for this date yet.
+                No settlements for this date.
               </p>
             </AppleCard>
           ) : (
             (settlementsQuery.data ?? []).map((row) => (
               <SettlementAdminRow key={row.id} row={row} />
-            ))
-          )}
-        </div>
-      </motion.div>
-
-      <motion.div variants={fadeInUp}>
-        <SectionTitle title="Payouts" subtitle="Approve, reject, or mark paid." />
-        <div className="mt-4 flex flex-wrap gap-2">
-          {['', 'requested', 'approved', 'paid', 'rejected'].map((status) => (
-            <button
-              key={status || 'all'}
-              type="button"
-              onClick={() => setPayoutFilter(status)}
-              className={cn(
-                'rounded-full px-3 py-1.5 text-[12px] font-medium capitalize',
-                payoutFilter === status
-                  ? 'bg-[#1d1d1f] text-white'
-                  : 'bg-[#f5f5f7] text-[#86868b] hover:bg-[#e8e8ed]',
-              )}
-            >
-              {status || 'all'}
-            </button>
-          ))}
-        </div>
-        <div className="mt-4 space-y-2">
-          {(payoutsQuery.data ?? []).length === 0 ? (
-            <AppleCard className="border border-dashed border-[#d2d2d7] bg-transparent px-6 py-8 text-center">
-              <p className="text-[14px] text-[#86868b]">No payouts found.</p>
-            </AppleCard>
-          ) : (
-            (payoutsQuery.data ?? []).map((payout) => (
-              <PayoutAdminRow
-                key={payout.id}
-                payout={payout}
-                busy={payoutMutation.isPending}
-                onUpdate={(status) =>
-                  payoutMutation.mutate({ id: payout.id, status })
-                }
-              />
             ))
           )}
         </div>
@@ -296,6 +219,7 @@ function WalletListRow({
   selected: boolean
   onSelect: () => void
 }) {
+  const due = feesDueFor(wallet)
   return (
     <button
       type="button"
@@ -314,11 +238,10 @@ function WalletListRow({
       <p
         className={cn(
           'text-[15px] font-semibold',
-          wallet.balancePesos > 0 && 'text-[#248a3d]',
-          wallet.balancePesos < 0 && 'text-[#b42318]',
+          due > 0 ? 'text-[#b42318]' : 'text-[#1d1d1f]',
         )}
       >
-        ₱{wallet.balancePesos.toLocaleString()}
+        ₱{due.toLocaleString()}
       </p>
     </button>
   )
@@ -330,7 +253,7 @@ function SettlementAdminRow({ row }: { row: WalletSettlement }) {
       <div>
         <p className="text-[14px] font-medium text-[#1d1d1f]">{row.settlementDate}</p>
         <p className="text-[12px] text-[#86868b]">
-          Cash commissions ₱{row.cashCommissionTotal.toLocaleString()} · Net{' '}
+          System fees ₱{row.cashCommissionTotal.toLocaleString()} · Net{' '}
           {formatPesos(row.netChange)}
         </p>
       </div>
@@ -344,73 +267,6 @@ function SettlementAdminRow({ row }: { row: WalletSettlement }) {
       >
         {row.status}
       </span>
-    </AppleCard>
-  )
-}
-
-function PayoutAdminRow({
-  payout,
-  busy,
-  onUpdate,
-}: {
-  payout: DriverPayout
-  busy: boolean
-  onUpdate: (status: 'approved' | 'paid' | 'rejected') => void
-}) {
-  return (
-    <AppleCard className="p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-[14px] font-medium text-[#1d1d1f]">
-            ₱{payout.amountPesos.toLocaleString()} ·{' '}
-            {payout.driver?.fullName ?? payout.driver?.email ?? 'Driver'}
-          </p>
-          <p className="mt-0.5 text-[12px] text-[#86868b]">
-            {payout.gcashNumber
-              ? `GCash ${payout.gcashNumber}`
-              : payout.accountNumber
-                ? `${payout.bankName ?? 'Bank'} ${payout.accountNumber}`
-                : 'No destination on file'}
-          </p>
-          <p className="mt-0.5 text-[12px] text-[#86868b]">
-            {new Date(payout.createdAt).toLocaleString()} · {payout.status}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {payout.status === 'requested' && (
-            <>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={busy}
-                className="rounded-full"
-                onClick={() => onUpdate('approved')}
-              >
-                Approve
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={busy}
-                className="rounded-full"
-                onClick={() => onUpdate('rejected')}
-              >
-                Reject
-              </Button>
-            </>
-          )}
-          {(payout.status === 'requested' || payout.status === 'approved') && (
-            <Button
-              size="sm"
-              disabled={busy}
-              className="rounded-full bg-[#0071e3] hover:bg-[#0077ed]"
-              onClick={() => onUpdate('paid')}
-            >
-              Mark paid
-            </Button>
-          )}
-        </div>
-      </div>
     </AppleCard>
   )
 }

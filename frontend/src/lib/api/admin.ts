@@ -26,7 +26,7 @@ export type AdminTrip = {
   route: string
   departureDate: string
   departureTime: string
-  status: 'draft' | 'published' | 'completed' | 'cancelled'
+  status: 'draft' | 'published' | 'in_progress' | 'completed' | 'cancelled'
   displayStatus?: string
   price: number
   seatsLeft: number

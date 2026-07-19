@@ -20,6 +20,7 @@ export function deriveTripDisplayStatus(
   if (status === 'completed') return 'completed'
   if (status === 'cancelled') return 'cancelled'
   if (status === 'draft') return 'draft'
+  if (status === 'in_progress') return 'ongoing'
   if (status === 'published') {
     return departureDate > today ? 'upcoming' : 'ongoing'
   }
@@ -37,7 +38,12 @@ function tripStatusWhere(
   if (filter === 'upcoming') {
     return { status: 'published', departureDate: { gt: today } }
   }
-  return { status: 'published', departureDate: { lte: today } }
+  return {
+    OR: [
+      { status: 'in_progress' },
+      { status: 'published', departureDate: { lte: today } },
+    ],
+  }
 }
 
 function containsSearch(search?: string) {
@@ -107,7 +113,12 @@ export const AdminModel = {
         where: { status: 'published', departureDate: { gt: today } },
       }),
       prisma.van.count({
-        where: { status: 'published', departureDate: { lte: today } },
+        where: {
+          OR: [
+            { status: 'in_progress' },
+            { status: 'published', departureDate: { lte: today } },
+          ],
+        },
       }),
       prisma.booking.count(),
       prisma.booking.count({ where: { status: 'confirmed' } }),

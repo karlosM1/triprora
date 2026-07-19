@@ -2,7 +2,17 @@ import { isAxiosError } from 'axios'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, createFileRoute, notFound, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
-import { ArrowLeft, Calendar, Car, CheckCircle2, Package, Users, XCircle } from 'lucide-react'
+import {
+  ArrowLeft,
+  Calendar,
+  Car,
+  CheckCircle2,
+  MapPin,
+  Package,
+  PlayCircle,
+  Users,
+  XCircle,
+} from 'lucide-react'
 import { AppleCard, PageHeader } from '@/components/layout/page-header'
 import {
   AlertDialog,
@@ -28,6 +38,8 @@ import {
   driverTripDetailsQueryKey,
   driverTripDetailsQueryOptions,
   driverTripsQueryKey,
+  markPassengerDestinationReached,
+  startDriverTrip,
   type DriverTripDelivery,
   type DriverTripPassenger,
 } from '@/lib/api/driver-trips'
@@ -35,10 +47,11 @@ import { queryClient } from '@/lib/query-client'
 import {
   canCancelTrip,
   canCompleteTrip,
+  canMarkDestinationReached,
+  canStartTrip,
   formatTripDateTime,
   getTripRouteLabel,
   getTripStatusLabel,
-  hasTripDeparted,
 } from '@/lib/driver-trips'
 import { cn } from '@/lib/utils'
 
@@ -158,6 +171,7 @@ function DriverTripDetailsPage() {
   const queryClient = useQueryClient()
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false)
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
+  const [startDialogOpen, setStartDialogOpen] = useState(false)
   const [packageTab, setPackageTab] = useState<'requests' | 'closed'>(
     'requests',
   )
@@ -208,6 +222,17 @@ function DriverTripDetailsPage() {
     showPagination: showPassengerPagination,
   } = usePagination(confirmedPassengers)
 
+  const startMutation = useMutation({
+    mutationFn: () => startDriverTrip(tripId),
+    onSuccess: async () => {
+      setStartDialogOpen(false)
+      await queryClient.invalidateQueries({ queryKey: driverTripsQueryKey })
+      await queryClient.invalidateQueries({
+        queryKey: driverTripDetailsQueryKey(tripId),
+      })
+    },
+  })
+
   const completeMutation = useMutation({
     mutationFn: () => completeDriverTrip(tripId),
     onSuccess: async () => {
@@ -225,6 +250,20 @@ function DriverTripDetailsPage() {
       await queryClient.invalidateQueries({ queryKey: driverTripsQueryKey })
       await queryClient.invalidateQueries({ queryKey: driverTripDetailsQueryKey(tripId) })
       await navigate({ to: '/driver/trips' })
+    },
+  })
+
+  const reachDestinationMutation = useMutation({
+    mutationFn: (bookingId: string) =>
+      markPassengerDestinationReached(tripId, bookingId),
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries({
+        queryKey: driverTripDetailsQueryKey(tripId),
+      })
+      await queryClient.invalidateQueries({ queryKey: driverTripsQueryKey })
+      if (result.tripEnded) {
+        await navigate({ to: '/driver/trips' })
+      }
     },
   })
 
@@ -302,13 +341,24 @@ function DriverTripDetailsPage() {
         ? 'cancelled'
         : trip.status === 'completed'
           ? 'completed'
-          : 'active'
+          : trip.status === 'in_progress'
+            ? 'active'
+            : 'active'
+  const showStartButton = canStartTrip(trip)
   const showCompleteButton = canCompleteTrip(trip)
   const showCancelButton = canCancelTrip(trip)
-  const tripHasDeparted = hasTripDeparted(trip)
+  const showReachActions = canMarkDestinationReached(trip)
   const passengerCount = confirmedPassengers.length + pendingPassengers.length
   const pendingPassengerCount = pendingPassengers.length
   const openDeliveryCount = openDeliveries.length
+  const reachedCount = confirmedPassengers.filter(
+    (passenger) => passenger.destinationReachedAt,
+  ).length
+  const actionBusy =
+    startMutation.isPending ||
+    completeMutation.isPending ||
+    cancelMutation.isPending ||
+    reachDestinationMutation.isPending
 
   return (
     <div className="space-y-10">
@@ -347,27 +397,42 @@ function DriverTripDetailsPage() {
               <Button
                 variant="ghost"
                 className="h-9 rounded-full px-5 text-[13px] font-normal text-[#bf4800] hover:bg-[#bf4800]/10 hover:text-[#bf4800]"
-                disabled={cancelMutation.isPending || completeMutation.isPending}
+                disabled={actionBusy}
                 onClick={() => setCancelDialogOpen(true)}
               >
                 <XCircle className="size-4" />
                 Cancel trip
               </Button>
             )}
+            {showStartButton && (
+              <Button
+                className="h-9 rounded-full bg-[#0071e3] px-5 text-[13px] font-normal hover:bg-[#0077ed]"
+                disabled={actionBusy}
+                onClick={() => setStartDialogOpen(true)}
+              >
+                <PlayCircle className="size-4" />
+                Start trip
+              </Button>
+            )}
             {showCompleteButton && (
               <Button
                 className="h-9 rounded-full bg-[#248a3d] px-5 text-[13px] font-normal hover:bg-[#1f7a35]"
-                disabled={completeMutation.isPending || cancelMutation.isPending}
+                disabled={actionBusy}
                 onClick={() => setCompleteDialogOpen(true)}
               >
                 <CheckCircle2 className="size-4" />
-                Complete trip
+                End trip
               </Button>
             )}
           </div>
+          {startMutation.isError && (
+            <p className="max-w-56 text-right text-[13px] text-[#bf4800]">
+              Failed to start trip. Try again.
+            </p>
+          )}
           {completeMutation.isError && (
             <p className="max-w-56 text-right text-[13px] text-[#bf4800]">
-              Failed to complete trip. Try again.
+              Failed to end trip. Try again.
             </p>
           )}
           {cancelMutation.isError && (
@@ -378,25 +443,59 @@ function DriverTripDetailsPage() {
         </div>
       </div>
 
-      <AlertDialog open={completeDialogOpen} onOpenChange={setCompleteDialogOpen}>
+      <AlertDialog open={startDialogOpen} onOpenChange={setStartDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {tripHasDeparted ? 'Complete this trip?' : 'Complete trip early?'}
-            </AlertDialogTitle>
+            <AlertDialogTitle>Start this trip?</AlertDialogTitle>
             <AlertDialogDescription>
-              {tripHasDeparted ? (
+              {confirmedPassengers.length > 0 ? (
                 <>
-                  This will mark the trip as finished and move it to your completed
-                  list. Passenger bookings will be finalized.
+                  Confirmed passengers will be notified that the trip has started.
+                  The trip will leave Find Vans so new bookings cannot be made.
+                  {pendingPassengerCount > 0
+                    ? ` ${pendingPassengerCount} pending seat request${pendingPassengerCount === 1 ? '' : 's'} will also be cancelled.`
+                    : null}
+                  {pendingDeliveries.length > 0
+                    ? ` ${pendingDeliveries.length} pending package request${pendingDeliveries.length === 1 ? '' : 's'} will be cancelled.`
+                    : null}
+                </>
+              ) : pendingPassengerCount > 0 || pendingDeliveries.length > 0 ? (
+                <>
+                  This trip has no confirmed passengers. Pending requests will be
+                  cancelled and the trip will leave Find Vans.
                 </>
               ) : (
                 <>
-                  This trip has not departed yet (
-                  {formatTripDateTime(trip)}). Are you sure you want to mark it as
-                  complete even though it is not done yet? This cannot be undone.
+                  The trip will leave Find Vans and move to in progress. You can
+                  end it when everyone has reached their destination.
                 </>
               )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={startMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-[#0071e3] hover:bg-[#0077ed]"
+              disabled={startMutation.isPending}
+              onClick={() => startMutation.mutate()}
+            >
+              {startMutation.isPending ? 'Starting…' : 'Yes, start trip'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={completeDialogOpen} onOpenChange={setCompleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>End this trip?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This marks the trip as ended and finalizes passenger bookings.
+              {confirmedPassengers.length > 0 && reachedCount < confirmedPassengers.length
+                ? ` ${confirmedPassengers.length - reachedCount} passenger${confirmedPassengers.length - reachedCount === 1 ? ' has' : 's have'} not been marked as reached yet.`
+                : null}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -408,7 +507,7 @@ function DriverTripDetailsPage() {
               disabled={completeMutation.isPending}
               onClick={() => completeMutation.mutate()}
             >
-              {completeMutation.isPending ? 'Completing…' : 'Yes, complete trip'}
+              {completeMutation.isPending ? 'Ending…' : 'Yes, end trip'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -475,7 +574,11 @@ function DriverTripDetailsPage() {
           <DetailItem
             icon={<Users className="size-4 text-[#86868b]" />}
             label="Passengers"
-            value={`${passengers.length} booked`}
+            value={
+              showReachActions
+                ? `${reachedCount}/${confirmedPassengers.length} reached`
+                : `${passengers.length} booked`
+            }
           />
           <DetailItem
             icon={<Package className="size-4 text-[#86868b]" />}
@@ -678,6 +781,12 @@ function DriverTripDetailsPage() {
               <h2 className="text-[17px] font-semibold text-[#1d1d1f]">
                 Confirmed passengers
               </h2>
+              {showReachActions && (
+                <p className="mt-1 text-[13px] text-[#86868b]">
+                  Mark each passenger when they reach their destination. The trip
+                  ends automatically when everyone has arrived.
+                </p>
+              )}
             </div>
             {confirmedPassengers.length === 0 ? (
               <p className="px-6 py-12 text-center text-[15px] text-[#86868b]">
@@ -691,9 +800,12 @@ function DriverTripDetailsPage() {
                   <table className="w-full min-w-[520px] text-left">
                     <thead>
                       <tr className="border-b border-[#d2d2d7]/60 bg-[#f5f5f7]/50">
-                        {['Passenger', 'Seat', 'Contact', 'Reference'].map((head) => (
+                        {(showReachActions
+                          ? ['Passenger', 'Seat', 'Destination', 'Status', '']
+                          : ['Passenger', 'Seat', 'Contact', 'Reference']
+                        ).map((head) => (
                           <th
-                            key={head}
+                            key={head || 'action'}
                             className="px-6 py-3 text-[12px] font-medium text-[#86868b] uppercase"
                           >
                             {head}
@@ -702,35 +814,87 @@ function DriverTripDetailsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {passengerPage.map((passenger) => (
-                        <tr
-                          key={passenger.id}
-                          className="border-b border-[#d2d2d7]/40 last:border-b-0"
-                        >
-                          <td className="px-6 py-4">
-                            <p className="text-[15px] font-medium text-[#1d1d1f]">
-                              {passenger.name}
-                            </p>
-                            {passenger.email && (
-                              <p className="text-[13px] text-[#86868b]">
-                                {passenger.email}
+                      {passengerPage.map((passenger) => {
+                        const reached = Boolean(passenger.destinationReachedAt)
+                        const markingThis =
+                          reachDestinationMutation.isPending &&
+                          reachDestinationMutation.variables === passenger.id
+
+                        return (
+                          <tr
+                            key={passenger.id}
+                            className="border-b border-[#d2d2d7]/40 last:border-b-0"
+                          >
+                            <td className="px-6 py-4">
+                              <p className="text-[15px] font-medium text-[#1d1d1f]">
+                                {passenger.name}
                               </p>
+                              {passenger.email && (
+                                <p className="text-[13px] text-[#86868b]">
+                                  {passenger.email}
+                                </p>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 text-[14px] font-medium text-[#1d1d1f]">
+                              {passenger.seat ?? '-'}
+                            </td>
+                            {showReachActions ? (
+                              <>
+                                <td className="px-6 py-4 text-[14px] text-[#86868b]">
+                                  {passenger.dropoffAddress?.trim() || '-'}
+                                </td>
+                                <td className="px-6 py-4">
+                                  <span
+                                    className={cn(
+                                      'inline-flex rounded-full px-2.5 py-1 text-[12px] font-medium',
+                                      reached
+                                        ? 'bg-[#f0fdf4] text-[#248a3d]'
+                                        : 'bg-[#fff8eb] text-[#bf4800]',
+                                    )}
+                                  >
+                                    {reached ? 'Reached' : 'On board'}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 text-right">
+                                  {!reached && (
+                                    <Button
+                                      className="h-8 rounded-full bg-[#248a3d] px-4 text-[12px] font-normal hover:bg-[#1f7a35]"
+                                      disabled={actionBusy}
+                                      onClick={() =>
+                                        reachDestinationMutation.mutate(
+                                          passenger.id,
+                                        )
+                                      }
+                                    >
+                                      <MapPin className="size-3.5" />
+                                      {markingThis
+                                        ? 'Saving…'
+                                        : 'Mark reached'}
+                                    </Button>
+                                  )}
+                                </td>
+                              </>
+                            ) : (
+                              <>
+                                <td className="px-6 py-4 text-[14px] text-[#86868b]">
+                                  {passenger.phone ?? '-'}
+                                </td>
+                                <td className="px-6 py-4 font-mono text-[13px] text-[#0066cc]">
+                                  {passenger.reference ?? '-'}
+                                </td>
+                              </>
                             )}
-                          </td>
-                          <td className="px-6 py-4 text-[14px] font-medium text-[#1d1d1f]">
-                            {passenger.seat ?? '-'}
-                          </td>
-                          <td className="px-6 py-4 text-[14px] text-[#86868b]">
-                            {passenger.phone ?? '-'}
-                          </td>
-                          <td className="px-6 py-4 font-mono text-[13px] text-[#0066cc]">
-                            {passenger.reference ?? '-'}
-                          </td>
-                        </tr>
-                      ))}
+                          </tr>
+                        )
+                      })}
                     </tbody>
                   </table>
                 </div>
+                {reachDestinationMutation.isError && (
+                  <p className="px-6 py-3 text-[13px] text-[#bf4800]">
+                    Failed to mark destination reached. Try again.
+                  </p>
+                )}
                 {showPassengerPagination && (
                   <TablePagination
                     currentPage={passengerPageNumber}

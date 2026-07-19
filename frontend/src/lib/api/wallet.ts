@@ -2,6 +2,7 @@ import { api } from '@/lib/axios'
 
 export type WalletSummary = {
   balancePesos: number
+  systemFeeDuePesos: number
   currency: 'PHP'
   meaning: 'platform_owes_driver' | 'driver_owes_platform' | 'settled'
 }
@@ -56,6 +57,7 @@ export type AdminWalletRow = {
   id: string
   driverId: string
   balancePesos: number
+  systemFeeDuePesos: number
   meaning: WalletSummary['meaning']
   updatedAt: string
   driver: {
@@ -91,18 +93,6 @@ export async function fetchDriverWalletHistory(params?: {
 
 export async function fetchDriverWalletSettlements() {
   const { data } = await api.get<WalletSettlement[]>('/driver/wallet/settlements')
-  return data
-}
-
-export async function fetchDriverWalletPayouts() {
-  const { data } = await api.get<DriverPayout[]>('/driver/wallet/payouts')
-  return data
-}
-
-export async function requestDriverPayout(amountPesos: number) {
-  const { data } = await api.post<DriverPayout>('/driver/wallet/payouts', {
-    amountPesos,
-  })
   return data
 }
 
@@ -161,7 +151,6 @@ export const driverWalletSettlementsQueryKey = [
   'wallet',
   'settlements',
 ] as const
-export const driverWalletPayoutsQueryKey = ['driver', 'wallet', 'payouts'] as const
 
 export const adminWalletsQueryKey = ['admin', 'wallets'] as const
 export const adminDriverWalletQueryKey = (driverId: string) =>

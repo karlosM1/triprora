@@ -96,7 +96,7 @@ function StatusPill({
 }
 
 function tripStatusVariant(status: AdminTrip['status']) {
-  if (status === 'published') return 'success' as const
+  if (status === 'published' || status === 'in_progress') return 'success' as const
   if (status === 'completed') return 'default' as const
   if (status === 'draft') return 'warning' as const
   return 'danger' as const

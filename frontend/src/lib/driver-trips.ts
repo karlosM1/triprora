@@ -26,19 +26,27 @@ export function getTripRouteLabel(
 }
 
 export function isUpcomingTrip(trip: DriverTrip) {
-  return trip.status === 'published'
+  return trip.status === 'published' || trip.status === 'in_progress'
 }
 
 export function isPastTrip(trip: DriverTrip) {
   return trip.status === 'completed'
 }
 
-export function canCompleteTrip(trip: DriverTrip) {
+export function canStartTrip(trip: DriverTrip) {
   return trip.status === 'published'
+}
+
+export function canCompleteTrip(trip: DriverTrip) {
+  return trip.status === 'in_progress'
 }
 
 export function canCancelTrip(trip: DriverTrip) {
   return trip.status === 'draft' || trip.status === 'published'
+}
+
+export function canMarkDestinationReached(trip: DriverTrip) {
+  return trip.status === 'in_progress'
 }
 
 export function hasTripDeparted(trip: DriverTrip, now = new Date()) {
@@ -50,6 +58,7 @@ export function getTripStatusLabel(trip: DriverTrip) {
   if (trip.status === 'draft') return 'Draft'
   if (trip.status === 'cancelled') return 'Cancelled'
   if (trip.status === 'completed') return 'Completed'
+  if (trip.status === 'in_progress') return 'In progress'
   return 'Confirmed'
 }
 
@@ -63,6 +72,8 @@ export function sumPotentialEarnings(trips: DriverTrip[]) {
 export function countTodayTrips(trips: DriverTrip[], now = new Date()) {
   const today = now.toISOString().slice(0, 10)
   return trips.filter(
-    (trip) => trip.status === 'published' && trip.departureDate === today,
+    (trip) =>
+      (trip.status === 'published' || trip.status === 'in_progress') &&
+      trip.departureDate === today,
   ).length
 }

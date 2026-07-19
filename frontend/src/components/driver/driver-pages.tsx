@@ -116,15 +116,14 @@ export function DriverDashboardPage() {
   const trips = tripsQuery.data ?? [];
   const firstName = profile?.fullName?.split(" ")[0] ?? "Driver";
 
-  const publishedTrips = trips.filter((trip) => trip.status === "published");
-  const upcomingTrips = publishedTrips
+  const upcomingTrips = trips
     .filter((trip) => isUpcomingTrip(trip))
     .sort((a, b) =>
       `${a.departureDate}T${a.departureTime}`.localeCompare(
         `${b.departureDate}T${b.departureTime}`,
       ),
     );
-  const pastTrips = publishedTrips.filter((trip) => isPastTrip(trip));
+  const pastTrips = trips.filter((trip) => isPastTrip(trip));
   const nextTrip = upcomingTrips[0];
   const recentTrips = [...pastTrips].sort((a, b) =>
     `${b.departureDate}T${b.departureTime}`.localeCompare(
@@ -146,13 +145,9 @@ export function DriverDashboardPage() {
     queryKey: driverWalletQueryKey,
     queryFn: fetchDriverWallet,
   });
-  const walletBalance = walletQuery.data?.balancePesos ?? 0;
-  const walletFooter =
-    walletQuery.data?.meaning === "platform_owes_driver"
-      ? "Platform owes you"
-      : walletQuery.data?.meaning === "driver_owes_platform"
-        ? "You owe the platform"
-        : "Settled after completed trips";
+  const systemFeeDue =
+    walletQuery.data?.systemFeeDuePesos ??
+    Math.max(0, -(walletQuery.data?.balancePesos ?? 0));
 
   return (
     <motion.div
@@ -180,11 +175,11 @@ export function DriverDashboardPage() {
           footer="Published trips in the past"
         />
         <StatCard
-          title="Wallet balance"
+          title="System fees due"
           value={
-            walletQuery.isLoading ? "…" : `₱${walletBalance.toLocaleString()}`
+            walletQuery.isLoading ? "…" : `₱${systemFeeDue.toLocaleString()}`
           }
-          footer={walletFooter}
+          footer="From passenger bookings"
         />
         <StatCard
           title="Upcoming trips"
@@ -497,7 +492,9 @@ export function DriverMyTripsPage() {
     queryKey: driverWalletQueryKey,
     queryFn: fetchDriverWallet,
   });
-  const walletBalance = earningsQuery.data?.balancePesos ?? 0;
+  const systemFeeDue =
+    earningsQuery.data?.systemFeeDuePesos ??
+    Math.max(0, -(earningsQuery.data?.balancePesos ?? 0));
 
   return (
     <div className="space-y-10">
@@ -519,11 +516,11 @@ export function DriverMyTripsPage() {
           footer="Scheduled departures"
         />
         <StatCard
-          title="Wallet balance"
+          title="System fees due"
           value={
-            earningsQuery.isLoading ? "…" : `₱${walletBalance.toLocaleString()}`
+            earningsQuery.isLoading ? "…" : `₱${systemFeeDue.toLocaleString()}`
           }
-          footer="From completed trip settlements"
+          footer="From passenger bookings"
         />
       </div>
 

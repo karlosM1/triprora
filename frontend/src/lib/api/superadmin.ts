@@ -37,7 +37,7 @@ export type SuperadminTrip = {
   route: string
   departureDate: string
   departureTime: string
-  status: 'draft' | 'published' | 'completed' | 'cancelled'
+  status: 'draft' | 'published' | 'in_progress' | 'completed' | 'cancelled'
   displayStatus: TripDisplayStatus
   price: number
   seatsLeft: number

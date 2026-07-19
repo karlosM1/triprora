@@ -9,6 +9,8 @@ import {
   createDriverTrip,
   getDriverTripById,
   getDriverTrips,
+  markPassengerDestinationReached,
+  startDriverTrip,
   updateDriverTrip,
 } from '../controllers/driver-trips.controller.js'
 import {
@@ -22,9 +24,7 @@ import {
 import {
   getDriverWallet,
   getDriverWalletHistory,
-  getDriverWalletPayouts,
   getDriverWalletSettlements,
-  requestDriverPayout,
 } from '../controllers/wallet.controller.js'
 import { asyncHandler } from '../middleware/async-handler.middleware.js'
 import { authenticate, requireRole } from '../middleware/auth.middleware.js'
@@ -37,10 +37,7 @@ import {
   driverTripIdParamSchema,
   updateDriverTripSchema,
 } from '../validators/driver-trips.validator.js'
-import {
-  requestPayoutSchema,
-  walletHistoryQuerySchema,
-} from '../validators/wallet.validator.js'
+import { walletHistoryQuerySchema } from '../validators/wallet.validator.js'
 
 export const driverRouter = Router()
 
@@ -93,6 +90,14 @@ driverRouter.patch(
 )
 
 driverRouter.post(
+  '/trips/:tripId/start',
+  authenticate,
+  requireRole('driver'),
+  validateRequest({ params: driverTripIdParamSchema }),
+  asyncHandler(startDriverTrip),
+)
+
+driverRouter.post(
   '/trips/:tripId/complete',
   authenticate,
   requireRole('driver'),
@@ -127,6 +132,16 @@ driverRouter.post(
     body: declineBookingSchema,
   }),
   asyncHandler(declineDriverBooking),
+)
+
+driverRouter.post(
+  '/trips/:tripId/bookings/:bookingId/reach-destination',
+  authenticate,
+  requireRole('driver'),
+  validateRequest({
+    params: driverTripIdParamSchema.merge(bookingIdParamSchema),
+  }),
+  asyncHandler(markPassengerDestinationReached),
 )
 
 driverRouter.post(
@@ -170,19 +185,4 @@ driverRouter.get(
   authenticate,
   requireRole('driver'),
   asyncHandler(getDriverWalletSettlements),
-)
-
-driverRouter.get(
-  '/wallet/payouts',
-  authenticate,
-  requireRole('driver'),
-  asyncHandler(getDriverWalletPayouts),
-)
-
-driverRouter.post(
-  '/wallet/payouts',
-  authenticate,
-  requireRole('driver'),
-  validateRequest({ body: requestPayoutSchema }),
-  asyncHandler(requestDriverPayout),
 )
