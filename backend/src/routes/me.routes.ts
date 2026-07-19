@@ -6,6 +6,11 @@ import {
   updateDestinationAddress,
 } from '../controllers/destination-addresses.controller.js'
 import { getMe, updateMe } from '../controllers/me.controller.js'
+import {
+  listMyNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from '../controllers/notifications.controller.js'
 import { asyncHandler } from '../middleware/async-handler.middleware.js'
 import { authenticate } from '../middleware/auth.middleware.js'
 import { validateRequest } from '../middleware/validate-request.middleware.js'
@@ -14,6 +19,7 @@ import {
   upsertDestinationAddressSchema,
 } from '../validators/destination-addresses.validator.js'
 import { updateProfileSchema } from '../validators/me.validator.js'
+import { notificationIdParamSchema } from '../validators/notifications.validator.js'
 
 export const meRouter = Router()
 
@@ -23,6 +29,19 @@ meRouter.patch(
   authenticate,
   validateRequest({ body: updateProfileSchema }),
   asyncHandler(updateMe),
+)
+
+meRouter.get('/notifications', authenticate, asyncHandler(listMyNotifications))
+meRouter.post(
+  '/notifications/read-all',
+  authenticate,
+  asyncHandler(markAllNotificationsRead),
+)
+meRouter.post(
+  '/notifications/:notificationId/read',
+  authenticate,
+  validateRequest({ params: notificationIdParamSchema }),
+  asyncHandler(markNotificationRead),
 )
 
 meRouter.get(

@@ -5,6 +5,7 @@ import { BookingTicketSheet } from '@/components/my-bookings/booking-ticket-shee
 import { CancelBookingDialog } from '@/components/my-bookings/cancel-booking-dialog'
 import { ModifyBookingSheet } from '@/components/my-bookings/modify-booking-sheet'
 import type { UpcomingBooking } from '@/lib/types/api'
+import { cn } from '@/lib/utils'
 
 type UpcomingTripCardProps = {
   booking: UpcomingBooking
@@ -14,14 +15,22 @@ export function UpcomingTripCard({ booking }: UpcomingTripCardProps) {
   const [ticketOpen, setTicketOpen] = useState(false)
   const [modifyOpen, setModifyOpen] = useState(false)
   const [cancelOpen, setCancelOpen] = useState(false)
+  const isPending = booking.status === 'pending'
 
   return (
     <section>
       <SectionTitle
-        title="Upcoming trip"
+        title={isPending ? 'Seat request' : 'Upcoming trip'}
         action={
-          <span className="rounded-full bg-[#f0f7ff] px-3 py-1 text-[12px] font-medium text-[#0066cc]">
-            Confirmed
+          <span
+            className={cn(
+              'rounded-full px-3 py-1 text-[12px] font-medium',
+              isPending
+                ? 'bg-[#fff8eb] text-[#bf4800]'
+                : 'bg-[#f0f7ff] text-[#0066cc]',
+            )}
+          >
+            {isPending ? 'Awaiting driver' : 'Confirmed'}
           </span>
         }
       />
@@ -40,6 +49,12 @@ export function UpcomingTripCard({ booking }: UpcomingTripCardProps) {
           </div>
 
           <div className="flex flex-1 flex-col justify-between p-6 lg:p-8">
+            {isPending && (
+              <p className="mb-5 text-[14px] text-[#86868b]">
+                The driver still needs to accept this seat request. You’ll be
+                notified when they decide.
+              </p>
+            )}
             <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
               <DetailItem label="Date" value={booking.date} />
               <DetailItem label="Time" value={booking.time} />
@@ -75,14 +90,16 @@ export function UpcomingTripCard({ booking }: UpcomingTripCardProps) {
                 >
                   Modify
                 </Button>
-                <Button
-                  className="h-10 rounded-full bg-[#0071e3] px-5 text-[14px] font-normal hover:bg-[#0077ed]"
-                  onClick={() => setTicketOpen(true)}
-                >
-                  View ticket
-                </Button>
+                {!isPending && (
+                  <Button
+                    className="h-10 rounded-full bg-[#0071e3] px-5 text-[14px] font-normal hover:bg-[#0077ed]"
+                    onClick={() => setTicketOpen(true)}
+                  >
+                    View ticket
+                  </Button>
+                )}
               </div>
-              {!booking.canCancel && (
+              {!booking.canCancel && !isPending && (
                 <p className="mt-3 text-[13px] text-[#86868b]">
                   Cancellations must be made at least 24 hours before pickup.
                 </p>

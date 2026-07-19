@@ -56,10 +56,26 @@ export async function requireRole(redirectTo: string, ...roles: Role[]) {
   ) as { role: Role } | undefined
 
   if (!profile || !roles.includes(profile.role)) {
-    throw redirect({ to: '/my-bookings' })
+    throw redirect({
+      to: profile?.role === 'driver' ? '/driver' : '/my-bookings',
+    })
   }
 
   return profile
+}
+
+/** Passenger-facing pages (bookings, tickets). Drivers are sent to the portal. */
+export async function requirePassenger(redirectTo: string) {
+  const session = await requireAuth(redirectTo)
+  const profile = queryClient.getQueryData(
+    profileQueryKey(session.user.id),
+  ) as { role: Role } | undefined
+
+  if (profile?.role === 'driver') {
+    throw redirect({ to: '/driver' })
+  }
+
+  return session
 }
 
 export function isDriverRegisterPath(pathname: string) {

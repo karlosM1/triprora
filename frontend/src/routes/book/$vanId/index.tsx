@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { loadVanBooking, vanBookingQueryOptions } from '@/lib/api/load-van-booking'
 import type { TripAddresses } from '@/lib/booking'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
+import { requirePassenger } from '@/lib/route-guards'
 
 export const Route = createFileRoute('/book/$vanId/')({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -20,6 +21,9 @@ export const Route = createFileRoute('/book/$vanId/')({
     pickupAddress: (search.pickupAddress as string) || '',
     dropoffAddress: (search.dropoffAddress as string) || '',
   }),
+  beforeLoad: async ({ params }) => {
+    await requirePassenger(`/book/${params.vanId}`)
+  },
   loader: async ({ params }) => {
     return loadVanBooking(params.vanId)
   },

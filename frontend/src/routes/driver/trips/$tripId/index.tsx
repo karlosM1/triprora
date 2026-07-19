@@ -2,7 +2,7 @@ import { isAxiosError } from 'axios'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, createFileRoute, notFound, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
-import { ArrowLeft, Calendar, Car, CheckCircle2, Package, Users } from 'lucide-react'
+import { ArrowLeft, Calendar, Car, CheckCircle2, Package, Users, XCircle } from 'lucide-react'
 import { AppleCard, PageHeader } from '@/components/layout/page-header'
 import {
   AlertDialog,
@@ -15,19 +15,25 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
 import { TablePagination } from '@/components/ui/table-pagination'
 import { usePagination } from '@/hooks/use-pagination'
 import {
+  acceptDriverBooking,
   acceptDriverDelivery,
+  cancelDriverTrip,
   completeDriverTrip,
+  declineDriverBooking,
   declineDriverDelivery,
   driverTripDetailsQueryKey,
   driverTripDetailsQueryOptions,
   driverTripsQueryKey,
   type DriverTripDelivery,
+  type DriverTripPassenger,
 } from '@/lib/api/driver-trips'
 import { queryClient } from '@/lib/query-client'
 import {
+  canCancelTrip,
   canCompleteTrip,
   formatTripDateTime,
   getTripRouteLabel,
@@ -151,11 +157,14 @@ function DriverTripDetailsPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false)
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const [packageTab, setPackageTab] = useState<'requests' | 'closed'>(
     'requests',
   )
   const detailsQuery = useQuery(driverTripDetailsQueryOptions(tripId))
   const passengers = detailsQuery.data?.passengers ?? []
+  const pendingPassengers = passengers.filter((p) => p.status === 'pending')
+  const confirmedPassengers = passengers.filter((p) => p.status === 'confirmed')
   const deliveries = detailsQuery.data?.deliveries ?? []
   const pendingDeliveries = deliveries.filter((d) => d.status === 'pending')
   const activeDeliveries = deliveries.filter((d) =>
@@ -197,7 +206,7 @@ function DriverTripDetailsPage() {
     totalItems: passengerTotalItems,
     goToPage: goToPassengerPage,
     showPagination: showPassengerPagination,
-  } = usePagination(passengers)
+  } = usePagination(confirmedPassengers)
 
   const completeMutation = useMutation({
     mutationFn: () => completeDriverTrip(tripId),
@@ -206,6 +215,42 @@ function DriverTripDetailsPage() {
       await queryClient.invalidateQueries({ queryKey: driverTripsQueryKey })
       await queryClient.invalidateQueries({ queryKey: driverTripDetailsQueryKey(tripId) })
       await navigate({ to: '/driver/trips' })
+    },
+  })
+
+  const cancelMutation = useMutation({
+    mutationFn: () => cancelDriverTrip(tripId),
+    onSuccess: async () => {
+      setCancelDialogOpen(false)
+      await queryClient.invalidateQueries({ queryKey: driverTripsQueryKey })
+      await queryClient.invalidateQueries({ queryKey: driverTripDetailsQueryKey(tripId) })
+      await navigate({ to: '/driver/trips' })
+    },
+  })
+
+  const acceptBookingMutation = useMutation({
+    mutationFn: (bookingId: string) => acceptDriverBooking(tripId, bookingId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: driverTripDetailsQueryKey(tripId),
+      })
+      await queryClient.invalidateQueries({ queryKey: driverTripsQueryKey })
+    },
+  })
+
+  const declineBookingMutation = useMutation({
+    mutationFn: ({
+      bookingId,
+      reason,
+    }: {
+      bookingId: string
+      reason?: string
+    }) => declineDriverBooking(tripId, bookingId, reason),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: driverTripDetailsQueryKey(tripId),
+      })
+      await queryClient.invalidateQueries({ queryKey: driverTripsQueryKey })
     },
   })
 
@@ -259,7 +304,11 @@ function DriverTripDetailsPage() {
           ? 'completed'
           : 'active'
   const showCompleteButton = canCompleteTrip(trip)
+  const showCancelButton = canCancelTrip(trip)
   const tripHasDeparted = hasTripDeparted(trip)
+  const passengerCount = confirmedPassengers.length + pendingPassengers.length
+  const pendingPassengerCount = pendingPassengers.length
+  const openDeliveryCount = openDeliveries.length
 
   return (
     <div className="space-y-10">
@@ -293,19 +342,37 @@ function DriverTripDetailsPage() {
               </Link>
             </Button>
           )}
-          {showCompleteButton && (
-            <Button
-              className="h-9 rounded-full bg-[#248a3d] px-5 text-[13px] font-normal hover:bg-[#1f7a35]"
-              disabled={completeMutation.isPending}
-              onClick={() => setCompleteDialogOpen(true)}
-            >
-              <CheckCircle2 className="size-4" />
-              Complete trip
-            </Button>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {showCancelButton && (
+              <Button
+                variant="ghost"
+                className="h-9 rounded-full px-5 text-[13px] font-normal text-[#bf4800] hover:bg-[#bf4800]/10 hover:text-[#bf4800]"
+                disabled={cancelMutation.isPending || completeMutation.isPending}
+                onClick={() => setCancelDialogOpen(true)}
+              >
+                <XCircle className="size-4" />
+                Cancel trip
+              </Button>
+            )}
+            {showCompleteButton && (
+              <Button
+                className="h-9 rounded-full bg-[#248a3d] px-5 text-[13px] font-normal hover:bg-[#1f7a35]"
+                disabled={completeMutation.isPending || cancelMutation.isPending}
+                onClick={() => setCompleteDialogOpen(true)}
+              >
+                <CheckCircle2 className="size-4" />
+                Complete trip
+              </Button>
+            )}
+          </div>
           {completeMutation.isError && (
             <p className="max-w-56 text-right text-[13px] text-[#bf4800]">
               Failed to complete trip. Try again.
+            </p>
+          )}
+          {cancelMutation.isError && (
+            <p className="max-w-56 text-right text-[13px] text-[#bf4800]">
+              Failed to cancel trip. Try again.
             </p>
           )}
         </div>
@@ -342,6 +409,52 @@ function DriverTripDetailsPage() {
               onClick={() => completeMutation.mutate()}
             >
               {completeMutation.isPending ? 'Completing…' : 'Yes, complete trip'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel this trip?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {passengerCount === 0 && openDeliveryCount === 0 ? (
+                <>
+                  This cannot be undone. The trip will move to your cancelled list.
+                </>
+              ) : passengerCount > 0 && openDeliveryCount > 0 ? (
+                <>
+                  This cannot be undone. {passengerCount} passenger
+                  {passengerCount === 1 ? '' : 's'} will be notified and{' '}
+                  {openDeliveryCount} package request
+                  {openDeliveryCount === 1 ? '' : 's'} will be cancelled.
+                </>
+              ) : passengerCount > 0 ? (
+                <>
+                  This cannot be undone. {passengerCount} passenger
+                  {passengerCount === 1 ? '' : 's'} with bookings will be notified
+                  and their seats released.
+                </>
+              ) : (
+                <>
+                  This cannot be undone. {openDeliveryCount} package request
+                  {openDeliveryCount === 1 ? '' : 's'} will be cancelled and the
+                  sender notified.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelMutation.isPending}>
+              Keep trip
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-[#bf4800] hover:bg-[#a63f00]"
+              disabled={cancelMutation.isPending}
+              onClick={() => cancelMutation.mutate()}
+            >
+              {cancelMutation.isPending ? 'Cancelling…' : 'Yes, cancel trip'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -505,72 +618,134 @@ function DriverTripDetailsPage() {
       </AppleCard>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_300px]">
-        <AppleCard className="overflow-hidden">
-          <div className="border-b border-[#d2d2d7]/60 px-6 py-4">
-            <h2 className="text-[17px] font-semibold text-[#1d1d1f]">Passengers</h2>
-          </div>
-          {passengers.length === 0 ? (
-            <p className="px-6 py-12 text-center text-[15px] text-[#86868b]">
-              No passengers have booked this trip yet.
-            </p>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[520px] text-left">
-                  <thead>
-                    <tr className="border-b border-[#d2d2d7]/60 bg-[#f5f5f7]/50">
-                      {['Passenger', 'Seat', 'Contact', 'Reference'].map((head) => (
-                        <th
-                          key={head}
-                          className="px-6 py-3 text-[12px] font-medium text-[#86868b] uppercase"
-                        >
-                          {head}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {passengerPage.map((passenger) => (
-                      <tr
-                        key={passenger.id}
-                        className="border-b border-[#d2d2d7]/40 last:border-b-0"
-                      >
-                        <td className="px-6 py-4">
-                          <p className="text-[15px] font-medium text-[#1d1d1f]">
-                            {passenger.name}
-                          </p>
-                          {passenger.email && (
-                            <p className="text-[13px] text-[#86868b]">{passenger.email}</p>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-[14px] font-medium text-[#1d1d1f]">
-                          {passenger.seat ?? '-'}
-                        </td>
-                        <td className="px-6 py-4 text-[14px] text-[#86868b]">
-                          {passenger.phone ?? '-'}
-                        </td>
-                        <td className="px-6 py-4 font-mono text-[13px] text-[#0066cc]">
-                          {passenger.reference ?? '-'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+        <div className="space-y-6">
+          {pendingPassengers.length > 0 && (
+            <AppleCard className="overflow-hidden">
+              <div className="border-b border-[#d2d2d7]/60 px-6 py-4">
+                <h2 className="text-[17px] font-semibold text-[#1d1d1f]">
+                  Seat requests
+                </h2>
+                <p className="mt-1 text-[13px] text-[#86868b]">
+                  Accept or decline passengers waiting for approval.
+                </p>
               </div>
-              {showPassengerPagination && (
-                <TablePagination
-                  currentPage={passengerPageNumber}
-                  totalPages={passengerTotalPages}
-                  rangeStart={passengerRangeStart}
-                  rangeEnd={passengerRangeEnd}
-                  totalItems={passengerTotalItems}
-                  itemLabel="passengers"
-                  onPageChange={goToPassengerPage}
-                />
-              )}
-            </>
+              <div className="divide-y divide-[#d2d2d7]/60">
+                {pendingPassengers.map((passenger) => (
+                  <SeatRequestRow
+                    key={passenger.id}
+                    passenger={passenger}
+                    accepting={
+                      acceptBookingMutation.isPending &&
+                      acceptBookingMutation.variables === passenger.id
+                    }
+                    declining={
+                      declineBookingMutation.isPending &&
+                      declineBookingMutation.variables?.bookingId === passenger.id
+                    }
+                    onAccept={() => acceptBookingMutation.mutate(passenger.id)}
+                    onDecline={(reason) =>
+                      declineBookingMutation.mutate({
+                        bookingId: passenger.id,
+                        reason,
+                      })
+                    }
+                    actionError={
+                      (acceptBookingMutation.variables === passenger.id
+                        ? (
+                            acceptBookingMutation.error as Error & {
+                              response?: { data?: { message?: string } }
+                            }
+                          )?.response?.data?.message ||
+                          acceptBookingMutation.error?.message
+                        : undefined) ||
+                      (declineBookingMutation.variables?.bookingId === passenger.id
+                        ? (
+                            declineBookingMutation.error as Error & {
+                              response?: { data?: { message?: string } }
+                            }
+                          )?.response?.data?.message ||
+                          declineBookingMutation.error?.message
+                        : undefined)
+                    }
+                  />
+                ))}
+              </div>
+            </AppleCard>
           )}
-        </AppleCard>
+
+          <AppleCard className="overflow-hidden">
+            <div className="border-b border-[#d2d2d7]/60 px-6 py-4">
+              <h2 className="text-[17px] font-semibold text-[#1d1d1f]">
+                Confirmed passengers
+              </h2>
+            </div>
+            {confirmedPassengers.length === 0 ? (
+              <p className="px-6 py-12 text-center text-[15px] text-[#86868b]">
+                {pendingPassengerCount > 0
+                  ? 'No confirmed passengers yet. Review seat requests above.'
+                  : 'No passengers have booked this trip yet.'}
+              </p>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[520px] text-left">
+                    <thead>
+                      <tr className="border-b border-[#d2d2d7]/60 bg-[#f5f5f7]/50">
+                        {['Passenger', 'Seat', 'Contact', 'Reference'].map((head) => (
+                          <th
+                            key={head}
+                            className="px-6 py-3 text-[12px] font-medium text-[#86868b] uppercase"
+                          >
+                            {head}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {passengerPage.map((passenger) => (
+                        <tr
+                          key={passenger.id}
+                          className="border-b border-[#d2d2d7]/40 last:border-b-0"
+                        >
+                          <td className="px-6 py-4">
+                            <p className="text-[15px] font-medium text-[#1d1d1f]">
+                              {passenger.name}
+                            </p>
+                            {passenger.email && (
+                              <p className="text-[13px] text-[#86868b]">
+                                {passenger.email}
+                              </p>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-[14px] font-medium text-[#1d1d1f]">
+                            {passenger.seat ?? '-'}
+                          </td>
+                          <td className="px-6 py-4 text-[14px] text-[#86868b]">
+                            {passenger.phone ?? '-'}
+                          </td>
+                          <td className="px-6 py-4 font-mono text-[13px] text-[#0066cc]">
+                            {passenger.reference ?? '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {showPassengerPagination && (
+                  <TablePagination
+                    currentPage={passengerPageNumber}
+                    totalPages={passengerTotalPages}
+                    rangeStart={passengerRangeStart}
+                    rangeEnd={passengerRangeEnd}
+                    totalItems={passengerTotalItems}
+                    itemLabel="passengers"
+                    onPageChange={goToPassengerPage}
+                  />
+                )}
+              </>
+            )}
+          </AppleCard>
+        </div>
 
         <AppleCard className="p-6">
           <h2 className="text-[17px] font-semibold text-[#1d1d1f]">Seat summary</h2>
@@ -578,6 +753,12 @@ function DriverTripDetailsPage() {
             <SummaryStat label="Available" value={seatsAvailable} tone="available" />
             <SummaryStat label="Booked" value={seatsOccupied} tone="occupied" />
           </div>
+          {pendingPassengerCount > 0 && (
+            <p className="mt-4 text-[13px] text-[#bf4800]">
+              {pendingPassengerCount} seat request
+              {pendingPassengerCount === 1 ? '' : 's'} awaiting your approval.
+            </p>
+          )}
 
           <div className="mt-4 flex flex-wrap gap-3 text-[12px] text-[#86868b]">
             <Legend color="bg-[#dcfce7] ring-[#86efac]" label="Available" />
@@ -612,6 +793,96 @@ function DriverTripDetailsPage() {
           </div>
         </AppleCard>
       </div>
+    </div>
+  )
+}
+
+function SeatRequestRow({
+  passenger,
+  onAccept,
+  onDecline,
+  accepting,
+  declining,
+  actionError,
+}: {
+  passenger: DriverTripPassenger
+  onAccept: () => void
+  onDecline: (reason?: string) => void
+  accepting?: boolean
+  declining?: boolean
+  actionError?: string
+}) {
+  const [reason, setReason] = useState('')
+  const busy = Boolean(accepting || declining)
+
+  return (
+    <div className="px-6 py-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 flex-1">
+          <p className="text-[15px] font-semibold text-[#1d1d1f]">
+            {passenger.name}
+          </p>
+          <p className="mt-1 text-[13px] text-[#86868b]">
+            Seat {passenger.seat ?? '—'}
+            {passenger.price ? ` · ${passenger.price}` : ''}
+          </p>
+          <div className="mt-3 space-y-1.5 text-[13px]">
+            <p>
+              <span className="text-[#86868b]">Pickup: </span>
+              <span className="font-medium text-[#1d1d1f]">
+                {passenger.pickupAddress?.trim() || '—'}
+              </span>
+            </p>
+            <p>
+              <span className="text-[#86868b]">Destination: </span>
+              <span className="font-medium text-[#1d1d1f]">
+                {passenger.dropoffAddress?.trim() || '—'}
+              </span>
+            </p>
+          </div>
+          {passenger.email && (
+            <p className="mt-2 text-[13px] text-[#86868b]">{passenger.email}</p>
+          )}
+          {passenger.phone && (
+            <p className="text-[13px] text-[#86868b]">{passenger.phone}</p>
+          )}
+          {passenger.reference && (
+            <p className="mt-1 font-mono text-[12px] text-[#0066cc]">
+              {passenger.reference}
+            </p>
+          )}
+        </div>
+        <div className="flex w-full shrink-0 flex-col gap-3 sm:w-56">
+          <Textarea
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+            placeholder="Reason for declining (optional)"
+            maxLength={500}
+            disabled={busy}
+            className="min-h-20 resize-none border-[#d2d2d7] bg-white text-[13px] placeholder:text-[#86868b]"
+          />
+          <div className="flex flex-wrap gap-2 sm:justify-end">
+            <Button
+              variant="ghost"
+              className="h-9 rounded-full px-4 text-[13px] text-[#bf4800] hover:bg-[#bf4800]/10"
+              disabled={busy}
+              onClick={() => onDecline(reason.trim() || undefined)}
+            >
+              {declining ? 'Declining…' : 'Decline'}
+            </Button>
+            <Button
+              className="h-9 rounded-full bg-[#248a3d] px-4 text-[13px] font-normal hover:bg-[#1f7a35]"
+              disabled={busy}
+              onClick={onAccept}
+            >
+              {accepting ? 'Accepting…' : 'Accept'}
+            </Button>
+          </div>
+        </div>
+      </div>
+      {actionError && (
+        <p className="mt-3 text-[13px] text-[#bf4800]">{actionError}</p>
+      )}
     </div>
   )
 }

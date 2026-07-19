@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
-import { CheckCircle2, Download } from 'lucide-react'
+import { Clock3, Download } from 'lucide-react'
 import { BookingStepper } from '@/components/booking/booking-stepper'
 import { CheckoutFooter } from '@/components/booking/booking-footer'
 import { AppleCard, PageHeader } from '@/components/layout/page-header'
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { loadVanBooking, vanBookingQueryOptions } from '@/lib/api/load-van-booking'
 import { calculateTotals } from '@/lib/booking'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
+import { requirePassenger } from '@/lib/route-guards'
 
 export const Route = createFileRoute('/book/$vanId/confirmation')({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -20,6 +21,9 @@ export const Route = createFileRoute('/book/$vanId/confirmation')({
     dropoffAddress: (search.dropoffAddress as string) || '',
     paymentMethod: 'cash' as const,
   }),
+  beforeLoad: async ({ params }) => {
+    await requirePassenger(`/book/${params.vanId}/confirmation`)
+  },
   loader: async ({ params }) => {
     return loadVanBooking(params.vanId)
   },
@@ -62,14 +66,14 @@ function ConfirmationPage() {
           </motion.div>
 
           <motion.div variants={fadeInUp} className="text-center">
-            <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-[#f0fdf4]">
-              <CheckCircle2 className="size-8 text-[#248a3d]" strokeWidth={1.75} />
+            <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-[#fff8eb]">
+              <Clock3 className="size-8 text-[#bf4800]" strokeWidth={1.75} />
             </div>
             <PageHeader
               className="mt-6 justify-center text-center sm:flex-col sm:items-center"
-              eyebrow="Confirmed"
-              title="You're all set."
-              subtitle={`Thank you, ${name}. Your door-to-door trip between Aurora and Metro Manila is booked.`}
+              eyebrow="Awaiting approval"
+              title="Request sent."
+              subtitle={`Thank you, ${name}. Your seat request is waiting for the driver to accept it.`}
             />
           </motion.div>
 
@@ -97,7 +101,7 @@ function ConfirmationPage() {
                   value={`₱${total.toLocaleString()}`}
                   highlight
                 />
-                <Row label="Payment" value="Cash on trip" />
+                <Row label="Payment" value="Cash on trip (after approval)" />
               </dl>
             </AppleCard>
           </motion.div>
@@ -106,8 +110,8 @@ function ConfirmationPage() {
             variants={fadeInUp}
             className="text-center text-[13px] leading-relaxed text-[#86868b]"
           >
-            Pay cash to your driver on trip day. Your driver will contact you before
-            departure to confirm pickup details.
+            You’ll be notified when the driver accepts or declines your request.
+            Your seat is held until then.
           </motion.p>
 
           <motion.div

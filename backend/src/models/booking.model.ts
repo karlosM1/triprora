@@ -1,6 +1,7 @@
 import type {
   CreateBookingInput,
   CreatedBooking,
+  DriverBookingPassenger,
   HistoryBooking,
   UpcomingBooking,
   UpdateBookingInput,
@@ -88,6 +89,7 @@ function toUpcomingBooking(
   dropoffAddress: string | null,
   snapshot: BookingSnapshotView | null,
   canCancel: boolean,
+  status: 'pending' | 'confirmed',
 ): UpcomingBooking | null {
   if (
     !reference ||
@@ -117,7 +119,7 @@ function toUpcomingBooking(
     route: snapshot.routeLabel,
     vehicle: snapshot.vehicleLabel,
     price: snapshot.priceDisplay,
-    status: 'confirmed',
+    status,
     canCancel,
   }
 }
@@ -178,7 +180,7 @@ export const BookingModel = {
           reference,
           pickupAddress: input.pickupAddress.trim(),
           dropoffAddress: input.dropoffAddress.trim(),
-          status: 'confirmed',
+          status: 'pending',
           snapshot: {
             create: {
               routeCode: van.id,
@@ -224,26 +226,33 @@ export const BookingModel = {
         vehicle: vehicleLabel,
         operator: presented.operator,
         price: formatPrice(fare.total),
+        status: 'pending' as const,
       }
     })
   },
 
   async getUpcoming(userId: string): Promise<UpcomingBooking | null> {
     const booking = await prisma.booking.findFirst({
-      where: { userId, status: 'confirmed' },
+      where: { userId, status: { in: ['pending', 'confirmed'] } },
       include: { snapshot: true, van: true },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [
+        { status: 'asc' }, // confirmed before pending alphabetically? Actually 'confirmed' < 'pending' so confirmed first
+        { createdAt: 'desc' },
+      ],
     })
 
     if (!booking) return null
 
+    const status = booking.status as 'pending' | 'confirmed'
     const canCancel =
-      booking.van != null
-        ? canCancelBeforePickup(
-            booking.van.departureDate,
-            booking.van.departureTime,
-          )
-        : false
+      status === 'pending'
+        ? true
+        : booking.van != null
+          ? canCancelBeforePickup(
+              booking.van.departureDate,
+              booking.van.departureTime,
+            )
+          : false
 
     return toUpcomingBooking(
       booking.id,
@@ -252,6 +261,7 @@ export const BookingModel = {
       booking.dropoffAddress,
       booking.snapshot,
       canCancel,
+      status,
     )
   },
 
@@ -259,7 +269,7 @@ export const BookingModel = {
     const bookings = await prisma.booking.findMany({
       where: {
         userId,
-        status: { in: ['completed', 'cancelled'] },
+        status: { in: ['completed', 'cancelled', 'declined'] },
       },
       include: { snapshot: true },
       orderBy: { createdAt: 'desc' },
@@ -271,7 +281,7 @@ export const BookingModel = {
       date: booking.snapshot?.departureDate ?? '',
       route: booking.snapshot?.routeLabel ?? '',
       tripType: booking.snapshot?.tripType ?? '',
-      status: booking.status as 'completed' | 'cancelled',
+      status: booking.status as 'completed' | 'cancelled' | 'declined',
       price: booking.snapshot?.priceDisplay ?? '',
     }))
   },
@@ -283,7 +293,11 @@ export const BookingModel = {
   ): Promise<UpcomingBooking> {
     return prisma.$transaction(async (tx) => {
       const booking = await tx.booking.findFirst({
-        where: { id: bookingId, userId, status: 'confirmed' },
+        where: {
+          id: bookingId,
+          userId,
+          status: { in: ['pending', 'confirmed'] },
+        },
         include: {
           snapshot: true,
           van: {
@@ -350,10 +364,13 @@ export const BookingModel = {
         include: { snapshot: true },
       })
 
-      const canCancel = canCancelBeforePickup(
-        booking.van.departureDate,
-        booking.van.departureTime,
-      )
+      const canCancel =
+        booking.status === 'pending'
+          ? true
+          : canCancelBeforePickup(
+              booking.van.departureDate,
+              booking.van.departureTime,
+            )
 
       const upcoming = toUpcomingBooking(
         updated.id,
@@ -362,6 +379,7 @@ export const BookingModel = {
         updated.dropoffAddress,
         updated.snapshot,
         canCancel,
+        booking.status as 'pending' | 'confirmed',
       )
       if (!upcoming) {
         throw new AppError('Unable to load updated booking', 500)
@@ -374,7 +392,11 @@ export const BookingModel = {
   async cancel(userId: string, bookingId: string): Promise<HistoryBooking> {
     return prisma.$transaction(async (tx) => {
       const booking = await tx.booking.findFirst({
-        where: { id: bookingId, userId, status: 'confirmed' },
+        where: {
+          id: bookingId,
+          userId,
+          status: { in: ['pending', 'confirmed'] },
+        },
         include: {
           snapshot: true,
           van: true,
@@ -390,6 +412,7 @@ export const BookingModel = {
       }
 
       if (
+        booking.status === 'confirmed' &&
         !canCancelBeforePickup(
           booking.van.departureDate,
           booking.van.departureTime,
@@ -426,5 +449,174 @@ export const BookingModel = {
         price: updated.snapshot?.priceDisplay ?? '',
       }
     })
+  },
+
+  async acceptByDriver(
+    tripId: string,
+    bookingId: string,
+    driverId: string,
+  ): Promise<DriverBookingPassenger> {
+    const van = await prisma.van.findFirst({
+      where: { id: tripId, driverId, status: 'published' },
+      select: { id: true },
+    })
+    if (!van) {
+      throw new AppError('Trip not found or not available', 404)
+    }
+
+    const booking = await prisma.booking.findFirst({
+      where: { id: bookingId, vanId: tripId, status: 'pending' },
+      include: {
+        snapshot: true,
+        user: {
+          select: { fullName: true, email: true, phone: true },
+        },
+      },
+    })
+
+    if (!booking) {
+      throw new AppError('Seat request not found or already handled', 404)
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const next = await tx.booking.update({
+        where: { id: bookingId },
+        data: { status: 'confirmed' },
+        include: {
+          snapshot: true,
+          user: {
+            select: { fullName: true, email: true, phone: true },
+          },
+        },
+      })
+
+      if (booking.userId) {
+        const routeLabel = booking.snapshot?.routeLabel ?? 'your trip'
+        const seatLabel = booking.snapshot?.seatLabel
+        await tx.notification.create({
+          data: {
+            userId: booking.userId,
+            type: 'booking_accepted',
+            title: 'Seat request accepted',
+            body: `Your seat request${booking.reference ? ` (${booking.reference})` : ''}${seatLabel ? ` for seat ${seatLabel}` : ''} on ${routeLabel} was accepted by the driver.`,
+            data: {
+              tripId,
+              bookingId: booking.id,
+              kind: 'booking',
+            },
+          },
+        })
+      }
+
+      return next
+    })
+
+    return {
+      id: updated.id,
+      reference: updated.reference,
+      seat: updated.snapshot?.seatLabel ?? null,
+      name: updated.user?.fullName?.trim() || updated.user?.email || 'Guest',
+      email: updated.user?.email ?? null,
+      phone: updated.user?.phone ?? null,
+      price: updated.snapshot?.priceDisplay ?? null,
+      pickupAddress: updated.pickupAddress ?? null,
+      dropoffAddress: updated.dropoffAddress ?? null,
+      status: 'confirmed',
+      bookedAt: updated.createdAt,
+    }
+  },
+
+  async declineByDriver(
+    tripId: string,
+    bookingId: string,
+    driverId: string,
+    reason?: string | null,
+  ): Promise<DriverBookingPassenger> {
+    const van = await prisma.van.findFirst({
+      where: { id: tripId, driverId },
+      select: { id: true },
+    })
+    if (!van) {
+      throw new AppError('Trip not found', 404)
+    }
+
+    const declineReason = reason?.trim() || null
+
+    const booking = await prisma.booking.findFirst({
+      where: { id: bookingId, vanId: tripId, status: 'pending' },
+      include: {
+        snapshot: true,
+        user: {
+          select: { fullName: true, email: true, phone: true },
+        },
+      },
+    })
+
+    if (!booking) {
+      throw new AppError('Seat request not found or already handled', 404)
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      if (booking.seatId) {
+        await tx.seat.update({
+          where: { id: booking.seatId },
+          data: { status: 'available' },
+        })
+      }
+
+      await tx.van.update({
+        where: { id: tripId },
+        data: { seatsLeft: { increment: 1 } },
+      })
+
+      const next = await tx.booking.update({
+        where: { id: bookingId },
+        data: { status: 'declined' },
+        include: {
+          snapshot: true,
+          user: {
+            select: { fullName: true, email: true, phone: true },
+          },
+        },
+      })
+
+      if (booking.userId) {
+        const routeLabel = booking.snapshot?.routeLabel ?? 'your trip'
+        const seatLabel = booking.snapshot?.seatLabel
+        const reasonSuffix = declineReason
+          ? ` Reason: ${declineReason}`
+          : ''
+        await tx.notification.create({
+          data: {
+            userId: booking.userId,
+            type: 'booking_declined',
+            title: 'Seat request declined',
+            body: `Your seat request${booking.reference ? ` (${booking.reference})` : ''}${seatLabel ? ` for seat ${seatLabel}` : ''} on ${routeLabel} was declined by the driver.${reasonSuffix} You can book another seat or trip.`,
+            data: {
+              tripId,
+              bookingId: booking.id,
+              kind: 'booking',
+              ...(declineReason ? { reason: declineReason } : {}),
+            },
+          },
+        })
+      }
+
+      return next
+    })
+
+    return {
+      id: updated.id,
+      reference: updated.reference,
+      seat: updated.snapshot?.seatLabel ?? null,
+      name: updated.user?.fullName?.trim() || updated.user?.email || 'Guest',
+      email: updated.user?.email ?? null,
+      phone: updated.user?.phone ?? null,
+      price: updated.snapshot?.priceDisplay ?? null,
+      pickupAddress: updated.pickupAddress ?? null,
+      dropoffAddress: updated.dropoffAddress ?? null,
+      status: 'declined',
+      bookedAt: updated.createdAt,
+    }
   },
 }

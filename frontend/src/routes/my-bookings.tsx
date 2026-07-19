@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
 import { PageHeader } from '@/components/layout/page-header'
@@ -7,28 +7,53 @@ import { PlanTripCta } from '@/components/my-bookings/plan-trip-cta'
 import { UpcomingTripCard } from '@/components/my-bookings/upcoming-trip-card'
 import { Footer } from '@/components/landing/footer'
 import { Header } from '@/components/landing/header'
+import { Button } from '@/components/ui/button'
 import {
   bookingHistoryQueryOptions,
   upcomingBookingQueryOptions,
 } from '@/lib/api/bookings'
+import {
+  markNotificationRead,
+  notificationsQueryKey,
+  notificationsQueryOptions,
+} from '@/lib/api/notifications'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
 import { queryClient } from '@/lib/query-client'
-import { requireAuth } from '@/lib/route-guards'
+import { requirePassenger } from '@/lib/route-guards'
 
 export const Route = createFileRoute('/my-bookings')({
   beforeLoad: async () => {
-    await requireAuth('/my-bookings')
+    await requirePassenger('/my-bookings')
   },
   loader: () => {
     void queryClient.prefetchQuery(upcomingBookingQueryOptions())
     void queryClient.prefetchQuery(bookingHistoryQueryOptions())
+    void queryClient.prefetchQuery(notificationsQueryOptions())
   },
   component: MyBookingsPage,
 })
 
 function MyBookingsPage() {
+  const queryClientInstance = useQueryClient()
   const upcomingQuery = useQuery(upcomingBookingQueryOptions())
   const historyQuery = useQuery(bookingHistoryQueryOptions())
+  const notificationsQuery = useQuery(notificationsQueryOptions())
+
+  const tripCancelledAlerts = (notificationsQuery.data?.notifications ?? []).filter(
+    (notification) =>
+      notification.type === 'trip_cancelled' &&
+      !notification.readAt &&
+      (!notification.data || notification.data.kind !== 'delivery'),
+  )
+
+  const markReadMutation = useMutation({
+    mutationFn: markNotificationRead,
+    onSuccess: async () => {
+      await queryClientInstance.invalidateQueries({
+        queryKey: notificationsQueryKey,
+      })
+    },
+  })
 
   return (
     <div className="app-page min-h-svh bg-[#f5f5f7]">
@@ -48,6 +73,32 @@ function MyBookingsPage() {
               subtitle="Manage your trips and track upcoming journeys between Aurora and Metro Manila."
             />
           </motion.div>
+
+          {tripCancelledAlerts.length > 0 && (
+            <motion.div variants={fadeInUp} className="space-y-3">
+              {tripCancelledAlerts.map((notification) => (
+                <div
+                  key={notification.id}
+                  className="rounded-2xl border border-[#f5c6a0] bg-[#fff8f2] px-5 py-4"
+                >
+                  <p className="text-[15px] font-semibold text-[#1d1d1f]">
+                    {notification.title}
+                  </p>
+                  <p className="mt-1 text-[14px] text-[#86868b]">
+                    {notification.body}
+                  </p>
+                  <Button
+                    variant="ghost"
+                    className="mt-2 h-8 px-0 text-[13px] text-[#0066cc] hover:bg-transparent hover:text-[#0077ed]"
+                    disabled={markReadMutation.isPending}
+                    onClick={() => markReadMutation.mutate(notification.id)}
+                  >
+                    Dismiss
+                  </Button>
+                </div>
+              ))}
+            </motion.div>
+          )}
 
           {upcomingQuery.isLoading ? (
             <motion.p

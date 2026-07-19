@@ -96,7 +96,7 @@ export const ProfileModel = {
       await tx.booking.updateMany({
         where: {
           van: { driverId: id },
-          status: 'confirmed',
+          status: { in: ['pending', 'confirmed'] },
         },
         data: { status: 'cancelled' },
       })

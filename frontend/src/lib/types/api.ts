@@ -1,4 +1,9 @@
-export type BookingStatus = 'confirmed' | 'completed' | 'cancelled'
+export type BookingStatus =
+  | 'pending'
+  | 'confirmed'
+  | 'completed'
+  | 'cancelled'
+  | 'declined'
 
 export type UpcomingBooking = {
   id: string
@@ -13,7 +18,7 @@ export type UpcomingBooking = {
   route: string
   vehicle: string
   price: string
-  status: 'confirmed'
+  status: 'pending' | 'confirmed'
   canCancel: boolean
 }
 
@@ -29,7 +34,7 @@ export type HistoryBooking = {
   date: string
   route: string
   tripType: string
-  status: 'completed' | 'cancelled'
+  status: 'completed' | 'cancelled' | 'declined'
   price: string
 }
 
@@ -45,6 +50,7 @@ export type CreatedBooking = {
   vehicle: string
   operator: string
   price: string
+  status: 'pending'
 }
 
 export type PackageType =

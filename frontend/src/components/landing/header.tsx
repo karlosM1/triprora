@@ -14,6 +14,7 @@ import {
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 import heroLogo from "@/assets/crabr-logo.png";
+import { NotificationsBell } from "@/components/notifications/notifications-bell";
 
 const baseNavLinks = [
   { label: "Home", to: "/" as const, key: "home" },
@@ -79,7 +80,16 @@ export function Header({
   const showAdminPortal = profileReady && isAdmin;
 
   const navLinks = [
-    ...baseNavLinks,
+    ...baseNavLinks.filter((link) => {
+      // Drivers manage trips in the portal — hide passenger booking/delivery pages.
+      if (
+        isDriver &&
+        (link.key === "my-bookings" || link.key === "my-deliveries")
+      ) {
+        return false;
+      }
+      return true;
+    }),
     ...(showDriverPortal
       ? [
           {
@@ -121,7 +131,7 @@ export function Header({
       animate={isHero ? { y: 0, opacity: 1 } : undefined}
       transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
     >
-      <nav className="relative mx-auto flex h-11 max-w-245 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+      <nav className="relative mx-auto flex h-11 max-w-245 items-center gap-3 px-4 sm:px-6 lg:px-8">
         <div className="flex min-w-0 shrink-0 items-center">
           <Link
             to="/"
@@ -141,13 +151,13 @@ export function Header({
           </Link>
         </div>
 
-        <ul className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-0 md:flex lg:gap-0.5">
+        <ul className="hidden min-w-0 flex-1 items-center justify-center gap-0 overflow-hidden md:flex lg:gap-0.5">
           {navLinks.map((link) => (
             <li key={link.key} className="shrink-0">
               <Link
                 to={link.to}
                 className={cn(
-                  "inline-flex h-8 items-center whitespace-nowrap rounded-md px-2 text-xs leading-none font-normal transition-colors lg:px-2.5 xl:px-3",
+                  "inline-flex h-8 items-center whitespace-nowrap rounded-md px-1.5 text-xs leading-none font-normal transition-colors lg:px-2 xl:px-2.5",
                   !isHero &&
                     cn(
                       "text-[#1d1d1f]/80 hover:text-[#0066cc]",
@@ -178,6 +188,7 @@ export function Header({
             </HeroMuted>
           ) : user ? (
             <>
+              {profileReady && <NotificationsBell />}
               <Link
                 to="/profile"
                 className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-[#0071e3] text-[10px] leading-none font-semibold text-white ring-1 ring-black/5 transition-opacity hover:opacity-90"

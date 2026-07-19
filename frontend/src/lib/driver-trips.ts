@@ -37,6 +37,10 @@ export function canCompleteTrip(trip: DriverTrip) {
   return trip.status === 'published'
 }
 
+export function canCancelTrip(trip: DriverTrip) {
+  return trip.status === 'draft' || trip.status === 'published'
+}
+
 export function hasTripDeparted(trip: DriverTrip, now = new Date()) {
   const departure = new Date(`${trip.departureDate}T${trip.departureTime}`)
   return departure <= now

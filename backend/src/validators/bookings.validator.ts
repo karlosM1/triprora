@@ -1,5 +1,18 @@
 import { z } from 'zod'
 
+export const bookingIdParamSchema = z.object({
+  bookingId: z.string().trim().min(1),
+})
+
+export const declineBookingSchema = z.object({
+  reason: z
+    .string()
+    .trim()
+    .max(500)
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
+})
+
 export const createBookingSchema = z.object({
   vanId: z.string().trim().min(1),
   seat: z.string().trim().min(1).max(10),

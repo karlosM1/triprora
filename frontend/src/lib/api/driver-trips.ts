@@ -37,6 +37,9 @@ export type DriverTripPassenger = {
   email: string | null
   phone: string | null
   price: string | null
+  pickupAddress: string | null
+  dropoffAddress: string | null
+  status: 'pending' | 'confirmed'
   bookedAt: string
 }
 
@@ -123,6 +126,18 @@ export async function completeDriverTrip(tripId: string) {
   return data
 }
 
+export type CancelDriverTripResult = {
+  trip: DriverTrip
+  notifiedCount: number
+}
+
+export async function cancelDriverTrip(tripId: string) {
+  const { data } = await api.post<CancelDriverTripResult>(
+    `/driver/trips/${encodeURIComponent(tripId)}/cancel`,
+  )
+  return data
+}
+
 export async function acceptDriverDelivery(
   tripId: string,
   deliveryId: string,
@@ -138,6 +153,25 @@ export async function acceptDriverDelivery(
 export async function declineDriverDelivery(tripId: string, deliveryId: string) {
   const { data } = await api.post<DriverTripDelivery>(
     `/driver/trips/${encodeURIComponent(tripId)}/deliveries/${encodeURIComponent(deliveryId)}/decline`,
+  )
+  return data
+}
+
+export async function acceptDriverBooking(tripId: string, bookingId: string) {
+  const { data } = await api.post<DriverTripPassenger>(
+    `/driver/trips/${encodeURIComponent(tripId)}/bookings/${encodeURIComponent(bookingId)}/accept`,
+  )
+  return data
+}
+
+export async function declineDriverBooking(
+  tripId: string,
+  bookingId: string,
+  reason?: string,
+) {
+  const { data } = await api.post<DriverTripPassenger>(
+    `/driver/trips/${encodeURIComponent(tripId)}/bookings/${encodeURIComponent(bookingId)}/decline`,
+    reason?.trim() ? { reason: reason.trim() } : {},
   )
   return data
 }

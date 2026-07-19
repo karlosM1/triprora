@@ -16,6 +16,11 @@ import {
   upcomingDeliveriesQueryKey,
   upcomingDeliveriesQueryOptions,
 } from "@/lib/api/deliveries";
+import {
+  markNotificationRead,
+  notificationsQueryKey,
+  notificationsQueryOptions,
+} from "@/lib/api/notifications";
 import { fadeInUp, staggerContainer } from "@/lib/motion";
 import { queryClient } from "@/lib/query-client";
 import type { DeliveryListItem } from "@/lib/types/api";
@@ -26,6 +31,7 @@ export const Route = createFileRoute("/my-deliveries/")({
     // Warm the cache without blocking the route. Sections render independently.
     void queryClient.prefetchQuery(upcomingDeliveriesQueryOptions());
     void queryClient.prefetchQuery(historyDeliveriesQueryOptions());
+    void queryClient.prefetchQuery(notificationsQueryOptions());
   },
   component: MyDeliveriesPage,
 });
@@ -64,6 +70,7 @@ function MyDeliveriesPage() {
   const client = useQueryClient();
   const upcomingQuery = useQuery(upcomingDeliveriesQueryOptions());
   const historyQuery = useQuery(historyDeliveriesQueryOptions());
+  const notificationsQuery = useQuery(notificationsQueryOptions());
 
   const cancelMutation = useMutation({
     mutationFn: cancelDelivery,
@@ -73,8 +80,23 @@ function MyDeliveriesPage() {
     },
   });
 
+  const markReadMutation = useMutation({
+    mutationFn: markNotificationRead,
+    onSuccess: async () => {
+      await client.invalidateQueries({ queryKey: notificationsQueryKey });
+    },
+  });
+
   const upcoming = upcomingQuery.data ?? [];
   const history = historyQuery.data ?? [];
+  const deliveryCancelledAlerts = (
+    notificationsQuery.data?.notifications ?? []
+  ).filter(
+    (notification) =>
+      notification.type === "trip_cancelled" &&
+      !notification.readAt &&
+      notification.data?.kind === "delivery",
+  );
   const {
     pageItems: historyPage,
     currentPage: historyPageNumber,
@@ -107,6 +129,32 @@ function MyDeliveriesPage() {
               subtitle="Track package requests. Pay only after the driver accepts."
             />
           </motion.div>
+
+          {deliveryCancelledAlerts.length > 0 && (
+            <motion.div variants={fadeInUp} className="space-y-3">
+              {deliveryCancelledAlerts.map((notification) => (
+                <div
+                  key={notification.id}
+                  className="rounded-2xl border border-[#f5c6a0] bg-[#fff8f2] px-5 py-4"
+                >
+                  <p className="text-[15px] font-semibold text-[#1d1d1f]">
+                    {notification.title}
+                  </p>
+                  <p className="mt-1 text-[14px] text-[#86868b]">
+                    {notification.body}
+                  </p>
+                  <Button
+                    variant="ghost"
+                    className="mt-2 h-8 px-0 text-[13px] text-[#0066cc] hover:bg-transparent hover:text-[#0077ed]"
+                    disabled={markReadMutation.isPending}
+                    onClick={() => markReadMutation.mutate(notification.id)}
+                  >
+                    Dismiss
+                  </Button>
+                </div>
+              ))}
+            </motion.div>
+          )}
 
           <motion.section className="space-y-4" variants={fadeInUp}>
             <h2 className="text-[21px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">

@@ -76,3 +76,16 @@ export async function completeDriverTrip(req: Request, res: Response) {
 
   res.json(trip)
 }
+
+export async function cancelDriverTrip(req: Request, res: Response) {
+  const result = await VanModel.cancelDriverTrip(
+    req.params.tripId,
+    req.profile!.id,
+  )
+
+  if (!result) {
+    throw new AppError('Trip not found or cannot be cancelled', 404)
+  }
+
+  res.json(result)
+}

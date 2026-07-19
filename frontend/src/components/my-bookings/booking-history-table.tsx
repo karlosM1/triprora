@@ -99,9 +99,14 @@ function StatusBadge({ status }: { status: HistoryBooking['status'] }) {
         'inline-flex rounded-full px-3 py-1 text-[12px] font-medium',
         status === 'completed' && 'bg-[#f0fdf4] text-[#248a3d]',
         status === 'cancelled' && 'bg-[#fff2f2] text-[#bf4800]',
+        status === 'declined' && 'bg-[#fff2f2] text-[#bf4800]',
       )}
     >
-      {status === 'completed' ? 'Completed' : 'Cancelled'}
+      {status === 'completed'
+        ? 'Completed'
+        : status === 'declined'
+          ? 'Declined'
+          : 'Cancelled'}
     </span>
   )
 }

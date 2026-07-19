@@ -42,3 +42,22 @@ export async function cancelBooking(req: Request, res: Response) {
 
   res.json(booking)
 }
+
+export async function acceptDriverBooking(req: Request, res: Response) {
+  const passenger = await BookingModel.acceptByDriver(
+    req.params.tripId,
+    req.params.bookingId,
+    req.profile!.id,
+  )
+  res.json(passenger)
+}
+
+export async function declineDriverBooking(req: Request, res: Response) {
+  const passenger = await BookingModel.declineByDriver(
+    req.params.tripId,
+    req.params.bookingId,
+    req.profile!.id,
+    req.body.reason,
+  )
+  res.json(passenger)
+}

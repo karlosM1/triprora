@@ -22,7 +22,7 @@ import { loadVanBooking, vanBookingQueryKey, vanBookingQueryOptions } from '@/li
 import { vansQueryKey } from '@/lib/api/vans'
 import type { PassengerDetails } from '@/lib/booking'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
-import { requireAuth } from '@/lib/route-guards'
+import { requirePassenger } from '@/lib/route-guards'
 
 export const Route = createFileRoute('/book/$vanId/checkout')({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -33,7 +33,7 @@ export const Route = createFileRoute('/book/$vanId/checkout')({
   beforeLoad: async ({ params, search }) => {
     const pickup = (search.pickupAddress as string) || ''
     const dropoff = (search.dropoffAddress as string) || ''
-    await requireAuth(
+    await requirePassenger(
       `/book/${params.vanId}/checkout?seat=${search.seat ?? '1A'}&pickupAddress=${encodeURIComponent(pickup)}&dropoffAddress=${encodeURIComponent(dropoff)}`,
     )
   },
@@ -199,9 +199,9 @@ function CheckoutPage() {
                   disabled={bookingMutation.isPending || !paymentReady}
                 >
                   {bookingMutation.isPending
-                    ? 'Processing…'
+                    ? 'Sending request…'
                     : paymentReady
-                      ? 'Complete booking'
+                      ? 'Request seat approval'
                       : 'Confirm cash payment…'}
                   <ArrowRight className="size-4" />
                 </Button>

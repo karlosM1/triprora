@@ -4,6 +4,7 @@ import {
   submitDriverApplication,
 } from '../controllers/driver-applications.controller.js'
 import {
+  cancelDriverTrip,
   completeDriverTrip,
   createDriverTrip,
   getDriverTripById,
@@ -14,6 +15,10 @@ import {
   acceptDriverDelivery,
   declineDriverDelivery,
 } from '../controllers/deliveries.controller.js'
+import {
+  acceptDriverBooking,
+  declineDriverBooking,
+} from '../controllers/bookings.controller.js'
 import {
   getDriverWallet,
   getDriverWalletHistory,
@@ -26,6 +31,7 @@ import { authenticate, requireRole } from '../middleware/auth.middleware.js'
 import { validateRequest } from '../middleware/validate-request.middleware.js'
 import { submitDriverApplicationSchema } from '../validators/driver-applications.validator.js'
 import { deliveryIdParamSchema, acceptDeliverySchema } from '../validators/deliveries.validator.js'
+import { bookingIdParamSchema, declineBookingSchema } from '../validators/bookings.validator.js'
 import {
   createDriverTripSchema,
   driverTripIdParamSchema,
@@ -92,6 +98,35 @@ driverRouter.post(
   requireRole('driver'),
   validateRequest({ params: driverTripIdParamSchema }),
   asyncHandler(completeDriverTrip),
+)
+
+driverRouter.post(
+  '/trips/:tripId/cancel',
+  authenticate,
+  requireRole('driver'),
+  validateRequest({ params: driverTripIdParamSchema }),
+  asyncHandler(cancelDriverTrip),
+)
+
+driverRouter.post(
+  '/trips/:tripId/bookings/:bookingId/accept',
+  authenticate,
+  requireRole('driver'),
+  validateRequest({
+    params: driverTripIdParamSchema.merge(bookingIdParamSchema),
+  }),
+  asyncHandler(acceptDriverBooking),
+)
+
+driverRouter.post(
+  '/trips/:tripId/bookings/:bookingId/decline',
+  authenticate,
+  requireRole('driver'),
+  validateRequest({
+    params: driverTripIdParamSchema.merge(bookingIdParamSchema),
+    body: declineBookingSchema,
+  }),
+  asyncHandler(declineDriverBooking),
 )
 
 driverRouter.post(
