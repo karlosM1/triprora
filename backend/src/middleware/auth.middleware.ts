@@ -30,7 +30,9 @@ export async function authenticate(
       return
     }
 
-    const profile = await ProfileModel.ensureProfile(user.id, user.email)
+    const profile = await ProfileModel.resolveForAuth(user.id, user.email, {
+      authCreatedAt: user.created_at,
+    })
 
     if (profile.isBanned) {
       next(

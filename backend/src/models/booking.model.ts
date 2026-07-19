@@ -153,39 +153,6 @@ export const BookingModel = {
       const presented = presentVan(van)
       const fare = calculateTotal(van.price)
 
-      let existingPaymentId: string | null = null
-
-      if (input.paymentMethod === 'qrph') {
-        if (!input.paymentIntentId) {
-          throw new AppError('paymentIntentId is required for QR Ph payments', 400)
-        }
-
-        const payment = await tx.payment.findFirst({
-          where: {
-            providerIntentId: input.paymentIntentId,
-            userId: input.userId,
-          },
-        })
-
-        if (!payment) {
-          throw new AppError('Payment not found', 404)
-        }
-
-        if (payment.bookingId || payment.deliveryId) {
-          throw new AppError('This payment has already been used', 409)
-        }
-
-        if (payment.status !== 'succeeded') {
-          throw new AppError('Payment is not completed yet', 402)
-        }
-
-        if (payment.amount !== fare.total) {
-          throw new AppError('Payment amount does not match booking total', 400)
-        }
-
-        existingPaymentId = payment.id
-      }
-
       const reference = createReference()
       const routeLabel = `${presented.departureLocation} → ${presented.arrivalLocation}`
       const vehicleLabel = presented.vehicleName ?? presented.operator
@@ -233,33 +200,17 @@ export const BookingModel = {
         include: { snapshot: true },
       })
 
-      if (existingPaymentId) {
-        const claimed = await tx.payment.updateMany({
-          where: {
-            id: existingPaymentId,
-            bookingId: null,
-            deliveryId: null,
-            status: 'succeeded',
-          },
-          data: { bookingId: booking.id },
-        })
-
-        if (claimed.count !== 1) {
-          throw new AppError('This payment has already been used', 409)
-        }
-      } else {
-        await tx.payment.create({
-          data: {
-            userId: input.userId,
-            bookingId: booking.id,
-            provider: 'cash',
-            providerIntentId: `cash_${booking.id}`,
-            amount: fare.total,
-            currency: 'PHP',
-            status: 'pending',
-          },
-        })
-      }
+      await tx.payment.create({
+        data: {
+          userId: input.userId,
+          bookingId: booking.id,
+          provider: 'cash',
+          providerIntentId: `cash_${booking.id}`,
+          amount: fare.total,
+          currency: 'PHP',
+          status: 'pending',
+        },
+      })
 
       return {
         id: booking.id,

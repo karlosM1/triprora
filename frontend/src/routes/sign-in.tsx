@@ -16,31 +16,54 @@ import { cn } from '@/lib/utils'
 
 type SignInSearch = {
   redirect?: string
+  error?: string
 }
 
 export const Route = createFileRoute('/sign-in')({
   validateSearch: (search: Record<string, unknown>): SignInSearch => ({
     redirect: typeof search.redirect === 'string' ? search.redirect : undefined,
+    error: typeof search.error === 'string' ? search.error : undefined,
   }),
   beforeLoad: async ({ search }) => {
     const session = await resolveSession()
+    if (!session) return
 
-    if (session) {
-      throw redirect({ to: search.redirect ?? '/my-bookings' })
+    try {
+      const { fetchProfile, profileQueryKey } = await import('@/lib/api/profile')
+      const { queryClient } = await import('@/lib/query-client')
+      await queryClient.fetchQuery({
+        queryKey: profileQueryKey(session.user.id),
+        queryFn: fetchProfile,
+        staleTime: 0,
+      })
+    } catch {
+      const { supabase } = await import('@/lib/supabase')
+      const { setCachedSession } = await import('@/lib/auth-session')
+      const { queryClient } = await import('@/lib/query-client')
+      setCachedSession(null)
+      queryClient.removeQueries({ queryKey: ['profile'] })
+      await supabase.auth.signOut()
+      return
     }
+
+    throw redirect({ to: search.redirect ?? '/my-bookings' })
   },
   component: SignInPage,
 })
 
 function SignInPage() {
-  const { redirect } = Route.useSearch()
+  const { redirect, error: searchError } = Route.useSearch()
   const navigate = useNavigate()
   const { signIn, signInWithGoogle, resetPassword, refreshProfile } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(true)
   const [showForgotPassword, setShowForgotPassword] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(
+    searchError === 'account-removed'
+      ? 'This account no longer exists. It was removed and cannot sign in.'
+      : null,
+  )
   const [success, setSuccess] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)

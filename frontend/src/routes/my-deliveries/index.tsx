@@ -57,9 +57,6 @@ function paymentMethodLabel(delivery: DeliveryListItem) {
   if (delivery.paymentMethod === "cash") {
     return delivery.isPaid ? "Cash (collected)" : "Cash on trip";
   }
-  if (delivery.paymentMethod === "qrph") {
-    return delivery.isPaid ? "QR Ph (paid)" : "QR Ph";
-  }
   return null;
 }
 

@@ -94,12 +94,9 @@ function paymentFields(payment: { provider: string; status: string } | null | un
     return { paymentMethod: null, isPaid: false }
   }
 
-  const paymentMethod: PaymentMethod =
-    payment.provider === 'cash' ? 'cash' : 'qrph'
-
   return {
-    paymentMethod,
-    // Cash stays unpaid until collected on the trip; only succeeded QR counts as paid.
+    paymentMethod: 'cash',
+    // Cash stays unpaid until collected on the trip.
     isPaid: payment.status === 'succeeded',
   }
 }
@@ -328,66 +325,18 @@ export const DeliveryModel = {
       }
 
       const fareTotal = Math.round(delivery.snapshot.totalCents / 100)
-      let existingPaymentId: string | null = null
 
-      if (input.paymentMethod === 'qrph') {
-        if (!input.paymentIntentId) {
-          throw new AppError('paymentIntentId is required for QR Ph payments', 400)
-        }
-
-        const payment = await tx.payment.findFirst({
-          where: {
-            providerIntentId: input.paymentIntentId,
-            userId: input.userId,
-          },
-        })
-
-        if (!payment) {
-          throw new AppError('Payment not found', 404)
-        }
-
-        if (payment.bookingId || payment.deliveryId) {
-          throw new AppError('This payment has already been used', 409)
-        }
-
-        if (payment.status !== 'succeeded') {
-          throw new AppError('Payment is not completed yet', 402)
-        }
-
-        if (payment.amount !== fareTotal) {
-          throw new AppError('Payment amount does not match delivery total', 400)
-        }
-
-        existingPaymentId = payment.id
-      }
-
-      if (existingPaymentId) {
-        const claimed = await tx.payment.updateMany({
-          where: {
-            id: existingPaymentId,
-            bookingId: null,
-            deliveryId: null,
-            status: 'succeeded',
-          },
-          data: { deliveryId: delivery.id },
-        })
-
-        if (claimed.count !== 1) {
-          throw new AppError('This payment has already been used', 409)
-        }
-      } else {
-        await tx.payment.create({
-          data: {
-            userId: input.userId,
-            deliveryId: delivery.id,
-            provider: 'cash',
-            providerIntentId: `cash_${delivery.id}`,
-            amount: fareTotal,
-            currency: 'PHP',
-            status: 'pending',
-          },
-        })
-      }
+      await tx.payment.create({
+        data: {
+          userId: input.userId,
+          deliveryId: delivery.id,
+          provider: 'cash',
+          providerIntentId: `cash_${delivery.id}`,
+          amount: fareTotal,
+          currency: 'PHP',
+          status: 'pending',
+        },
+      })
 
       const updated = await tx.delivery.update({
         where: { id: delivery.id },
@@ -397,8 +346,8 @@ export const DeliveryModel = {
 
       const presented = presentVan(updated.van!)
       const { paymentMethod, isPaid } = paymentFields({
-        provider: input.paymentMethod === 'cash' ? 'cash' : 'qrph',
-        status: input.paymentMethod === 'cash' ? 'pending' : 'succeeded',
+        provider: 'cash',
+        status: 'pending',
       })
 
       return {

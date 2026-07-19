@@ -18,7 +18,7 @@ export const Route = createFileRoute('/book/$vanId/confirmation')({
     ref: (search.ref as string) || '',
     pickupAddress: (search.pickupAddress as string) || '',
     dropoffAddress: (search.dropoffAddress as string) || '',
-    paymentMethod: search.paymentMethod === 'cash' ? 'cash' : 'qrph',
+    paymentMethod: 'cash' as const,
   }),
   loader: async ({ params }) => {
     return loadVanBooking(params.vanId)
@@ -37,7 +37,7 @@ function formatTripDate(departureDate?: string) {
 
 function ConfirmationPage() {
   const { vanId } = Route.useParams()
-  const { seat, name, ref, pickupAddress, dropoffAddress, paymentMethod } =
+  const { seat, name, ref, pickupAddress, dropoffAddress } =
     Route.useSearch()
   const bookingQuery = useQuery(vanBookingQueryOptions(vanId))
   const { van } = bookingQuery.data!
@@ -45,7 +45,6 @@ function ConfirmationPage() {
   const { total } = calculateTotals(van.price)
   const tripDate = formatTripDate(van.departureDate)
   const driver = van.driver
-  const isCash = paymentMethod === 'cash'
 
   return (
     <div className="app-page min-h-svh bg-[#f5f5f7]">
@@ -94,11 +93,11 @@ function ConfirmationPage() {
                 {van.plateNumber && <Row label="Plate no." value={van.plateNumber} />}
                 <Row label="Vehicle" value={van.vehicleName ?? 'Van'} />
                 <Row
-                  label={isCash ? 'Amount due' : 'Total paid'}
+                  label="Amount due"
                   value={`₱${total.toLocaleString()}`}
                   highlight
                 />
-                {isCash && <Row label="Payment" value="Cash on trip" />}
+                <Row label="Payment" value="Cash on trip" />
               </dl>
             </AppleCard>
           </motion.div>
@@ -107,9 +106,8 @@ function ConfirmationPage() {
             variants={fadeInUp}
             className="text-center text-[13px] leading-relaxed text-[#86868b]"
           >
-            {isCash
-              ? 'Pay cash to your driver on trip day. Your driver will contact you before departure to confirm pickup details.'
-              : 'Your driver will contact you before departure to confirm your exact pickup time and location.'}
+            Pay cash to your driver on trip day. Your driver will contact you before
+            departure to confirm pickup details.
           </motion.p>
 
           <motion.div

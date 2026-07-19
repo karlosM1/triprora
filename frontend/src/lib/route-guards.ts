@@ -1,10 +1,18 @@
 import { redirect } from '@tanstack/react-router'
+import { isAxiosError } from 'axios'
 import { fetchProfile, profileQueryKey } from '@/lib/api/profile'
-import { resolveSession } from '@/lib/auth-session'
+import { resolveSession, setCachedSession } from '@/lib/auth-session'
 import { queryClient } from '@/lib/query-client'
+import { supabase } from '@/lib/supabase'
 import type { Role } from '@/lib/types/profile'
 
 const PROFILE_STALE_TIME = 1000 * 60 * 5
+
+async function forceSignOut() {
+  setCachedSession(null)
+  queryClient.removeQueries({ queryKey: ['profile'] })
+  await supabase.auth.signOut()
+}
 
 export async function requireAuth(redirectTo: string) {
   const session = await resolveSession()
@@ -16,18 +24,38 @@ export async function requireAuth(redirectTo: string) {
     })
   }
 
+  try {
+    await queryClient.ensureQueryData({
+      queryKey: profileQueryKey(session.user.id),
+      queryFn: fetchProfile,
+      staleTime: PROFILE_STALE_TIME,
+    })
+  } catch (error) {
+    await forceSignOut()
+
+    const removed =
+      isAxiosError(error) &&
+      (error.response?.status === 401 || error.response?.status === 403)
+
+    throw redirect({
+      to: '/sign-in',
+      search: {
+        redirect: redirectTo,
+        ...(removed ? { error: 'account-removed' } : {}),
+      },
+    })
+  }
+
   return session
 }
 
 export async function requireRole(redirectTo: string, ...roles: Role[]) {
   const session = await requireAuth(redirectTo)
-  const profile = await queryClient.ensureQueryData({
-    queryKey: profileQueryKey(session.user.id),
-    queryFn: fetchProfile,
-    staleTime: PROFILE_STALE_TIME,
-  })
+  const profile = queryClient.getQueryData(
+    profileQueryKey(session.user.id),
+  ) as { role: Role } | undefined
 
-  if (!roles.includes(profile.role)) {
+  if (!profile || !roles.includes(profile.role)) {
     throw redirect({ to: '/my-bookings' })
   }
 

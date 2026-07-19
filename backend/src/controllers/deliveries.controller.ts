@@ -1,8 +1,5 @@
 import type { Request, Response } from 'express'
-import { syncPaymentStatus } from '../lib/paymongo.js'
 import { DeliveryModel } from '../models/delivery.model.js'
-import type { PaymentMethod } from '../models/delivery.types.js'
-import { AppError } from '../utils/app-error.js'
 
 export async function createDelivery(req: Request, res: Response) {
   const delivery = await DeliveryModel.create({
@@ -23,30 +20,10 @@ export async function createDelivery(req: Request, res: Response) {
 }
 
 export async function payDelivery(req: Request, res: Response) {
-  const profile = req.profile!
-  const paymentMethod = (req.body.paymentMethod as PaymentMethod) ?? 'qrph'
-  const paymentIntentId = req.body.paymentIntentId as string | undefined
-
-  if (paymentMethod === 'qrph') {
-    if (!paymentIntentId) {
-      throw new AppError('paymentIntentId is required for QR Ph payments', 400)
-    }
-
-    const payment = await syncPaymentStatus(profile.id, paymentIntentId)
-
-    if (payment.status !== 'succeeded') {
-      throw new AppError(
-        'Payment is not completed yet. Please finish paying via QR Ph.',
-        402,
-      )
-    }
-  }
-
   const delivery = await DeliveryModel.pay({
-    userId: profile.id,
+    userId: req.profile!.id,
     deliveryId: req.params.deliveryId,
-    paymentMethod,
-    paymentIntentId,
+    paymentMethod: 'cash',
   })
 
   res.json(delivery)

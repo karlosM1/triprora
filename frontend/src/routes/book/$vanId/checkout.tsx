@@ -9,7 +9,6 @@ import { CheckoutSummary } from '@/components/booking/checkout-summary'
 import { PassengerForm } from '@/components/booking/passenger-form'
 import {
   PaymentForm,
-  type CheckoutPaymentMethod,
 } from '@/components/booking/payment-form'
 import { PageHeader } from '@/components/layout/page-header'
 import { Header } from '@/components/landing/header'
@@ -62,28 +61,19 @@ function CheckoutPage() {
   const [passenger, setPassenger] = useState<PassengerDetails>(emptyPassenger)
   const [checkoutStep, setCheckoutStep] = useState<1 | 2>(1)
   const [error, setError] = useState<string | null>(null)
-  const [paymentMethod, setPaymentMethod] = useState<CheckoutPaymentMethod>('qrph')
-  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null)
   const [paymentReady, setPaymentReady] = useState(false)
 
   const addresses = { pickupAddress, dropoffAddress }
 
   const bookingMutation = useMutation({
-    mutationFn: () => {
-      if (paymentMethod === 'qrph' && !paymentIntentId) {
-        throw new Error('Payment is required before completing booking.')
-      }
-      return createBooking({
+    mutationFn: () =>
+      createBooking({
         vanId,
         seat,
         pickupAddress,
         dropoffAddress,
-        paymentMethod,
-        ...(paymentMethod === 'qrph' && paymentIntentId
-          ? { paymentIntentId }
-          : {}),
-      })
-    },
+        paymentMethod: 'cash',
+      }),
     onSuccess: (booking) => {
       queryClient.invalidateQueries({ queryKey: upcomingBookingQueryKey })
       queryClient.invalidateQueries({ queryKey: bookingHistoryQueryKey })
@@ -99,7 +89,7 @@ function CheckoutPage() {
           ref: booking.reference,
           pickupAddress,
           dropoffAddress,
-          paymentMethod,
+          paymentMethod: 'cash',
         },
       })
     },
@@ -116,15 +106,7 @@ function CheckoutPage() {
 
   function handleCompleteBooking() {
     if (!paymentReady) {
-      setError(
-        paymentMethod === 'cash'
-          ? 'Please select cash payment before continuing.'
-          : 'Please complete QR Ph payment before continuing.',
-      )
-      return
-    }
-    if (paymentMethod === 'qrph' && !paymentIntentId) {
-      setError('Please complete QR Ph payment before continuing.')
+      setError('Please confirm cash payment before continuing.')
       return
     }
     setError(null)
@@ -190,13 +172,7 @@ function CheckoutPage() {
               {checkoutStep === 2 && (
                 <PaymentForm
                   baseFare={van.price}
-                  onPaymentChange={({
-                    paymentMethod: method,
-                    paymentIntentId: id,
-                    ready,
-                  }) => {
-                    setPaymentMethod(method)
-                    setPaymentIntentId(id)
+                  onPaymentChange={({ ready }) => {
                     setPaymentReady(ready)
                   }}
                 />
@@ -226,7 +202,7 @@ function CheckoutPage() {
                     ? 'Processing…'
                     : paymentReady
                       ? 'Complete booking'
-                      : 'Waiting for payment…'}
+                      : 'Confirm cash payment…'}
                   <ArrowRight className="size-4" />
                 </Button>
               )}

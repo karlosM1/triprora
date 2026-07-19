@@ -1,15 +1,15 @@
 # Crabr
 
-Door-to-door van booking platform for travel between Aurora Province and Metro Manila, Philippines. Passengers search routes, pick seats, and pay online or in cash; drivers register, publish trips, and manage earnings; admins review applications and oversee wallets and operations.
+Door-to-door van booking platform for travel between Aurora Province and Metro Manila, Philippines. Passengers search routes, pick seats, and pay in cash; drivers register, publish trips, and manage earnings; admins review applications and oversee wallets and operations.
 
 > Monorepo package name: `triprora` (npm workspaces). Product brand: **Crabr**.
 
 ## Features
 
-- **Passengers:** Search vans by route and date, select seats, checkout with QR Ph or cash, manage bookings, and save destination addresses
+- **Passengers:** Search vans by route and date, select seats, checkout with cash, manage bookings, and save destination addresses
 - **Drivers:** Multi-step registration with document uploads, trip creation and editing, trip completion, and wallet balance with payouts
 - **Admins:** Dashboard stats, trip and booking management, user listing, driver application review, and wallet / settlement / payout oversight
-- **Payments:** PayMongo QR Ph for cashless checkout; cash bookings with platform commission tracking
+- **Payments:** Cash checkout; platform commission tracked on the driver wallet
 - **Schedules:** Browse frequent routes and network monitoring views
 - **Account:** Profile management, privacy policy, and terms of service
 
@@ -21,7 +21,7 @@ Door-to-door van booking platform for travel between Aurora Province and Metro M
 | Backend | Express, Prisma, Zod |
 | Database | PostgreSQL (Supabase or local Docker) |
 | Auth | Supabase Auth (JWT verified by the API) |
-| Payments | PayMongo (QR Ph) |
+| Payments | Cash (platform commission via driver wallet) |
 | Storage | Supabase Storage (driver documents) |
 
 ## Project structure
@@ -39,7 +39,6 @@ triprora/
 - [Node.js](https://nodejs.org/) 22+
 - [npm](https://www.npmjs.com/) 10+
 - A [Supabase](https://supabase.com/) project (for authentication and storage)
-- A [PayMongo](https://www.paymongo.com/) account (for QR Ph payments)
 - PostgreSQL, either Supabase hosted or local via Docker
 
 ## Getting started
@@ -69,7 +68,6 @@ cp frontend/.env.example frontend/.env
 | `ADMIN_EMAIL` | Email that receives the `admin` role on sign-up |
 | `DATABASE_URL` | Postgres connection string (transaction pooler, port 6543 for Supabase) |
 | `DIRECT_URL` | Direct Postgres connection (migrations / `db push`, port 5432) |
-| `PAYMONGO_SECRET_KEY` | PayMongo secret key (`sk_test_...` or `sk_live_...`) |
 
 **Frontend** (`frontend/.env`):
 
@@ -117,7 +115,17 @@ npm run storage:setup -w backend
 
 Or execute `backend/supabase/driver-documents-storage.sql` manually.
 
-### 5. Run the app
+### 5. Auth profile sync
+
+New Auth users need a matching `profiles` row. Install the trigger once:
+
+```bash
+npm run auth:setup -w backend
+```
+
+Or execute `backend/supabase/handle-new-user.sql` manually. Deleting a profile no longer recreates it on login; orphaned Auth users are removed on the next request.
+
+### 6. Run the app
 
 Start both frontend and backend:
 
@@ -144,7 +152,7 @@ The Vite dev server proxies `/api` requests to `http://localhost:3001` (override
 
 Compose runs a local **development** stack (Postgres, Express with `tsx watch`, Vite with HMR). Source under `backend/src`, `backend/prisma`, and `frontend/src` is bind-mounted so edits hot-reload inside the containers.
 
-Copy env files first (`backend/.env`, `frontend/.env`). Supabase Auth and PayMongo keys are still required. Compose overrides `DATABASE_URL` / `DIRECT_URL` to the in-compose Postgres service.
+Copy env files first (`backend/.env`, `frontend/.env`). Supabase Auth keys are still required. Compose overrides `DATABASE_URL` / `DIRECT_URL` to the in-compose Postgres service.
 
 Run the full stack:
 
@@ -190,7 +198,6 @@ All routes are prefixed with `/api`.
 | `/vans` | None | Search and list van trips |
 | `/schedules` | None | Route schedules and frequent routes |
 | `/bookings` | User | Create and manage bookings |
-| `/payments` | User | QR Ph payment intents and status |
 | `/me` | User | Profile, account, and destination addresses |
 | `/driver/*` | Driver / Passenger | Registration, trips, and wallet |
 | `/admin/*` | Admin | Stats, users, bookings, drivers, wallets, settlements, payouts |
@@ -201,7 +208,7 @@ Authentication uses Supabase JWTs sent as `Authorization: Bearer <token>`.
 
 | Role | Capabilities |
 | --- | --- |
-| `passenger` | Search, book (QR Ph or cash), manage bookings and destinations; submit driver application |
+| `passenger` | Search, book with cash, manage bookings and destinations; submit driver application |
 | `driver` | Create and manage trips; complete rides; view wallet and request payouts |
 | `admin` | Full admin panel; review driver applications; settle wallets and approve payouts |
 

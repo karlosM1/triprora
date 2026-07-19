@@ -72,27 +72,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: profileQueryKey(userId),
     queryFn: fetchProfile,
     enabled: Boolean(userId),
-    retry: 1,
+    retry: false,
     staleTime: PROFILE_STALE_TIME,
-    placeholderData: (previousData) => previousData,
   })
 
   useEffect(() => {
     if (!profileQuery.isError || !userId) return
 
     const error = profileQuery.error
-    const message = isAxiosError(error)
-      ? String(error.response?.data?.message ?? '')
-      : ''
-
-    if (
-      error &&
-      isAxiosError(error) &&
-      error.response?.status === 403 &&
-      message.toLowerCase().includes('banned')
-    ) {
+    if (!isAxiosError(error)) {
       void supabase.auth.signOut()
       queryClient.removeQueries({ queryKey: ['profile'] })
+      return
+    }
+
+    const status = error.response?.status
+    // Any failed profile load with a session means the account is unusable.
+    if (status === 401 || status === 403 || status === 404) {
+      void supabase.auth.signOut()
+      queryClient.removeQueries({ queryKey: ['profile'] })
+      setCachedSession(null)
+      setSession(null)
     }
   }, [profileQuery.isError, profileQuery.error, userId, queryClient])
 
@@ -130,10 +130,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearRememberedEmail()
       }
 
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      return { error: error?.message ?? null }
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      if (error) {
+        return { error: error.message }
+      }
+
+      // Auth can succeed even after the app profile was deleted. Confirm the
+      // profile still exists before treating login as successful.
+      try {
+        await fetchProfile()
+      } catch (profileError) {
+        await supabase.auth.signOut()
+        queryClient.removeQueries({ queryKey: ['profile'] })
+
+        if (
+          isAxiosError(profileError) &&
+          profileError.response?.status === 401
+        ) {
+          return {
+            error:
+              'This account no longer exists. It may have been removed by an administrator.',
+          }
+        }
+
+        return {
+          error: 'Signed in, but your account profile could not be loaded.',
+        }
+      }
+
+      if (data.session) {
+        setCachedSession(data.session)
+        setSession(data.session)
+      }
+
+      return { error: null }
     },
-    [],
+    [queryClient],
   )
 
   const signUp = useCallback(

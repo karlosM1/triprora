@@ -18,7 +18,7 @@ export type DeliveryStatus =
   | 'declined'
   | 'cancelled'
 
-export type PaymentMethod = 'qrph' | 'cash'
+export type PaymentMethod = 'cash'
 
 export type CreateDeliveryInput = {
   userId: string
@@ -38,7 +38,6 @@ export type PayDeliveryInput = {
   userId: string
   deliveryId: string
   paymentMethod: PaymentMethod
-  paymentIntentId?: string
 }
 
 export type CreatedDelivery = {

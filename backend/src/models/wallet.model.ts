@@ -236,40 +236,7 @@ export async function postBookingSettlement(
 
   const commissionPesos = commissionFromBase(baseFarePesos)
 
-  let amountPesos: number
-  let earningsPesos: number
-  let type: 'cash_commission' | 'cashless_earnings'
-  let reason: string
-
-  if (payment.provider === 'cash') {
-    // Driver collected the base fare in cash; platform is owed commission.
-    amountPesos = -commissionPesos
-    earningsPesos = earningsFromBase(baseFarePesos)
-    type = 'cash_commission'
-    reason = 'Platform commission owed'
-  } else if (payment.provider === 'paymongo') {
-    if (payment.status !== 'succeeded') {
-      const wallet = await ensureWallet(tx, driverId)
-      await writeAudit(tx, {
-        walletId: wallet.id,
-        actorProfileId: actorProfileId ?? driverId,
-        action: 'booking_settlement_skipped',
-        entityType: 'Booking',
-        entityId: booking.id,
-        metadata: {
-          reason: 'paymongo_not_succeeded',
-          status: payment.status,
-        },
-      })
-      return null
-    }
-    // Platform already collected base + service fee from the passenger;
-    // remit the full base fare to the driver (fee stays with the platform).
-    amountPesos = baseFarePesos
-    earningsPesos = baseFarePesos
-    type = 'cashless_earnings'
-    reason = 'Cashless earnings'
-  } else {
+  if (payment.provider !== 'cash') {
     const wallet = await ensureWallet(tx, driverId)
     await writeAudit(tx, {
       walletId: wallet.id,
@@ -281,6 +248,12 @@ export async function postBookingSettlement(
     })
     return null
   }
+
+  // Driver collected the base fare in cash; platform is owed commission.
+  const amountPesos = -commissionPesos
+  const earningsPesos = earningsFromBase(baseFarePesos)
+  const type = 'cash_commission' as const
+  const reason = 'Platform commission owed'
 
   const wallet = await ensureWallet(tx, driverId)
   const beforeBalance = wallet.balancePesos

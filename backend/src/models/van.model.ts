@@ -159,11 +159,23 @@ async function resolveDriverVehicleId(tx: Prisma.TransactionClient, driverId: st
     orderBy: { id: 'asc' },
   })
 
-  if (!vehicle) {
-    throw new AppError('No registered vehicle found for this driver', 400)
+  if (vehicle) return vehicle.id
+
+  const application = await tx.driverApplication.findUnique({
+    where: { profileId: driverId },
+    select: { vehicleId: true, status: true },
+  })
+
+  if (application?.vehicleId) {
+    return application.vehicleId
   }
 
-  return vehicle.id
+  throw new AppError(
+    application?.status === 'approved'
+      ? 'No registered vehicle found for this driver. Contact support to re-link your vehicle.'
+      : 'No registered vehicle found for this driver. Complete and get your driver application approved first.',
+    400,
+  )
 }
 
 function locationContainsFilter(

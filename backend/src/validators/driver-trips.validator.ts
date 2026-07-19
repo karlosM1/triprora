@@ -5,12 +5,18 @@ const driverTripBodySchema = z.object({
   arrivalLocation: z.string().trim().min(2).max(200),
   departureDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   departureTime: z.string().regex(/^\d{2}:\d{2}$/),
-  durationHours: z.number().min(1).max(24),
+  durationHours: z.coerce.number().min(1).max(24),
   tripCategory: z.enum(['express', 'business', 'standard']),
   vehicleName: z.string().trim().min(2).max(200),
-  plateNumber: z.string().trim().min(2).max(20).optional(),
-  price: z.number().int().positive().max(1_000_000),
-  totalSeats: z.number().int().min(1).max(18),
+  plateNumber: z
+    .string()
+    .trim()
+    .min(2)
+    .max(20)
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
+  price: z.coerce.number().int().positive().max(1_000_000),
+  totalSeats: z.coerce.number().int().min(1).max(14),
   status: z.enum(['draft', 'published']).default('published'),
 })
 

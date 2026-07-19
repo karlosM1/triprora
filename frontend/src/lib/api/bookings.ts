@@ -12,8 +12,7 @@ export type CreateBookingInput = {
   seat: string
   pickupAddress: string
   dropoffAddress: string
-  paymentMethod: 'qrph' | 'cash'
-  paymentIntentId?: string
+  paymentMethod: 'cash'
 }
 
 export async function createBooking(input: CreateBookingInput) {

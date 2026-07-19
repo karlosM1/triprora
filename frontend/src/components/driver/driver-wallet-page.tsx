@@ -38,9 +38,9 @@ function balanceLabel(meaning: string, balance: number) {
 function ledgerTypeLabel(type: string) {
   switch (type) {
     case 'cash_commission':
-      return 'Cash commission'
+      return 'Platform fee owed'
     case 'cashless_earnings':
-      return 'Cashless earnings'
+      return 'Legacy cashless earnings'
     case 'payout':
       return 'Payout'
     case 'settlement_adjustment':
@@ -115,7 +115,7 @@ export function DriverWalletPage() {
         <PageHeader
           eyebrow="Driver portal"
           title="Wallet."
-          subtitle="Your balance is the source of truth for commissions, cashless earnings, and payouts."
+          subtitle="Your balance shows platform fees owed from cash trips, and any payouts."
         />
       </motion.div>
 
@@ -140,8 +140,8 @@ export function DriverWalletPage() {
               : 'Loading balance…'}
           </p>
           <p className="mt-3 text-[12px] text-[#86868b]">
-            Entries post when you complete a trip. Cash bookings debit commission;
-            cashless bookings credit your earnings.
+            Entries post when you complete a trip. Cash bookings debit the 4%
+            platform fee you owe Crabr.
           </p>
         </AppleCard>
 
@@ -201,7 +201,7 @@ export function DriverWalletPage() {
 
       <motion.div variants={fadeInUp} className="grid gap-8 lg:grid-cols-2">
         <div>
-          <SectionTitle title="Daily settlements" subtitle="Snapshots of cash vs cashless activity." />
+          <SectionTitle title="Daily settlements" subtitle="Snapshots of cash commissions owed to the platform." />
           <div className="mt-4 space-y-3">
             {(settlementsQuery.data ?? []).length === 0 ? (
               <AppleCard className="border border-dashed border-[#d2d2d7] bg-transparent px-6 py-8 text-center">
@@ -285,12 +285,6 @@ function SettlementRow({ row }: { row: WalletSettlement }) {
           <dt className="text-[#86868b]">Cash commissions</dt>
           <dd className="font-medium text-[#1d1d1f]">
             ₱{row.cashCommissionTotal.toLocaleString()}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-[#86868b]">Cashless earnings</dt>
-          <dd className="font-medium text-[#1d1d1f]">
-            ₱{row.cashlessEarningsTotal.toLocaleString()}
           </dd>
         </div>
         <div>

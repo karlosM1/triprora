@@ -210,7 +210,7 @@ export function AdminWalletPage() {
       <motion.div variants={fadeInUp}>
         <SectionTitle
           title="Daily settlements"
-          subtitle="Finalize a calendar day to snapshot cash commissions vs cashless earnings."
+          subtitle="Finalize a calendar day to snapshot cash commissions owed to the platform."
         />
         <div className="mt-4 flex flex-wrap items-end gap-3">
           <label className="text-[13px] text-[#86868b]">
@@ -330,8 +330,8 @@ function SettlementAdminRow({ row }: { row: WalletSettlement }) {
       <div>
         <p className="text-[14px] font-medium text-[#1d1d1f]">{row.settlementDate}</p>
         <p className="text-[12px] text-[#86868b]">
-          Cash ₱{row.cashCommissionTotal.toLocaleString()} · Cashless ₱
-          {row.cashlessEarningsTotal.toLocaleString()} · Net {formatPesos(row.netChange)}
+          Cash commissions ₱{row.cashCommissionTotal.toLocaleString()} · Net{' '}
+          {formatPesos(row.netChange)}
         </p>
       </div>
       <span

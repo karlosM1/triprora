@@ -1,20 +1,27 @@
 import type { Prisma } from '@prisma/client'
 
-/** Full layout: 1 front passenger + 3 rows of 4 rear seats. */
+/** Full layout: 1 front passenger + 3 rows of 4 rear seats (+ optional 5th-row seat). */
 export const STANDARD_VAN_SEATS = 13
+export const MAX_VAN_SEATS = 14
 
 export function generateSeatLabels(totalSeats: number) {
+  const capped = Math.min(Math.max(1, totalSeats), MAX_VAN_SEATS)
   const labels: string[] = []
 
   // Row 1: front passenger beside driver
   labels.push('1A')
 
   // Rows 2–4: three rows of four seats
-  for (let row = 2; row <= 4 && labels.length < totalSeats; row++) {
+  for (let row = 2; row <= 4 && labels.length < capped; row++) {
     for (const column of ['A', 'B', 'C', 'D']) {
-      if (labels.length >= totalSeats) break
+      if (labels.length >= capped) break
       labels.push(`${row}${column}`)
     }
+  }
+
+  // Row 5: optional extra seat for 14-passenger vans
+  if (labels.length < capped) {
+    labels.push('5A')
   }
 
   return labels

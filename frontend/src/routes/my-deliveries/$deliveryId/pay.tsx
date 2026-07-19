@@ -9,10 +9,7 @@ import {
 } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { CheckoutFooter } from "@/components/booking/booking-footer";
-import {
-  PaymentForm,
-  type CheckoutPaymentMethod,
-} from "@/components/booking/payment-form";
+import { PaymentForm } from "@/components/booking/payment-form";
 import { Header } from "@/components/landing/header";
 import { AppleCard, PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
@@ -67,9 +64,6 @@ function PayDeliveryPage() {
   const navigate = useNavigate();
   const client = useQueryClient();
   const [error, setError] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] =
-    useState<CheckoutPaymentMethod>("qrph");
-  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
   const [paymentReady, setPaymentReady] = useState(false);
 
   const deliveryQuery = useQuery(deliveryQueryOptions(deliveryId));
@@ -89,17 +83,10 @@ function PayDeliveryPage() {
       : null;
 
   const payMutation = useMutation({
-    mutationFn: () => {
-      if (paymentMethod === "qrph" && !paymentIntentId) {
-        throw new Error("Payment is required.");
-      }
-      return payDelivery(deliveryId, {
-        paymentMethod,
-        ...(paymentMethod === "qrph" && paymentIntentId
-          ? { paymentIntentId }
-          : {}),
-      });
-    },
+    mutationFn: () =>
+      payDelivery(deliveryId, {
+        paymentMethod: "cash",
+      }),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: upcomingDeliveriesQueryKey });
       client.invalidateQueries({ queryKey: historyDeliveriesQueryKey });
@@ -210,7 +197,7 @@ function PayDeliveryPage() {
             <PageHeader
               eyebrow={delivery.reference}
               title="Pay for delivery"
-              subtitle="The driver accepted your package. Complete payment to confirm it."
+              subtitle="The driver accepted your package. Confirm cash payment to lock it in."
             />
           </motion.div>
 
@@ -234,8 +221,6 @@ function PayDeliveryPage() {
               totalAmount={fare.total}
               purpose="delivery"
               onPaymentChange={(state) => {
-                setPaymentMethod(state.paymentMethod);
-                setPaymentIntentId(state.paymentIntentId);
                 setPaymentReady(state.ready);
               }}
             />
@@ -263,11 +248,7 @@ function PayDeliveryPage() {
                 payMutation.mutate();
               }}
             >
-              {payMutation.isPending
-                ? "Confirming…"
-                : paymentMethod === "cash"
-                  ? "Confirm with cash"
-                  : "Confirm payment"}
+              {payMutation.isPending ? "Confirming…" : "Confirm with cash"}
             </Button>
             {delivery.canCancel && (
               <Button

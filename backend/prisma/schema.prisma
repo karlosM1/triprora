@@ -250,6 +250,18 @@ model Profile {
   @@map("profiles")
 }
 
+/// Auth users / emails that must not regain access after profile removal.
+model RevokedAccount {
+  id         String   @id @default(cuid())
+  authUserId String   @unique @db.Uuid
+  email      String
+  reason     String?
+  revokedAt  DateTime @default(now())
+
+  @@index([email])
+  @@map("revoked_accounts")
+}
+
 model DestinationAddress {
   id          String   @id @default(cuid())
   profileId   String   @db.Uuid

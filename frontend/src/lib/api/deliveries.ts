@@ -23,8 +23,7 @@ export type CreateDeliveryInput = {
 }
 
 export type PayDeliveryInput = {
-  paymentMethod: 'qrph' | 'cash'
-  paymentIntentId?: string
+  paymentMethod: 'cash'
 }
 
 export async function createDelivery(input: CreateDeliveryInput) {

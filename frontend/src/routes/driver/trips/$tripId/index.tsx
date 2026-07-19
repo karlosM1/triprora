@@ -660,11 +660,7 @@ function PackageRequestRow({
       ? delivery.isPaid
         ? 'Cash (collected)'
         : 'Cash on trip'
-      : delivery.paymentMethod === 'qrph'
-        ? delivery.isPaid
-          ? 'QR Ph (paid)'
-          : 'QR Ph'
-        : null
+      : null
 
   const feeNumber = Number(deliveryFee)
   const platformFee = Number.isFinite(feeNumber)

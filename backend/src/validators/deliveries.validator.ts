@@ -29,20 +29,9 @@ export const createDeliverySchema = z.object({
   specialInstructions: z.string().trim().max(500).optional(),
 })
 
-export const payDeliverySchema = z
-  .object({
-    paymentMethod: z.enum(['qrph', 'cash']).default('qrph'),
-    paymentIntentId: z.string().trim().min(1).optional(),
-  })
-  .superRefine((data, ctx) => {
-    if (data.paymentMethod === 'qrph' && !data.paymentIntentId) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'paymentIntentId is required for QR Ph payments',
-        path: ['paymentIntentId'],
-      })
-    }
-  })
+export const payDeliverySchema = z.object({
+  paymentMethod: z.literal('cash').default('cash'),
+})
 
 export const acceptDeliverySchema = z.object({
   deliveryFee: z.coerce.number().int().min(1).max(100_000),

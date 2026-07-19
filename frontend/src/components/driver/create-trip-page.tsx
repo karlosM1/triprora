@@ -27,10 +27,13 @@ import {
 } from '@/lib/api/driver-trips'
 import { vansQueryKey } from '@/lib/api/vans'
 import { useAuth } from '@/lib/auth-context'
+import { isAxiosError } from 'axios'
 import { TRIP_DESTINATION_PLACES } from '@/lib/places'
 import type { DriverApplication } from '@/lib/types/profile'
 import { todayDateInputValue } from '@/lib/trip-search'
 import { cn } from '@/lib/utils'
+
+const MAX_TRIP_SEATS = 14
 
 type FormState = {
   departureLocation: string
@@ -136,8 +139,23 @@ function vehicleDefaultsFromApplication(application: DriverApplication) {
   return {
     vehicleName: `${application.vehicleMake} ${application.vehicleModel} ${application.vehicleYear}`.trim(),
     plateNumber: application.vehiclePlateNumber,
-    totalSeats: application.vehicleCapacity,
+    totalSeats: Math.min(
+      MAX_TRIP_SEATS,
+      Math.max(1, application.vehicleCapacity || 13),
+    ),
   }
+}
+
+function tripErrorMessage(err: unknown, fallback: string) {
+  if (!isAxiosError(err)) return fallback
+  const data = err.response?.data as
+    | { message?: string; errors?: Record<string, string[] | undefined> }
+    | undefined
+  if (data?.errors) {
+    const firstFieldError = Object.values(data.errors).flat().find(Boolean)
+    if (firstFieldError) return firstFieldError
+  }
+  return data?.message || fallback
 }
 
 export function DriverCreateTripPage({ draftTripId }: DriverCreateTripPageProps = {}) {
@@ -181,7 +199,9 @@ export function DriverCreateTripPage({ draftTripId }: DriverCreateTripPageProps 
     }
 
     setForm(formStateFromTrip(trip))
-    setSeats([trip.totalSeats ?? 13])
+    setSeats([
+      Math.min(MAX_TRIP_SEATS, Math.max(1, trip.totalSeats ?? 13)),
+    ])
     setInitialized(true)
   }, [draftQuery.data, initialized, isEditing, navigate])
 
@@ -197,6 +217,10 @@ export function DriverCreateTripPage({ draftTripId }: DriverCreateTripPageProps 
 
   const saveMutation = useMutation({
     mutationFn: (status: 'draft' | 'published') => {
+      const totalSeats = Math.min(
+        MAX_TRIP_SEATS,
+        Math.max(1, Math.round(seats[0] ?? 13)),
+      )
       const payload: CreateDriverTripPayload = {
         departureLocation: form.departureLocation,
         arrivalLocation: form.arrivalLocation,
@@ -207,7 +231,7 @@ export function DriverCreateTripPage({ draftTripId }: DriverCreateTripPageProps 
         vehicleName: form.vehicleName,
         plateNumber: form.plateNumber.trim() || undefined,
         price: Math.round(baseFare),
-        totalSeats: seats[0]!,
+        totalSeats,
         status,
       }
       return isEditing
@@ -225,11 +249,14 @@ export function DriverCreateTripPage({ draftTripId }: DriverCreateTripPageProps 
       await queryClient.invalidateQueries({ queryKey: vansQueryKey })
       await navigate({ to: status === 'draft' ? '/driver/trips' : '/driver' })
     },
-    onError: () => {
+    onError: (err) => {
       setError(
-        isEditing
-          ? 'Failed to update trip. Check all fields and try again.'
-          : 'Failed to save trip. Check all fields and try again.',
+        tripErrorMessage(
+          err,
+          isEditing
+            ? 'Failed to update trip. Check all fields and try again.'
+            : 'Failed to save trip. Check all fields and try again.',
+        ),
       )
     },
   })
@@ -556,9 +583,16 @@ export function DriverCreateTripPage({ draftTripId }: DriverCreateTripPageProps 
               </div>
               <Slider
                 value={seats}
-                onValueChange={setSeats}
+                onValueChange={(value) =>
+                  setSeats([
+                    Math.min(
+                      MAX_TRIP_SEATS,
+                      Math.max(1, Math.round(value[0] ?? 13)),
+                    ),
+                  ])
+                }
                 min={1}
-                max={18}
+                max={MAX_TRIP_SEATS}
                 step={1}
                 className="py-2 accent-[#0071e3]"
               />
