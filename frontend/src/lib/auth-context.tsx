@@ -18,7 +18,10 @@ import {
 } from '@/lib/auth-session'
 import {
   clearRememberedEmail,
+  detectPasswordRecoveryFromUrl,
   getAuthRedirectUrl,
+  isPasswordRecoveryActive,
+  setPasswordRecoveryActive,
   setRememberedEmail,
   setRememberMePreference,
   supabase,
@@ -33,6 +36,7 @@ type AuthContextValue = {
   loading: boolean
   profileLoading: boolean
   profileReady: boolean
+  isPasswordRecovery: boolean
   isAdmin: boolean
   isSuperAdmin: boolean
   isDriver: boolean
@@ -61,13 +65,39 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 
 const PROFILE_STALE_TIME = 1000 * 60 * 5
 
+function readInitialRecoveryState() {
+  if (detectPasswordRecoveryFromUrl()) {
+    setPasswordRecoveryActive(true)
+    return true
+  }
+  return isPasswordRecoveryActive()
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
-  const [session, setSession] = useState<Session | null>(() => getCachedSession())
-  const [loading, setLoading] = useState(() => !getCachedSession())
-  const previousUserIdRef = useRef(session?.user?.id ?? null)
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(() =>
+    readInitialRecoveryState(),
+  )
+  const [session, setSession] = useState<Session | null>(() =>
+    isPasswordRecoveryActive() ? null : getCachedSession(),
+  )
+  const [loading, setLoading] = useState(() => {
+    if (isPasswordRecoveryActive()) return true
+    return !getCachedSession()
+  })
+  const previousUserIdRef = useRef(
+    isPasswordRecoveryActive() ? null : (getCachedSession()?.user?.id ?? null),
+  )
 
-  const userId = session?.user?.id ?? null
+  // Recovery sessions must not look like a normal login (header, APIs, guards).
+  useEffect(() => {
+    if (!isPasswordRecovery) return
+    setCachedSession(null)
+    queryClient.removeQueries({ queryKey: ['profile'] })
+  }, [isPasswordRecovery, queryClient])
+
+  const userId =
+    isPasswordRecovery || !session?.user?.id ? null : session.user.id
 
   const profileQuery = useQuery({
     queryKey: profileQueryKey(userId),
@@ -104,19 +134,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const previousUserId = previousUserIdRef.current
       const nextUserId = nextSession?.user?.id ?? null
 
+      if (event === 'PASSWORD_RECOVERY') {
+        setPasswordRecoveryActive(true)
+        setIsPasswordRecovery(true)
+        setCachedSession(null)
+        setSession(null)
+        setLoading(false)
+        previousUserIdRef.current = null
+        queryClient.removeQueries({ queryKey: ['profile'] })
+
+        if (window.location.pathname !== '/reset-password') {
+          window.location.replace(`${window.location.origin}/reset-password`)
+        }
+        return
+      }
+
+      if (event === 'SIGNED_OUT') {
+        setPasswordRecoveryActive(false)
+        setIsPasswordRecovery(false)
+      }
+
+      // Normal auth events clear recovery mode (e.g. a real sign-in).
+      if (
+        event === 'SIGNED_IN' &&
+        isPasswordRecoveryActive() &&
+        window.location.pathname !== '/reset-password'
+      ) {
+        setPasswordRecoveryActive(false)
+        setIsPasswordRecovery(false)
+      }
+
+      if (isPasswordRecoveryActive() && event !== 'SIGNED_OUT') {
+        setCachedSession(null)
+        setSession(null)
+        setLoading(false)
+        previousUserIdRef.current = null
+        return
+      }
+
       setCachedSession(nextSession)
       setSession(nextSession)
       setLoading(false)
       previousUserIdRef.current = nextUserId
-
-      if (event === 'PASSWORD_RECOVERY') {
-        const path = window.location.pathname
-        if (path !== '/reset-password') {
-          window.location.replace(
-            `${window.location.origin}/reset-password`,
-          )
-        }
-      }
 
       if (
         event === 'SIGNED_OUT' ||
@@ -130,8 +189,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe()
   }, [queryClient])
 
+  // If we refreshed mid-recovery, keep Supabase's session for updateUser only.
+  useEffect(() => {
+    if (!isPasswordRecovery) return
+
+    void supabase.auth.getSession().then(() => {
+      setCachedSession(null)
+      setSession(null)
+      setLoading(false)
+    })
+  }, [isPasswordRecovery])
+
   const signIn = useCallback(
     async (email: string, password: string, rememberMe = true) => {
+      setPasswordRecoveryActive(false)
+      setIsPasswordRecovery(false)
       setRememberMePreference(rememberMe)
 
       if (rememberMe) {
@@ -227,6 +299,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signOut = useCallback(async () => {
+    setPasswordRecoveryActive(false)
+    setIsPasswordRecovery(false)
     await supabase.auth.signOut()
     queryClient.removeQueries({ queryKey: ['profile'] })
   }, [queryClient])
@@ -244,17 +318,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      session,
-      user: session?.user ?? null,
-      profile,
-      role,
+      // Mask recovery as logged-out for the rest of the app.
+      session: isPasswordRecovery ? null : session,
+      user: isPasswordRecovery ? null : (session?.user ?? null),
+      profile: isPasswordRecovery ? null : profile,
+      role: isPasswordRecovery ? null : role,
       loading,
-      profileLoading,
-      profileReady,
-      isAdmin: profileReady && profile?.role === 'admin',
-      isSuperAdmin: profileReady && profile?.role === 'superadmin',
-      isDriver: profileReady && profile?.role === 'driver',
-      isPassenger: profileReady && profile?.role === 'passenger',
+      profileLoading: isPasswordRecovery ? false : profileLoading,
+      profileReady: isPasswordRecovery ? false : profileReady,
+      isPasswordRecovery,
+      isAdmin: !isPasswordRecovery && profileReady && profile?.role === 'admin',
+      isSuperAdmin:
+        !isPasswordRecovery &&
+        profileReady &&
+        profile?.role === 'superadmin',
+      isDriver:
+        !isPasswordRecovery && profileReady && profile?.role === 'driver',
+      isPassenger:
+        !isPasswordRecovery && profileReady && profile?.role === 'passenger',
       signIn,
       signUp,
       signInWithGoogle,
@@ -270,6 +351,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       profileLoading,
       profileReady,
+      isPasswordRecovery,
       signIn,
       signUp,
       signInWithGoogle,

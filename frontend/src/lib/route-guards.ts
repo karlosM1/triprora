@@ -3,7 +3,7 @@ import { isAxiosError } from 'axios'
 import { fetchProfile, profileQueryKey } from '@/lib/api/profile'
 import { resolveSession, setCachedSession } from '@/lib/auth-session'
 import { queryClient } from '@/lib/query-client'
-import { supabase } from '@/lib/supabase'
+import { isPasswordRecoveryActive, supabase } from '@/lib/supabase'
 import type { Role } from '@/lib/types/profile'
 
 const PROFILE_STALE_TIME = 1000 * 60 * 5
@@ -15,6 +15,10 @@ async function forceSignOut() {
 }
 
 export async function requireAuth(redirectTo: string) {
+  if (isPasswordRecoveryActive()) {
+    throw redirect({ to: '/reset-password' })
+  }
+
   const session = await resolveSession()
 
   if (!session) {

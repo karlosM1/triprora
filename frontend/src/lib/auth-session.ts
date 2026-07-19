@@ -1,5 +1,5 @@
 import type { Session } from '@supabase/supabase-js'
-import { supabase } from '@/lib/supabase'
+import { isPasswordRecoveryActive, supabase } from '@/lib/supabase'
 
 let cachedSession: Session | null = readStoredSession()
 
@@ -55,6 +55,11 @@ export function setCachedSession(session: Session | null) {
 }
 
 export async function resolveSession() {
+  if (isPasswordRecoveryActive()) {
+    setCachedSession(null)
+    return null
+  }
+
   if (cachedSession) return cachedSession
 
   const {

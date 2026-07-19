@@ -4,6 +4,7 @@ import { AuthField } from '@/components/auth/auth-field'
 import { AuthAlert, AuthLayout, AuthLink } from '@/components/auth/auth-layout'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth-context'
+import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/reset-password')({
@@ -12,17 +13,29 @@ export const Route = createFileRoute('/reset-password')({
 
 function ResetPasswordPage() {
   const navigate = useNavigate()
-  const { session, loading, updatePassword, signOut } = useAuth()
+  const { loading, isPasswordRecovery, updatePassword, signOut } = useAuth()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [ready, setReady] = useState(false)
+  const [hasRecoverySession, setHasRecoverySession] = useState(false)
 
   useEffect(() => {
     if (loading) return
-    setReady(true)
-  }, [loading])
+
+    let cancelled = false
+
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      if (cancelled) return
+      setHasRecoverySession(Boolean(session) && isPasswordRecovery)
+      setReady(true)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [loading, isPasswordRecovery])
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
@@ -38,7 +51,7 @@ function ResetPasswordPage() {
       return
     }
 
-    if (!session) {
+    if (!hasRecoverySession) {
       setError('This reset link is invalid or has expired. Request a new one.')
       return
     }
@@ -75,7 +88,7 @@ function ResetPasswordPage() {
     )
   }
 
-  if (!session) {
+  if (!hasRecoverySession) {
     return (
       <AuthLayout
         title="Link expired"

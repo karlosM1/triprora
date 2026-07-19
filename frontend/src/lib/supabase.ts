@@ -11,6 +11,34 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const REMEMBER_EMAIL_KEY = 'triprora-remember-email'
 export const REMEMBER_ME_KEY = 'triprora-remember-me'
+export const PASSWORD_RECOVERY_KEY = 'triprora-password-recovery'
+
+export function isPasswordRecoveryActive() {
+  return sessionStorage.getItem(PASSWORD_RECOVERY_KEY) === 'true'
+}
+
+export function setPasswordRecoveryActive(active: boolean) {
+  if (active) {
+    sessionStorage.setItem(PASSWORD_RECOVERY_KEY, 'true')
+    return
+  }
+  sessionStorage.removeItem(PASSWORD_RECOVERY_KEY)
+}
+
+/** True when the current URL is a Supabase password-recovery redirect. */
+export function detectPasswordRecoveryFromUrl() {
+  if (typeof window === 'undefined') return false
+
+  const search = new URLSearchParams(window.location.search)
+  if (search.get('type') === 'recovery') return true
+
+  const hash = window.location.hash.startsWith('#')
+    ? window.location.hash.slice(1)
+    : window.location.hash
+  if (!hash) return false
+
+  return new URLSearchParams(hash).get('type') === 'recovery'
+}
 
 function getSupabaseAuthStorageKey() {
   try {
