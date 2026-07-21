@@ -38,7 +38,7 @@ const galleryImages = [
 
 export function FeaturesSection() {
   return (
-    <section className="mx-auto max-w-[980px] px-6 py-20 lg:px-8 lg:py-28">
+    <section className="mx-auto max-w-245 px-6 py-20 lg:px-8 lg:py-28">
       <motion.div
         className="text-center"
         initial="hidden"
@@ -84,7 +84,7 @@ export function FeaturesSection() {
       </motion.div>
 
       <motion.div
-        className="mt-16 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-[1.2fr_0.55fr_1fr] lg:grid-rows-2 lg:gap-5 lg:h-[520px]"
+        className="mt-16 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-[1.2fr_0.55fr_1fr] lg:grid-rows-2 lg:gap-5 lg:h-130"
         initial="hidden"
         whileInView="visible"
         viewport={viewportOnce}

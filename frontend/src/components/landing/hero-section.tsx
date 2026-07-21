@@ -43,7 +43,7 @@ export function HeroSection() {
       />
       <div className="absolute inset-0 bg-linear-to-b from-black/55 via-black/25 to-black/70" />
 
-      <div className="relative mx-auto flex min-h-svh w-full max-w-[1280px] flex-col justify-end gap-8 px-4 pt-20 pb-6 sm:justify-between sm:gap-0 sm:px-6 sm:pt-24 sm:pb-10 lg:px-10 lg:pt-28">
+      <div className="relative mx-auto flex min-h-svh w-full max-w-7xl flex-col justify-end gap-8 px-4 pt-20 pb-6 sm:justify-between sm:gap-0 sm:px-6 sm:pt-24 sm:pb-10 lg:px-10 lg:pt-28">
         <motion.div
           className="flex flex-1 flex-col items-center justify-center text-center"
           variants={staggerContainer}
@@ -108,7 +108,7 @@ export function HeroSection() {
         >
           <div className="flex flex-col gap-3 xl:flex-row xl:items-stretch">
             <div className="flex flex-1 flex-col gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:flex xl:flex-row xl:gap-3">
-              <div className="relative flex min-w-0 flex-col gap-2 sm:col-span-2 sm:flex-row sm:gap-3 lg:col-span-2 xl:flex-[2] xl:basis-0">
+              <div className="relative flex min-w-0 flex-col gap-2 sm:col-span-2 sm:flex-row sm:gap-3 lg:col-span-2 xl:flex-2 xl:basis-0">
                 <PlaceInput
                   className="min-w-0 flex-1 basis-0"
                   value={from}
