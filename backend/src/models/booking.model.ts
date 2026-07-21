@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client'
 import type {
   CreateBookingInput,
   CreatedBooking,
@@ -10,6 +11,7 @@ import {
   canCancelBeforePickup,
   CANCELLATION_TOO_LATE_MESSAGE,
 } from '../lib/booking-cancellation.js'
+import { createBookingId, createBookingReference } from '../lib/ids.js'
 import { prisma } from '../lib/prisma.js'
 import { presentVan, vanInclude } from '../lib/van-presenter.js'
 import { AppError } from '../utils/app-error.js'
@@ -60,14 +62,6 @@ function calculateTotal(baseFare: number) {
     tax,
     total: baseFare + serviceFee,
   }
-}
-
-function createBookingId() {
-  return `BK-${Date.now().toString(36).toUpperCase()}`
-}
-
-function createReference() {
-  return `TRP-${Date.now().toString().slice(-8)}`
 }
 
 function formatPrice(amount: number) {
@@ -130,6 +124,23 @@ function toUpcomingBooking(
 
 export const BookingModel = {
   async create(input: CreateBookingInput): Promise<CreatedBooking> {
+    // Retry only on unique-constraint collisions from the random id/reference.
+    // Seat/seatsLeft conflicts throw AppError(409) and are NOT retried.
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        return await BookingModel.createOnce(input)
+      } catch (error) {
+        const isUniqueCollision =
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002'
+        if (isUniqueCollision && attempt < 2) continue
+        throw error
+      }
+    }
+    throw new AppError('Could not create booking. Please try again.', 500)
+  },
+
+  async createOnce(input: CreateBookingInput): Promise<CreatedBooking> {
     return prisma.$transaction(async (tx) => {
       const van = await tx.van.findFirst({
         where: { id: input.vanId, status: 'published' },
@@ -148,36 +159,39 @@ export const BookingModel = {
         throw new AppError('Seat not found', 404)
       }
 
-      if (seat.status === 'occupied') {
+      // Atomically claim the seat: the WHERE clause is re-evaluated against the
+      // latest committed row, so two concurrent bookings cannot both succeed.
+      const seatClaim = await tx.seat.updateMany({
+        where: { id: seat.id, status: { not: 'occupied' } },
+        data: { status: 'occupied' },
+      })
+      if (seatClaim.count === 0) {
         throw new AppError('This seat is no longer available', 409)
       }
 
-      if (van.seatsLeft <= 0) {
+      // Atomically decrement remaining seats only if capacity is left.
+      const capacityClaim = await tx.van.updateMany({
+        where: { id: van.id, seatsLeft: { gt: 0 } },
+        data: { seatsLeft: { decrement: 1 } },
+      })
+      if (capacityClaim.count === 0) {
         throw new AppError('No seats remaining on this trip', 409)
       }
 
       const presented = presentVan(van)
       const fare = calculateTotal(van.price)
 
-      const reference = createReference()
+      const reference = createBookingReference()
       const routeLabel = `${presented.departureLocation} → ${presented.arrivalLocation}`
       const vehicleLabel = presented.vehicleName ?? presented.operator
       const date = formatDisplayDate(van.departureDate)
       const tripType = van.tripCategory ?? presented.classType
 
-      await tx.seat.update({
-        where: { id: seat.id },
-        data: { status: 'occupied' },
-      })
-
-      await tx.van.update({
-        where: { id: van.id },
-        data: { seatsLeft: { decrement: 1 } },
-      })
+      const bookingId = createBookingId()
 
       const booking = await tx.booking.create({
         data: {
-          id: createBookingId(),
+          id: bookingId,
           userId: input.userId,
           vanId: van.id,
           seatId: seat.id,
@@ -346,21 +360,23 @@ export const BookingModel = {
           throw new AppError('Seat not found', 404)
         }
 
-        if (targetSeat.status === 'occupied' && targetSeat.id !== booking.seatId) {
-          throw new AppError('This seat is no longer available', 409)
-        }
-
-        if (currentSeat) {
-          await tx.seat.update({
-            where: { id: currentSeat.id },
-            data: { status: 'available' },
+        if (targetSeat.id !== booking.seatId) {
+          // Atomically claim the new seat before releasing the old one.
+          const claim = await tx.seat.updateMany({
+            where: { id: targetSeat.id, status: { not: 'occupied' } },
+            data: { status: 'occupied' },
           })
-        }
+          if (claim.count === 0) {
+            throw new AppError('This seat is no longer available', 409)
+          }
 
-        await tx.seat.update({
-          where: { id: targetSeat.id },
-          data: { status: 'occupied' },
-        })
+          if (currentSeat) {
+            await tx.seat.update({
+              where: { id: currentSeat.id },
+              data: { status: 'available' },
+            })
+          }
+        }
 
         nextSeatId = targetSeat.id
       }

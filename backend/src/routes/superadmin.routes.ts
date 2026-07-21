@@ -11,6 +11,7 @@ import {
 } from '../controllers/admin.controller.js'
 import { asyncHandler } from '../middleware/async-handler.middleware.js'
 import { authenticate, requireRole } from '../middleware/auth.middleware.js'
+import { sensitiveRateLimiter } from '../middleware/rate-limit.middleware.js'
 import { validateRequest } from '../middleware/validate-request.middleware.js'
 import {
   adminBookingsQuerySchema,
@@ -51,6 +52,7 @@ superadminRouter.get(
 
 superadminRouter.patch(
   '/users/:id/role',
+  sensitiveRateLimiter,
   validateRequest({
     params: userIdParamSchema,
     body: updateUserRoleSchema,
@@ -60,6 +62,7 @@ superadminRouter.patch(
 
 superadminRouter.patch(
   '/users/:id/ban',
+  sensitiveRateLimiter,
   validateRequest({
     params: userIdParamSchema,
     body: banUserSchema,
@@ -69,6 +72,7 @@ superadminRouter.patch(
 
 superadminRouter.patch(
   '/users/:id/password',
+  sensitiveRateLimiter,
   validateRequest({
     params: userIdParamSchema,
     body: setUserPasswordSchema,

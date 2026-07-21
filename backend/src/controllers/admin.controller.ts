@@ -1,6 +1,8 @@
 import type { Request, Response } from 'express'
 import { getSupabaseAdmin } from '../lib/supabase-admin.js'
+import { invalidateAuthForUser } from '../middleware/auth.middleware.js'
 import { AdminModel } from '../models/admin.model.js'
+import { AuditLogModel } from '../models/audit-log.model.js'
 import { DriverApplicationModel } from '../models/driver-application.model.js'
 import { ProfileModel } from '../models/profile.model.js'
 import { AppError } from '../utils/app-error.js'
@@ -68,6 +70,17 @@ export async function updateAdminUserRole(req: Request, res: Response) {
 
   const updated = await ProfileModel.updateRole(target.id, body.role)
 
+  invalidateAuthForUser(target.id)
+  await AuditLogModel.record({
+    actorProfileId: req.profile!.id,
+    action: 'user_role_changed',
+    entityType: 'Profile',
+    entityId: target.id,
+    before: { role: target.role },
+    after: { role: updated.role },
+    ip: req.ip ?? null,
+  })
+
   res.json({
     id: updated.id,
     role: updated.role,
@@ -89,6 +102,17 @@ export async function banAdminUser(req: Request, res: Response) {
     body.isBanned,
     body.reason,
   )
+
+  invalidateAuthForUser(target.id)
+  await AuditLogModel.record({
+    actorProfileId: req.profile!.id,
+    action: body.isBanned ? 'user_banned' : 'user_unbanned',
+    entityType: 'Profile',
+    entityId: target.id,
+    before: { isBanned: target.isBanned },
+    after: { isBanned: updated.isBanned, bannedReason: updated.bannedReason },
+    ip: req.ip ?? null,
+  })
 
   res.json({
     id: updated.id,
@@ -117,6 +141,17 @@ export async function setAdminUserPassword(req: Request, res: Response) {
     throw new AppError(error.message || 'Failed to update password', 400)
   }
 
+  invalidateAuthForUser(target.id)
+  await AuditLogModel.record({
+    actorProfileId: req.profile!.id,
+    action: 'user_password_reset',
+    entityType: 'Profile',
+    entityId: target.id,
+    // Never store the password itself.
+    metadata: { via: 'superadmin' },
+    ip: req.ip ?? null,
+  })
+
   res.json({ id: target.id, updated: true })
 }
 
@@ -139,6 +174,20 @@ export async function reviewDriverApplication(req: Request, res: Response) {
     req.profile!.id,
     req.body.adminNotes,
   )
+
+  if (reviewed.status === 'approved' || reviewed.status === 'rejected') {
+    invalidateAuthForUser(application.profileId)
+  }
+  await AuditLogModel.record({
+    actorProfileId: req.profile!.id,
+    action: `driver_application_${reviewed.status}`,
+    entityType: 'DriverApplication',
+    entityId: reviewed.id,
+    before: { status: 'pending' },
+    after: { status: reviewed.status },
+    metadata: { profileId: application.profileId },
+    ip: req.ip ?? null,
+  })
 
   res.json({
     id: reviewed.id,

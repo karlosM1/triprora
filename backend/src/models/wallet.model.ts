@@ -426,16 +426,6 @@ export const WalletModel = {
     return rows.map(presentPayout)
   },
 
-  async requestPayout(
-    _driverId: string,
-    _amountPesos: number,
-  ): Promise<PresentedPayout> {
-    throw new AppError(
-      'Payout requests are no longer available. Your wallet tracks system fees owed to the platform.',
-      400,
-    )
-  },
-
   async listAllWallets() {
     const wallets = await prisma.driverWallet.findMany({
       include: {

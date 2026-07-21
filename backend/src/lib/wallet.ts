@@ -1,3 +1,18 @@
+/**
+ * Payment model: CASH ONLY.
+ *
+ * Passengers/senders pay drivers in cash on the trip. There is no online
+ * payment gateway. Every `Payment` row is created with `provider: 'cash'`
+ * and stays `status: 'pending'` (cash is settled off-platform).
+ *
+ * What the wallet tracks is the platform's cut, NOT passenger payments:
+ *  - On each booking the driver owes the platform a commission (a negative
+ *    `cash_commission` ledger entry, so a negative balance = "driver owes
+ *    platform"). Admins reconcile these via the settlement + payout flow.
+ *  - The `cashless_earnings` ledger type and the `paymongo` payout method
+ *    exist in the schema for a future online-payments feature and are
+ *    currently unused. Do not treat them as active code paths.
+ */
 export const PLATFORM_COMMISSION_RATE = 0.04
 
 export function commissionFromBase(baseFarePesos: number) {

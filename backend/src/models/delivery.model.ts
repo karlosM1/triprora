@@ -11,11 +11,13 @@ import type {
   PayDeliveryInput,
   PaymentMethod,
 } from './delivery.types.js'
+import { Prisma } from '@prisma/client'
 import {
   canCancelBeforePickup,
   CANCELLATION_TOO_LATE_MESSAGE,
 } from '../lib/booking-cancellation.js'
 import { calculateDeliveryTotals, totalsFromDeliveryFee } from '../lib/delivery-fare.js'
+import { createDeliveryId, createDeliveryReference } from '../lib/ids.js'
 import { prisma } from '../lib/prisma.js'
 import { presentVan, vanInclude } from '../lib/van-presenter.js'
 import { AppError } from '../utils/app-error.js'
@@ -64,14 +66,6 @@ function formatDisplayDate(dateStr: string) {
     day: 'numeric',
     year: 'numeric',
   })
-}
-
-function createDeliveryId() {
-  return `DL-${Date.now().toString(36).toUpperCase()}`
-}
-
-function createReference() {
-  return `PKG-${Date.now().toString().slice(-8)}`
 }
 
 function formatPrice(amount: number) {
@@ -211,6 +205,21 @@ function toDriverRequest(delivery: {
 
 export const DeliveryModel = {
   async create(input: CreateDeliveryInput): Promise<CreatedDelivery> {
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        return await DeliveryModel.createOnce(input)
+      } catch (error) {
+        const isUniqueCollision =
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002'
+        if (isUniqueCollision && attempt < 2) continue
+        throw error
+      }
+    }
+    throw new AppError('Could not create delivery. Please try again.', 500)
+  },
+
+  async createOnce(input: CreateDeliveryInput): Promise<CreatedDelivery> {
     const van = await prisma.van.findFirst({
       where: { id: input.vanId, status: 'published' },
       include: vanInclude,
@@ -227,7 +236,7 @@ export const DeliveryModel = {
       weightBand: input.weightBand,
     })
 
-    const reference = createReference()
+    const reference = createDeliveryReference()
     const routeLabel = `${presented.departureLocation} → ${presented.arrivalLocation}`
     const vehicleLabel = presented.vehicleName ?? presented.operator
     const date = formatDisplayDate(van.departureDate)

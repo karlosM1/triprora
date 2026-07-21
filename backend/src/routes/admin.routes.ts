@@ -17,6 +17,7 @@ import {
 } from '../controllers/wallet.controller.js'
 import { asyncHandler } from '../middleware/async-handler.middleware.js'
 import { authenticate, requireRole } from '../middleware/auth.middleware.js'
+import { sensitiveRateLimiter } from '../middleware/rate-limit.middleware.js'
 import { validateRequest } from '../middleware/validate-request.middleware.js'
 import {
   applicationIdParamSchema,
@@ -86,6 +87,7 @@ adminRouter.get(
 
 adminRouter.post(
   '/settlements/finalize',
+  sensitiveRateLimiter,
   validateRequest({ body: finalizeSettlementSchema }),
   asyncHandler(finalizeAdminSettlements),
 )
@@ -98,6 +100,7 @@ adminRouter.get(
 
 adminRouter.patch(
   '/payouts/:id',
+  sensitiveRateLimiter,
   validateRequest({
     params: payoutIdParamSchema,
     body: adminUpdatePayoutSchema,

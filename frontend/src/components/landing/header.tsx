@@ -132,19 +132,23 @@ export function Header({
       transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
     >
       <nav className="relative mx-auto flex h-11 max-w-245 items-center gap-3 px-4 sm:px-6 lg:px-8">
-        <div className="flex min-w-0 shrink-0 items-center">
+        <div className="flex min-w-0 shrink-0 items-center self-center">
           <Link
             to="/"
             className={cn(
-              "inline-flex items-center gap-2 leading-none",
+              "inline-flex h-8 items-center gap-2 leading-none sm:h-11",
               !isHero && "text-[#1d1d1f]",
             )}
           >
             <HeroText isHero={isHero} scrollProgress={textDark}>
-              <span className="inline-flex size-11 shrink-0 items-center justify-center">
-                <img src={heroLogo} alt="" className="size-11 object-contain" />
+              <span className="inline-flex size-8 shrink-0 items-center justify-center sm:size-11">
+                <img
+                  src={heroLogo}
+                  alt=""
+                  className="size-8 object-contain sm:size-11"
+                />
               </span>
-              <span className="text-[17px] font-semibold tracking-tight">
+              <span className="text-[17px] leading-none font-semibold tracking-tight">
                 Crabr
               </span>
             </HeroText>
@@ -173,7 +177,7 @@ export function Header({
           ))}
         </ul>
 
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-1.5 self-center sm:gap-2">
           <MobileNavMenu
             navLinks={navLinks}
             activeLink={activeLink}
@@ -191,7 +195,7 @@ export function Header({
               {profileReady && <NotificationsBell />}
               <Link
                 to="/profile"
-                className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-[#0071e3] text-[10px] leading-none font-semibold text-white ring-1 ring-black/5 transition-opacity hover:opacity-90"
+                className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-[#0071e3] text-[10px] leading-none font-semibold text-white ring-1 ring-black/5 transition-opacity hover:opacity-90"
                 title={user.email ?? "Profile"}
               >
                 {getInitials(user.email ?? "user")}
@@ -272,7 +276,7 @@ function MobileNavMenu({
           type="button"
           aria-label="Open menu"
           className={cn(
-            "inline-flex size-8 items-center justify-center rounded-md transition-colors md:hidden",
+            "inline-flex size-8 shrink-0 items-center justify-center rounded-md transition-colors md:hidden",
             !isHero && "text-[#1d1d1f]/80 hover:bg-black/5 hover:text-[#0066cc]",
           )}
         >

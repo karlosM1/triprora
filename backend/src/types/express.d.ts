@@ -10,6 +10,7 @@ declare global {
       }
       profile?: Profile
       role?: AppRole
+      requestId?: string
     }
   }
 }

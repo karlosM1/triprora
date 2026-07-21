@@ -5,10 +5,6 @@ export const walletHistoryQuerySchema = z.object({
   cursor: z.string().trim().min(1).optional(),
 })
 
-export const requestPayoutSchema = z.object({
-  amountPesos: z.number().int().positive(),
-})
-
 export const finalizeSettlementSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'date must be YYYY-MM-DD'),
   driverId: z.string().uuid().optional(),

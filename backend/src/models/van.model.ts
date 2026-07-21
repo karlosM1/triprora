@@ -6,6 +6,7 @@ import {
   ensureRoute,
   ensureVanClass,
 } from '../lib/reference-data.js'
+import { createTripId } from '../lib/ids.js'
 import { locationSearchTerms } from '../lib/place-match.js'
 import {
   presentVan,
@@ -126,10 +127,6 @@ function formatDuration(hours: number) {
   const minutes = Math.round((hours - wholeHours) * 60)
   if (minutes === 0) return `${wholeHours}h`
   return `${wholeHours}h ${minutes}m`
-}
-
-function createTripId() {
-  return `TRP-${Date.now().toString(36).toUpperCase()}`
 }
 
 function toDriverTrip(van: VanWithRelations): DriverTrip {

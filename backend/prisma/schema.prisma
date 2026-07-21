@@ -248,10 +248,31 @@ model Profile {
   driverPayouts     DriverPayout[]
   walletSettlements WalletDailySettlement[]
   walletAuditLogs   WalletAuditLog[]        @relation("WalletAuditActor")
+  auditLogs         AuditLog[]              @relation("AuditActor")
   destinationAddresses DestinationAddress[]
   notifications     Notification[]
 
   @@map("profiles")
+}
+
+/// Generic audit trail for privileged, non-wallet admin actions
+/// (role changes, bans, password resets, application reviews).
+model AuditLog {
+  id             String   @id @default(cuid())
+  actorProfileId String?  @db.Uuid
+  actor          Profile? @relation("AuditActor", fields: [actorProfileId], references: [id], onDelete: SetNull)
+  action         String
+  entityType     String
+  entityId       String?
+  before         Json?
+  after          Json?
+  metadata       Json?
+  ip             String?
+  createdAt      DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([actorProfileId, createdAt])
+  @@map("audit_logs")
 }
 
 /// Auth users / emails that must not regain access after profile removal.

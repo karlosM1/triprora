@@ -24,14 +24,6 @@ export async function getDriverWalletPayouts(req: Request, res: Response) {
   res.json(payouts)
 }
 
-export async function requestDriverPayout(req: Request, res: Response) {
-  const payout = await WalletModel.requestPayout(
-    req.profile!.id,
-    req.body.amountPesos,
-  )
-  res.status(201).json(payout)
-}
-
 export async function listAdminWallets(_req: Request, res: Response) {
   const wallets = await WalletModel.listAllWallets()
   res.json(wallets)
