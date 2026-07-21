@@ -15,7 +15,8 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "storage:setup": "prisma db execute --file supabase/driver-documents-storage.sql --schema prisma/schema.prisma",
-    "auth:setup": "prisma db execute --file supabase/handle-new-user.sql --schema prisma/schema.prisma"
+    "auth:setup": "prisma db execute --file supabase/handle-new-user.sql --schema prisma/schema.prisma",
+    "rls:setup": "prisma db execute --file supabase/rls-policies.sql --schema prisma/schema.prisma"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",
